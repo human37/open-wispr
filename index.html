@@ -313,6 +313,35 @@
       padding:2px 6px;font-size:12px;
     }
 
+    /* ABOUT */
+    .about{max-width:1000px;margin:0 auto;padding:0 24px 100px}
+    .about-grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:0;
+      border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow);
+    }
+    .about-text{
+      padding:32px 28px;background:var(--surface);
+      border-right:var(--bw) solid var(--border);
+    }
+    .about-text p{font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:16px}
+    .about-text p:last-child{margin-bottom:0}
+    .about-text a{font-weight:600}
+    .about-compare{padding:32px 28px;background:var(--surface)}
+    .about-compare h3{
+      font-family:'DM Sans',sans-serif;font-size:16px;font-weight:800;
+      margin-bottom:16px;
+    }
+    .compare-row{
+      display:flex;justify-content:space-between;align-items:baseline;
+      padding:8px 0;border-bottom:1px solid var(--border);
+      font-size:13px;
+    }
+    .compare-row:last-child{border-bottom:none}
+    .compare-label{color:var(--muted)}
+    .compare-val{font-weight:600}
+    .compare-val.good{color:var(--accent)}
+
     /* TESTIMONIAL */
     .testimonial{max-width:1000px;margin:0 auto;padding:0 24px 100px}
     .testimonial-card{
@@ -359,6 +388,8 @@
       .feature-cell:last-child{border-bottom:none}
       .config-grid{grid-template-columns:1fr}
       .config-card:first-child{border-right:var(--bw) solid var(--border);border-bottom:0}
+      .about-grid{grid-template-columns:1fr}
+      .about-text{border-right:none;border-bottom:var(--bw) solid var(--border)}
       .nav-links{gap:14px}
       .nav-links a{font-size:11px}
     }
@@ -392,8 +423,8 @@
 
 <section class="hero">
   <div class="tag">100% local / no cloud / MIT license</div>
-  <h1>Voice to text.<br>On your Mac.<br>That's it.</h1>
-  <p class="hero-sub">Hold a key, speak, release. Your words appear at the cursor. Powered by whisper.cpp with Metal acceleration. No audio or text ever leaves your machine.</p>
+  <h1>Voice to text.<br>On your Mac.</h1>
+  <p class="hero-sub">Hold a key, speak, release. Your words appear at the cursor. Powered by <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a> with Metal acceleration. No audio or text ever leaves your machine.</p>
 
   <div id="install" class="install-block">
     <div class="install-header">
@@ -432,6 +463,49 @@
       <div class="step-num">03</div>
       <div class="step-title">Release</div>
       <div class="step-desc">Let go. Transcribed text is typed at your cursor. Works in any app. The temp audio file is deleted.</div>
+    </div>
+  </div>
+</section>
+
+<section class="about">
+  <p class="section-tag">Powered by Whisper</p>
+  <h2>Better than Apple Dictation.</h2>
+  <div class="about-grid">
+    <div class="about-text">
+      <p><a href="https://github.com/openai/whisper">Whisper</a> is an open-source speech recognition model from OpenAI, trained on 680,000 hours of multilingual audio. It's widely regarded as the most accurate general-purpose transcription model available.</p>
+      <p>open-wispr runs Whisper locally through <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a>, a high-performance C/C++ port by Georgi Gerganov that takes advantage of Apple's Metal GPU framework for hardware-accelerated inference on Apple Silicon.</p>
+      <p>Unlike Apple's built-in dictation, Whisper handles punctuation, technical jargon, code terms, and accented speech far more reliably. And unlike cloud dictation services, nothing is ever sent to a server.</p>
+    </div>
+    <div class="about-compare">
+      <h3>vs. Apple Dictation</h3>
+      <div class="compare-row">
+        <span class="compare-label">Accuracy</span>
+        <span class="compare-val good">Significantly better</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Punctuation</span>
+        <span class="compare-val good">Automatic</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Technical terms</span>
+        <span class="compare-val good">Handles well</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Privacy</span>
+        <span class="compare-val good">100% on-device</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Internet required</span>
+        <span class="compare-val good">No</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Languages</span>
+        <span class="compare-val good">99 supported</span>
+      </div>
+      <div class="compare-row">
+        <span class="compare-label">Works in any app</span>
+        <span class="compare-val good">Yes</span>
+      </div>
     </div>
   </div>
 </section>
