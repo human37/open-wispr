@@ -4,21 +4,20 @@ import Foundation
 
 struct Permissions {
     static func ensureAccessibility() -> Bool {
-        let trusted = AXIsProcessTrusted()
-        if trusted { return true }
+        if AXIsProcessTrusted() { return true }
 
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-        let prompted = AXIsProcessTrustedWithOptions(options)
+        _ = AXIsProcessTrustedWithOptions(options)
 
-        if !prompted {
-            print("Accessibility permission required.")
-            print("A system dialog should have appeared — grant access, then restart open-wispr.")
-            print("")
-            print("If no dialog appeared, add open-wispr manually:")
-            print("  System Settings → Privacy & Security → Accessibility")
+        print("  Accessibility: waiting for permission...")
+        print("  Grant access in the system dialog, then it will continue automatically.")
+
+        while !AXIsProcessTrusted() {
+            Thread.sleep(forTimeInterval: 2)
         }
 
-        return prompted
+        print("  Accessibility: granted")
+        return true
     }
 
     static func ensureMicrophone() -> Bool {
@@ -26,7 +25,7 @@ struct Permissions {
         case .authorized:
             return true
         case .notDetermined:
-            print("Requesting microphone access...")
+            print("  Microphone: requesting...")
             let semaphore = DispatchSemaphore(value: 0)
             var granted = false
             AVCaptureDevice.requestAccess(for: .audio) { result in
@@ -35,13 +34,11 @@ struct Permissions {
             }
             semaphore.wait()
             if !granted {
-                print("Microphone access denied. Grant it in:")
-                print("  System Settings → Privacy & Security → Microphone")
+                print("  Microphone: denied — grant in System Settings → Privacy & Security → Microphone")
             }
             return granted
         default:
-            print("Microphone access denied. Grant it in:")
-            print("  System Settings → Privacy & Security → Microphone")
+            print("  Microphone: denied — grant in System Settings → Privacy & Security → Microphone")
             return false
         }
     }
@@ -52,16 +49,9 @@ struct Permissions {
         let mic = ensureMicrophone()
         if mic {
             print("  Microphone: granted")
-        } else {
-            print("  Microphone: DENIED")
         }
 
         let accessibility = ensureAccessibility()
-        if accessibility {
-            print("  Accessibility: granted")
-        } else {
-            print("  Accessibility: DENIED — grant access and restart open-wispr")
-        }
 
         print("")
         return mic && accessibility
