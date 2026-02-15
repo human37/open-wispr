@@ -15,7 +15,12 @@ class Transcriber {
             throw TranscriberError.whisperNotFound
         }
 
-        let modelPath = findModel()
+        var modelPath = findModel()
+        if modelPath == nil {
+            print("Model '\(modelSize)' not found, downloading automatically...")
+            try ModelDownloader.download(modelSize: modelSize)
+            modelPath = findModel()
+        }
         guard let modelPath = modelPath else {
             throw TranscriberError.modelNotFound(modelSize)
         }
@@ -49,6 +54,8 @@ class Transcriber {
 
     private func findWhisperCLI() -> String? {
         let candidates = [
+            "/opt/homebrew/bin/whisper-cli",
+            "/usr/local/bin/whisper-cli",
             "/opt/homebrew/bin/whisper-cpp",
             "/usr/local/bin/whisper-cpp",
             "/opt/homebrew/bin/whisper",
@@ -61,20 +68,22 @@ class Transcriber {
             }
         }
 
-        let which = Process()
-        which.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        which.arguments = ["whisper-cpp"]
-        let pipe = Pipe()
-        which.standardOutput = pipe
-        which.standardError = Pipe()
-        try? which.run()
-        which.waitUntilExit()
+        for name in ["whisper-cli", "whisper-cpp", "whisper"] {
+            let which = Process()
+            which.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+            which.arguments = [name]
+            let pipe = Pipe()
+            which.standardOutput = pipe
+            which.standardError = Pipe()
+            try? which.run()
+            which.waitUntilExit()
 
-        let result = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+            let result = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if let result = result, !result.isEmpty {
-            return result
+            if let result = result, !result.isEmpty {
+                return result
+            }
         }
 
         return nil
