@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # ── Colors & formatting ──────────────────────────────────────────────
 GREEN='\033[0;32m'
@@ -16,7 +15,10 @@ LOG=$(mktemp /tmp/open-wispr-install.XXXXXX)
 APP_PID=""
 
 cleanup() {
-    [ -n "$APP_PID" ] && kill "$APP_PID" 2>/dev/null && wait "$APP_PID" 2>/dev/null
+    if [ -n "$APP_PID" ]; then
+        kill "$APP_PID" 2>/dev/null
+        wait "$APP_PID" 2>/dev/null
+    fi
     rm -f "$LOG"
 }
 trap cleanup EXIT
@@ -37,6 +39,14 @@ fail() {
     printf "\r\033[K  ${RED}✗${NC} %b\n" "$1"
 }
 
+stop_spin() {
+    if [ -n "$SPIN_PID" ]; then
+        kill "$SPIN_PID" 2>/dev/null
+        wait "$SPIN_PID" 2>/dev/null
+        SPIN_PID=""
+    fi
+}
+
 spin() {
     local msg="$1"
     local i=0
@@ -47,29 +57,37 @@ spin() {
     done
 }
 
+start_spin() {
+    spin "$1" &
+    SPIN_PID=$!
+}
+
 wait_for_log() {
     local pattern="$1"
     local timeout="${2:-30}"
     local msg="$3"
-    local spin_pid=""
 
     if [ -n "$msg" ]; then
-        spin "$msg" &
-        spin_pid=$!
+        start_spin "$msg"
     fi
 
     local elapsed=0
     while [ $elapsed -lt "$timeout" ]; do
         if grep -q "$pattern" "$LOG" 2>/dev/null; then
-            [ -n "$spin_pid" ] && kill "$spin_pid" 2>/dev/null && wait "$spin_pid" 2>/dev/null
+            stop_spin
             return 0
         fi
         sleep 1
         elapsed=$((elapsed + 1))
     done
 
-    [ -n "$spin_pid" ] && kill "$spin_pid" 2>/dev/null && wait "$spin_pid" 2>/dev/null
+    stop_spin
     return 1
+}
+
+die() {
+    fail "$1"
+    exit 1
 }
 
 # ── Header ────────────────────────────────────────────────────────────
@@ -79,32 +97,28 @@ printf "  ${DIM}─────────────────────�
 
 # ── Step 1: Clean up ─────────────────────────────────────────────────
 step "Removing previous installation"
+start_spin "Cleaning up..."
 
-spin "Cleaning up..." &
-SPIN_PID=$!
-
-brew services stop open-wispr 2>/dev/null || true
-brew uninstall open-wispr 2>/dev/null || true
-brew untap human37/open-wispr 2>/dev/null || true
-tccutil reset Accessibility com.human37.open-wispr 2>/dev/null || true
+brew services stop open-wispr >/dev/null 2>&1 || true
+brew uninstall open-wispr >/dev/null 2>&1 || true
+brew untap human37/open-wispr >/dev/null 2>&1 || true
+tccutil reset Accessibility com.human37.open-wispr >/dev/null 2>&1 || true
 rm -rf ~/Applications/OpenWispr.app
 
-kill "$SPIN_PID" 2>/dev/null && wait "$SPIN_PID" 2>/dev/null
+stop_spin
 ok "Clean"
 
 # ── Step 2: Install ──────────────────────────────────────────────────
 step "Installing"
 
-spin "Tapping human37/open-wispr..." &
-SPIN_PID=$!
+start_spin "Tapping human37/open-wispr..."
 brew tap human37/open-wispr >/dev/null 2>&1
-kill "$SPIN_PID" 2>/dev/null && wait "$SPIN_PID" 2>/dev/null
+stop_spin
 ok "Tapped ${DIM}human37/open-wispr${NC}"
 
-spin "Building from source (this takes a minute)..." &
-SPIN_PID=$!
-brew install open-wispr 2>&1 | tail -1 >/dev/null
-kill "$SPIN_PID" 2>/dev/null && wait "$SPIN_PID" 2>/dev/null
+start_spin "Building from source (this takes a minute)..."
+brew install open-wispr >/dev/null 2>&1
+stop_spin
 ok "Installed"
 
 # ── Step 3: Permissions ──────────────────────────────────────────────
@@ -115,8 +129,7 @@ info "Starting app to request permissions...\n"
 APP_PID=$!
 
 if ! wait_for_log "Microphone:" 20 "Requesting microphone access..."; then
-    fail "Timed out waiting for app. Check: $APP_BIN start"
-    exit 1
+    die "Timed out waiting for app to start. Run manually: $APP_BIN start"
 fi
 
 if grep -q "Microphone: granted" "$LOG" 2>/dev/null; then
@@ -124,8 +137,7 @@ if grep -q "Microphone: granted" "$LOG" 2>/dev/null; then
 elif grep -q "Microphone: denied" "$LOG" 2>/dev/null; then
     fail "Microphone denied"
     info "Grant in ${BOLD}System Settings → Privacy & Security → Microphone${NC}"
-    info "Then re-run this script."
-    exit 1
+    die "Then re-run this script."
 else
     ok "Microphone"
 fi
@@ -138,8 +150,7 @@ else
     info "System Settings will open — find ${BOLD}OpenWispr${NC} and toggle it ${BOLD}ON${NC}.\n"
 
     if ! wait_for_log "Accessibility: granted" 300 "Waiting for you to grant Accessibility permission..."; then
-        fail "Timed out waiting for Accessibility permission."
-        exit 1
+        die "Timed out waiting for Accessibility permission."
     fi
     ok "Accessibility"
 fi
@@ -148,9 +159,8 @@ fi
 if grep -q "Downloading" "$LOG" 2>/dev/null; then
     step "Downloading Whisper model"
 
-    if ! wait_for_log "Model downloaded\|Ready\." 300 "Downloading model (~142 MB, one-time)..."; then
-        fail "Download timed out. Check logs: tail -f /opt/homebrew/var/log/open-wispr.log"
-        exit 1
+    if ! wait_for_log "Ready\." 300 "Downloading model (~142 MB, one-time)..."; then
+        die "Download timed out. Check logs: tail -f /opt/homebrew/var/log/open-wispr.log"
     fi
     ok "Model ready"
 fi
@@ -158,21 +168,19 @@ fi
 # ── Step 5: Wait for ready ───────────────────────────────────────────
 if ! grep -q "Ready\." "$LOG" 2>/dev/null; then
     if ! wait_for_log "Ready\." 30 "Finishing setup..."; then
-        fail "Timed out. Check logs: tail -f /opt/homebrew/var/log/open-wispr.log"
-        exit 1
+        die "Timed out. Check logs: tail -f /opt/homebrew/var/log/open-wispr.log"
     fi
 fi
 
 # ── Step 6: Switch to service ────────────────────────────────────────
-kill "$APP_PID" 2>/dev/null && wait "$APP_PID" 2>/dev/null
+kill "$APP_PID" 2>/dev/null
+wait "$APP_PID" 2>/dev/null
 APP_PID=""
 
 step "Starting background service"
-
-spin "Starting..." &
-SPIN_PID=$!
+start_spin "Starting..."
 brew services start open-wispr >/dev/null 2>&1
-kill "$SPIN_PID" 2>/dev/null && wait "$SPIN_PID" 2>/dev/null
+stop_spin
 ok "Running as background service"
 
 # ── Done ──────────────────────────────────────────────────────────────
