@@ -17,4 +17,9 @@ struct Permissions {
             print("Microphone denied. Grant in System Settings → Privacy & Security → Microphone")
         }
     }
+
+    static func promptAccessibility() {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
+        AXIsProcessTrustedWithOptions(options)
+    }
 }

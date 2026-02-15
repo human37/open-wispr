@@ -20,6 +20,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setup() {
+        do {
+            try setupInner()
+        } catch {
+            print("Fatal setup error: \(error.localizedDescription)")
+        }
+    }
+
+    private func setupInner() throws {
         let config = Config.load()
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
 
@@ -33,6 +41,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Permissions.ensureMicrophone()
 
         if !AXIsProcessTrusted() {
+            DispatchQueue.main.async {
+                self.statusBar.state = .waitingForPermission
+                self.statusBar.buildMenu()
+            }
+            Permissions.promptAccessibility()
             print("Waiting for Accessibility permission...")
             print("Enable OpenWispr in System Settings → Privacy & Security → Accessibility")
             while !AXIsProcessTrusted() {
@@ -47,15 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.statusBar.updateDownloadProgress("Downloading \(config.modelSize) model...")
             }
             print("Downloading \(config.modelSize) model...")
-            do {
-                try ModelDownloader.download(modelSize: config.modelSize)
-            } catch {
-                print("Error downloading model: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    self.statusBar.updateDownloadProgress("Download failed")
-                }
-                return
-            }
+            try ModelDownloader.download(modelSize: config.modelSize)
             DispatchQueue.main.async {
                 self.statusBar.updateDownloadProgress(nil)
             }

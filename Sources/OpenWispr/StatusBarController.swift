@@ -11,6 +11,7 @@ class StatusBarController {
         case recording
         case transcribing
         case downloading
+        case waitingForPermission
     }
 
     var state: State = .idle {
@@ -58,6 +59,7 @@ class StatusBarController {
         case .recording: stateText = "Recording..."
         case .transcribing: stateText = "Transcribing..."
         case .downloading: stateText = "Downloading model..."
+        case .waitingForPermission: stateText = "Waiting for Accessibility permission..."
         }
         let stateItem = NSMenuItem(title: stateText, action: nil, keyEquivalent: "")
         stateItem.isEnabled = false
@@ -91,6 +93,8 @@ class StatusBarController {
             startTranscribingAnimation()
         case .downloading:
             startDownloadingAnimation()
+        case .waitingForPermission:
+            setIcon(StatusBarController.drawLockIcon())
         }
     }
 
@@ -270,6 +274,32 @@ class StatusBarController {
             headPath.lineCapStyle = .round
             headPath.lineJoinStyle = .round
             headPath.stroke()
+
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
+    static func drawLockIcon() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSColor.black.setStroke()
+            NSColor.black.setFill()
+
+            let centerX = rect.midX
+
+            let bodyRect = NSRect(x: centerX - 4, y: 2, width: 8, height: 7)
+            NSBezierPath(roundedRect: bodyRect, xRadius: 1.5, yRadius: 1.5).fill()
+
+            let shacklePath = NSBezierPath()
+            shacklePath.move(to: NSPoint(x: centerX - 2.5, y: 9))
+            shacklePath.curve(to: NSPoint(x: centerX + 2.5, y: 9),
+                              controlPoint1: NSPoint(x: centerX - 2.5, y: 15),
+                              controlPoint2: NSPoint(x: centerX + 2.5, y: 15))
+            shacklePath.lineWidth = 1.8
+            shacklePath.lineCapStyle = .round
+            shacklePath.stroke()
 
             return true
         }
