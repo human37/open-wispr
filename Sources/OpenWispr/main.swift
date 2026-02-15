@@ -32,6 +32,11 @@ func printUsage() {
 
 func cmdStart() {
     let config = Config.load()
+
+    if !Permissions.ensureAll() {
+        exit(1)
+    }
+
     let recorder = AudioRecorder()
     let transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
     let inserter = TextInserter()
