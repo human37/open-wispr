@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>open-wispr — Free Local Voice Dictation for macOS</title>
+  <meta name="description" content="Free, private voice-to-text for macOS. Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device. No cloud, no accounts, no telemetry.">
+  <meta name="keywords" content="voice dictation, speech to text, macOS, whisper, on-device, privacy, open source, Apple Silicon, voice typing, dictation app">
+  <meta name="author" content="human37">
+  <link rel="canonical" href="https://human37.github.io/open-wispr/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://human37.github.io/open-wispr/">
+  <meta property="og:title" content="open-wispr — Free Local Voice Dictation for macOS">
+  <meta property="og:description" content="Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device. No audio ever leaves your Mac.">
+  <meta property="og:image" content="https://human37.github.io/open-wispr/og.png">
+  <meta property="og:site_name" content="open-wispr">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="open-wispr — Free Local Voice Dictation for macOS">
+  <meta name="twitter:description" content="Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device.">
+  <meta name="twitter:image" content="https://human37.github.io/open-wispr/og.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "open-wispr",
+    "operatingSystem": "macOS",
+    "applicationCategory": "UtilitiesApplication",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "description": "Free, private voice-to-text for macOS. Powered by Whisper AI, runs entirely on-device.",
+    "url": "https://human37.github.io/open-wispr/",
+    "downloadUrl": "https://human37.github.io/open-wispr/#install",
+    "softwareVersion": "0.3.1",
+    "author": { "@type": "Organization", "name": "human37" },
+    "license": "https://opensource.org/licenses/MIT"
+  }
+  </script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0a;
+      --surface:#141414;
+      --border:#222;
+      --text:#e8e8e8;
+      --muted:#888;
+      --accent:#3b82f6;
+      --accent-hover:#2563eb;
+      --green:#22c55e;
+      --radius:12px;
+    }
+    html{scroll-behavior:smooth}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      line-height:1.6;
+      -webkit-font-smoothing:antialiased;
+    }
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    /* Nav */
+    nav{
+      position:fixed;top:0;left:0;right:0;z-index:100;
+      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+      background:rgba(10,10,10,.8);
+      border-bottom:1px solid var(--border);
+    }
+    .nav-inner{
+      max-width:1100px;margin:0 auto;padding:16px 24px;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .logo{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+    .logo span{color:var(--muted);font-weight:400}
+    .nav-links{display:flex;gap:24px;align-items:center}
+    .nav-links a{color:var(--muted);font-size:14px;transition:color .2s}
+    .nav-links a:hover{color:var(--text);text-decoration:none}
+
+    /* Hero */
+    .hero{
+      max-width:1100px;margin:0 auto;padding:160px 24px 100px;
+      text-align:center;
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:100px;padding:6px 16px;font-size:13px;color:var(--muted);
+      margin-bottom:32px;
+    }
+    .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+    h1{
+      font-size:clamp(40px,7vw,72px);font-weight:800;
+      letter-spacing:-.03em;line-height:1.05;
+      margin-bottom:24px;
+    }
+    h1 .gradient{
+      background:linear-gradient(135deg,#60a5fa,#a78bfa,#f472b6);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    .subtitle{
+      font-size:clamp(16px,2.5vw,20px);color:var(--muted);
+      max-width:600px;margin:0 auto 48px;line-height:1.6;
+    }
+    .cta-group{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:14px 28px;border-radius:var(--radius);font-size:15px;font-weight:600;
+      border:none;cursor:pointer;transition:all .2s;text-decoration:none;
+    }
+    .btn-primary{background:var(--text);color:var(--bg)}
+    .btn-primary:hover{background:#fff;text-decoration:none;transform:translateY(-1px)}
+    .btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{border-color:#444;text-decoration:none;transform:translateY(-1px)}
+
+    /* Install command */
+    .install-cmd{
+      margin:48px auto 0;max-width:700px;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:16px 24px;
+      font-family:'SF Mono',SFMono-Regular,Menlo,monospace;font-size:14px;
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      color:var(--muted);
+    }
+    .install-cmd code{color:var(--text);word-break:break-all}
+    .install-cmd button{
+      background:none;border:1px solid var(--border);border-radius:8px;
+      color:var(--muted);cursor:pointer;padding:6px 12px;font-size:13px;
+      transition:all .2s;flex-shrink:0;
+    }
+    .install-cmd button:hover{border-color:#555;color:var(--text)}
+
+    /* Demo */
+    .demo{
+      max-width:800px;margin:80px auto 0;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:16px;padding:32px;text-align:center;
+      position:relative;overflow:hidden;
+    }
+    .demo::before{
+      content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+      background:radial-gradient(circle at center,rgba(59,130,246,.04),transparent 60%);
+      pointer-events:none;
+    }
+    .demo-steps{
+      display:flex;justify-content:center;gap:48px;flex-wrap:wrap;
+      position:relative;z-index:1;
+    }
+    .step{display:flex;flex-direction:column;align-items:center;gap:12px}
+    .step-icon{
+      width:56px;height:56px;border-radius:14px;
+      background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);
+      display:flex;align-items:center;justify-content:center;font-size:24px;
+    }
+    .step-label{font-size:14px;color:var(--muted)}
+    .step-arrow{
+      color:var(--border);font-size:24px;align-self:center;
+      display:flex;align-items:center;
+    }
+
+    /* Features */
+    .features{max-width:1100px;margin:0 auto;padding:120px 24px}
+    .section-label{
+      font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--accent);margin-bottom:16px;text-align:center;
+    }
+    .section-title{
+      font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-.02em;
+      text-align:center;margin-bottom:64px;
+    }
+    .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+    .feature-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:28px;
+      transition:border-color .2s;
+    }
+    .feature-card:hover{border-color:#333}
+    .feature-icon{font-size:28px;margin-bottom:16px}
+    .feature-card h3{font-size:17px;font-weight:600;margin-bottom:8px}
+    .feature-card p{font-size:14px;color:var(--muted);line-height:1.6}
+
+    /* Config */
+    .config{max-width:1100px;margin:0 auto;padding:80px 24px 120px}
+    .config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:32px}
+    .config-block{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:24px;
+    }
+    .config-block h3{font-size:15px;font-weight:600;margin-bottom:16px}
+    .config-block pre{
+      background:var(--bg);border:1px solid var(--border);border-radius:8px;
+      padding:16px;font-size:13px;overflow-x:auto;
+      font-family:'SF Mono',SFMono-Regular,Menlo,monospace;
+      color:var(--muted);line-height:1.7;
+    }
+    .config-block pre span{color:var(--text)}
+
+    /* Support */
+    .support{
+      max-width:700px;margin:0 auto;padding:80px 24px 120px;text-align:center;
+    }
+    .support .section-title{margin-bottom:16px}
+    .support p{color:var(--muted);font-size:16px;margin-bottom:40px;line-height:1.7}
+    .support-btn{
+      display:inline-flex;align-items:center;gap:10px;
+      padding:16px 32px;border-radius:var(--radius);
+      font-size:16px;font-weight:600;cursor:pointer;
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+      color:#fff;border:none;transition:all .2s;text-decoration:none;
+    }
+    .support-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,.3);text-decoration:none}
+    .support-note{font-size:13px;color:var(--muted);margin-top:16px}
+
+    /* Footer */
+    footer{
+      border-top:1px solid var(--border);
+      max-width:1100px;margin:0 auto;padding:32px 24px;
+      display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+    }
+    footer p{font-size:13px;color:var(--muted)}
+    .footer-links{display:flex;gap:20px}
+    .footer-links a{font-size:13px;color:var(--muted)}
+    .footer-links a:hover{color:var(--text)}
+
+    @media(max-width:640px){
+      .demo-steps{gap:24px}
+      .step-arrow{display:none}
+      .nav-links{gap:16px}
+      .cta-group{flex-direction:column;align-items:center}
+      .btn{width:100%;max-width:280px;justify-content:center}
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">open-wispr <span>for macOS</span></div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#support">Support</a>
+      <a href="https://github.com/human37/open-wispr">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="badge"><span class="dot"></span> 100% local &middot; no cloud &middot; no telemetry</div>
+  <h1>Voice to text,<br><span class="gradient">entirely on-device.</span></h1>
+  <p class="subtitle">Hold a key, speak, release — your words appear at the cursor. Powered by whisper.cpp with Metal acceleration. Nothing ever leaves your Mac.</p>
+  <div class="cta-group">
+    <a href="#install" class="btn btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Install
+    </a>
+    <a href="#features" class="btn btn-secondary">Learn more</a>
+  </div>
+
+  <div id="install" class="install-cmd">
+    <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"</code>
+    <button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim());this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)">Copy</button>
+  </div>
+
+  <div class="demo">
+    <div class="demo-steps">
+      <div class="step">
+        <div class="step-icon">🌐</div>
+        <div class="step-label">Hold Globe key</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">🎙</div>
+        <div class="step-label">Speak</div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">✨</div>
+        <div class="step-label">Text appears</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="features">
+  <p class="section-label">Features</p>
+  <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Completely private</h3>
+      <p>Audio is recorded to a temp file, transcribed locally, and deleted. Zero network requests. No accounts, no telemetry, no cloud.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Metal accelerated</h3>
+      <p>Runs on Apple Silicon GPU via whisper.cpp. Transcription is fast — real-time or faster on M1 and above.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Works everywhere</h3>
+      <p>Text appears at your cursor in any app — editors, browsers, terminals, Slack, email. No app-specific integrations needed.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⌨️</div>
+      <h3>Configurable hotkey</h3>
+      <p>Use Globe, Right Option, F5, or any key combo. One command to change, one restart to apply.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <h3>Multiple models</h3>
+      <p>Choose from tiny (75 MB, fastest) to medium (1.5 GB, most accurate). Switch with a single command.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌍</div>
+      <h3>Multilingual</h3>
+      <p>Supports 99 languages via Whisper's multilingual models. Set your language code and go.</p>
+    </div>
+  </div>
+</section>
+
+<section class="config">
+  <div class="config-grid">
+    <div class="config-block">
+      <h3>Change hotkey</h3>
+      <pre><span>open-wispr set-hotkey globe</span>          # default
+<span>open-wispr set-hotkey rightoption</span>   # Right Option
+<span>open-wispr set-hotkey f5</span>            # F5
+<span>open-wispr set-hotkey ctrl+space</span>    # Ctrl + Space
+brew services restart open-wispr</pre>
+    </div>
+    <div class="config-block">
+      <h3>Switch model</h3>
+      <pre><span>open-wispr set-model tiny.en</span>       # 75 MB
+<span>open-wispr set-model base.en</span>       # 142 MB (default)
+<span>open-wispr set-model small.en</span>      # 466 MB
+<span>open-wispr set-model medium.en</span>     # 1.5 GB
+brew services restart open-wispr</pre>
+    </div>
+  </div>
+</section>
+
+<section id="support" class="support">
+  <p class="section-label">Support</p>
+  <h2 class="section-title">open-wispr is free and open source</h2>
+  <p>This project is built and maintained independently. If it saves you time or you just want to say thanks, you can leave an optional tip. No account required.</p>
+  <a href="#" class="support-btn" id="support-link">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    Leave a tip
+  </a>
+  <p class="support-note">Totally optional — open-wispr is free forever.</p>
+</section>
+
+<footer>
+  <p>&copy; 2025 human37. MIT License.</p>
+  <div class="footer-links">
+    <a href="https://github.com/human37/open-wispr">Source</a>
+    <a href="https://github.com/human37/open-wispr/issues">Issues</a>
+  </div>
+</footer>
+
+<script>
+// Stripe Payment Link — replace with your actual Stripe payment link
+// Create one at https://dashboard.stripe.com/payment-links
+// Use "customer chooses price" mode for pay-what-you-want
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/YOUR_PAYMENT_LINK_HERE';
+
+document.getElementById('support-link').href = STRIPE_PAYMENT_LINK;
+</script>
+
+</body>
+</html>
