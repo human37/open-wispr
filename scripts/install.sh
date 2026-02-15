@@ -10,10 +10,12 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 SPINNER_FRAMES=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+SPIN_PID=""
 LOG=$(mktemp /tmp/open-wispr-install.XXXXXX)
 APP_PID=""
 
 cleanup() {
+    stop_spin
     if [ -n "$APP_PID" ]; then
         kill "$APP_PID" 2>/dev/null
         wait "$APP_PID" 2>/dev/null
@@ -38,21 +40,12 @@ fail() {
     printf "\r\033[K  ${RED}✗${NC} %b\n" "$1"
 }
 
-stop_spin() {
-    if [ -n "$SPIN_PID" ]; then
-        kill "$SPIN_PID" 2>/dev/null
-        wait "$SPIN_PID" 2>/dev/null
-        SPIN_PID=""
-    fi
-}
-
 spin() {
-    local msg="$1"
-    local i=0
     while true; do
-        printf "\r\033[K  ${YELLOW}${SPINNER_FRAMES[$((i % 10))]}${NC} %b" "$msg"
-        i=$((i + 1))
-        sleep 0.1
+        for frame in "${SPINNER_FRAMES[@]}"; do
+            printf "\r\033[K  ${YELLOW}%s${NC} %b" "$frame" "$1"
+            sleep 0.1
+        done
     done
 }
 
@@ -61,14 +54,20 @@ start_spin() {
     SPIN_PID=$!
 }
 
+stop_spin() {
+    if [ -n "$SPIN_PID" ]; then
+        kill "$SPIN_PID" 2>/dev/null
+        wait "$SPIN_PID" 2>/dev/null
+        SPIN_PID=""
+    fi
+}
+
 wait_for_log() {
     local pattern="$1"
     local timeout="${2:-30}"
     local msg="$3"
 
-    if [ -n "$msg" ]; then
-        start_spin "$msg"
-    fi
+    [ -n "$msg" ] && start_spin "$msg"
 
     local elapsed=0
     while [ $elapsed -lt "$timeout" ]; do
@@ -85,8 +84,13 @@ wait_for_log() {
 }
 
 die() {
+    stop_spin
     fail "$1"
     exit 1
+}
+
+run_quiet() {
+    "$@" </dev/null >/dev/null 2>&1
 }
 
 # ── Header ────────────────────────────────────────────────────────────
@@ -98,10 +102,10 @@ printf "  ${DIM}─────────────────────�
 step "Removing previous installation"
 start_spin "Cleaning up..."
 
-brew services stop open-wispr >/dev/null 2>&1 || true
-brew uninstall open-wispr >/dev/null 2>&1 || true
-brew untap human37/open-wispr >/dev/null 2>&1 || true
-tccutil reset Accessibility com.human37.open-wispr >/dev/null 2>&1 || true
+run_quiet brew services stop open-wispr || true
+run_quiet brew uninstall open-wispr || true
+run_quiet brew untap human37/open-wispr || true
+run_quiet tccutil reset Accessibility com.human37.open-wispr || true
 rm -rf ~/Applications/OpenWispr.app
 
 stop_spin
@@ -111,26 +115,26 @@ ok "Clean"
 step "Installing"
 
 start_spin "Tapping human37/open-wispr..."
-brew tap human37/open-wispr >/dev/null 2>&1
+run_quiet brew tap human37/open-wispr || die "Failed to tap. Check your internet connection."
 stop_spin
 ok "Tapped ${DIM}human37/open-wispr${NC}"
 
 start_spin "Building from source (this takes a minute)..."
-brew install open-wispr >/dev/null 2>&1
+run_quiet brew install open-wispr || die "Failed to install. Run 'brew install open-wispr' manually."
 stop_spin
 ok "Installed"
 
 # ── Step 3: Permissions ──────────────────────────────────────────────
 step "Setting up permissions"
 
-APP_BIN="$(brew --prefix open-wispr)/OpenWispr.app/Contents/MacOS/open-wispr"
+APP_BIN="$(brew --prefix open-wispr 2>/dev/null)/OpenWispr.app/Contents/MacOS/open-wispr"
 if [ ! -x "$APP_BIN" ]; then
-    die "App binary not found at $APP_BIN"
+    die "App binary not found at: $APP_BIN"
 fi
 
 info "Starting app to request permissions...\n"
 
-"$APP_BIN" start > "$LOG" 2>&1 &
+"$APP_BIN" start </dev/null > "$LOG" 2>&1 &
 APP_PID=$!
 
 if ! wait_for_log "Microphone:" 20 "Requesting microphone access..."; then
@@ -184,14 +188,14 @@ APP_PID=""
 
 step "Starting background service"
 start_spin "Starting..."
-brew services start open-wispr >/dev/null 2>&1
+run_quiet brew services start open-wispr || die "Failed to start service."
 stop_spin
 ok "Running as background service"
 
 # ── Done ──────────────────────────────────────────────────────────────
 hotkey=$(grep "^Hotkey:" "$LOG" 2>/dev/null | tail -1 | sed 's/^Hotkey: //')
 model=$(grep "^Model:" "$LOG" 2>/dev/null | tail -1 | sed 's/^Model: //')
-version=$(grep "^open-wispr v" "$LOG" 2>/dev/null | tail -1 | sed 's/^//')
+version=$(grep "^open-wispr v" "$LOG" 2>/dev/null | tail -1)
 
 printf "\n"
 printf "  ${DIM}────────────────────────────────────────────${NC}\n"

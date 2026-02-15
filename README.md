@@ -7,7 +7,7 @@ Powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with Metal acc
 ## Install
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"
 ```
 
 The script handles everything: installs via Homebrew, walks you through granting permissions, downloads the Whisper model, and starts the service. You'll see live feedback as each step completes.
