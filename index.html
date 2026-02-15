@@ -173,7 +173,8 @@
     }
     .install-body code{
       font-family:var(--mono);font-size:13px;
-      color:var(--text);word-break:break-all;line-height:1.5;
+      color:var(--text);white-space:nowrap;overflow-x:auto;
+      display:block;line-height:1.5;
     }
     .copy-btn{
       font-family:var(--mono);
@@ -287,6 +288,13 @@
       background:var(--code-bg);margin:0;
     }
     .config-card pre b{color:var(--text);font-weight:500}
+    .config-note{
+      margin-top:20px;font-size:13px;color:var(--muted);line-height:1.6;
+    }
+    .config-note code{
+      background:var(--code-bg);border:1px solid var(--border);
+      padding:2px 6px;font-size:12px;
+    }
 
     /* INSTALL FLOW */
     .flow{max-width:1000px;margin:0 auto;padding:0 24px 100px}
@@ -570,7 +578,7 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>Two commands.<br>Everything changes.</h2>
+  <h2>Two commands.</h2>
   <div class="config-grid">
     <div class="config-card">
       <div class="config-card-header">Hotkey</div>
@@ -591,6 +599,7 @@ brew services restart open-wispr</pre>
 brew services restart open-wispr</pre>
     </div>
   </div>
+  <p class="config-note">Or edit the config file directly at <code>~/.config/open-wispr/config.json</code> and restart the service.</p>
 </section>
 
 <section class="testimonial">
