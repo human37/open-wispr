@@ -166,14 +166,19 @@
     }
     .copy-btn:hover{background:#6D28D9}
     .tip-row{
-      display:flex;align-items:center;gap:12px;
-      font-size:12px;color:var(--muted);
+      display:flex;align-items:center;gap:16px;
+      font-size:13px;color:var(--muted);
       letter-spacing:.04em;
     }
     .tip-row a{
-      color:var(--accent);font-weight:500;
+      color:#fff;background:var(--accent);font-weight:600;
       display:inline-flex;align-items:center;gap:5px;
+      padding:6px 14px;border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow);font-size:12px;
+      letter-spacing:.06em;text-transform:uppercase;
+      transition:background .12s,box-shadow .12s,transform .12s;
     }
+    .tip-row a:hover{background:#6D28D9;box-shadow:var(--shadow-hover);transform:translate(1px,1px)}
 
     /* STEPS */
     .how{max-width:1200px;margin:0 auto;padding:var(--sp) 40px}
