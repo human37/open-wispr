@@ -42,7 +42,7 @@
   <meta name="color-scheme" content="light dark">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -58,9 +58,8 @@
       --shadow:4px 4px 0 #000;
       --shadow-lg:6px 6px 0 #000;
       --shadow-hover:2px 2px 0 #000;
-      --bw:2.5px;
+      --bw:2px;
       --mono:'IBM Plex Mono',monospace;
-      --display:'Syne',sans-serif;
       --nav-bg:rgba(255,254,245,.92);
       --code-bg:#F0F0E8;
       --tag-bg:#BFFF00;
@@ -87,7 +86,7 @@
       }
     }
 
-    html{scroll-behavior:smooth}
+    html{scroll-behavior:smooth;scroll-padding-top:80px}
     body{
       font-family:var(--mono);
       background:var(--bg);
@@ -109,7 +108,7 @@
       display:flex;align-items:center;justify-content:space-between;
     }
     .logo{
-      font-family:var(--display);font-size:20px;font-weight:800;
+      font-family:'DM Sans',sans-serif;font-size:20px;font-weight:800;
       color:var(--text);display:flex;align-items:center;gap:10px;
       letter-spacing:-.02em;
     }
@@ -137,11 +136,10 @@
       margin-bottom:28px;
     }
     h1{
-      font-family:var(--display);
-      font-size:clamp(44px,8vw,84px);font-weight:800;
-      letter-spacing:-.04em;line-height:1.05;
+      font-family:'DM Sans',sans-serif;
+      font-size:clamp(44px,8vw,80px);font-weight:800;
+      letter-spacing:-.03em;line-height:1.15;
       margin-bottom:28px;
-      text-transform:uppercase;
     }
     .hero-sub{
       font-size:16px;color:var(--muted);
@@ -208,10 +206,10 @@
       letter-spacing:.1em;color:var(--accent);margin-bottom:20px;
     }
     h2{
-      font-family:var(--display);
-      font-size:clamp(28px,5vw,48px);font-weight:800;
-      letter-spacing:-.03em;line-height:1.1;
-      text-transform:uppercase;margin-bottom:48px;
+      font-family:'DM Sans',sans-serif;
+      font-size:clamp(28px,5vw,44px);font-weight:800;
+      letter-spacing:-.02em;line-height:1.2;
+      margin-bottom:48px;
     }
     .steps-row{
       display:grid;grid-template-columns:repeat(3,1fr);gap:0;
@@ -225,7 +223,7 @@
     }
     .step-card:last-child{border-right:none}
     .step-num{
-      font-family:var(--display);font-size:48px;font-weight:800;
+      font-family:'DM Sans',sans-serif;font-size:48px;font-weight:800;
       line-height:1;margin-bottom:12px;color:var(--accent);
     }
     .step-title{
@@ -250,8 +248,8 @@
     .feature-cell:nth-child(2n){border-right:none}
     .feature-cell:nth-last-child(-n+2){border-bottom:none}
     .feature-cell h3{
-      font-family:var(--display);font-size:18px;font-weight:800;
-      text-transform:uppercase;letter-spacing:-.01em;
+      font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;
+      letter-spacing:-.01em;
       margin-bottom:10px;
     }
     .feature-cell p{font-size:13px;color:var(--muted);line-height:1.7}
@@ -304,7 +302,7 @@
     }
     .flow-step:last-child{border-bottom:none}
     .flow-num{
-      font-family:var(--display);font-size:20px;font-weight:800;
+      font-family:'DM Sans',sans-serif;font-size:20px;font-weight:800;
       color:var(--accent);flex-shrink:0;width:32px;
     }
     .flow-text{font-size:14px;line-height:1.7}
@@ -418,7 +416,7 @@
 
 <section id="how" class="how">
   <p class="section-tag">How it works</p>
-  <h2>Three steps.</h2>
+  <h2>Everything you need.<br>Nothing you don't.</h2>
   <div class="steps-row">
     <div class="step-card">
       <div class="step-num">01</div>
@@ -440,7 +438,7 @@
 
 <section class="flow">
   <p class="section-tag">Install flow</p>
-  <h2>Setup in under a minute.</h2>
+  <h2>Guided setup.<br>Under a minute.</h2>
   <div class="flow-steps">
     <div class="flow-step">
       <div class="flow-num">01</div>
@@ -467,7 +465,7 @@
 
 <section id="features" class="features">
   <p class="section-tag">Features</p>
-  <h2>What you get.</h2>
+  <h2>Nothing extra.<br>Nothing missing.</h2>
   <div class="feature-grid">
     <div class="feature-cell">
       <h3><span class="feature-marker"></span>Private</h3>
@@ -498,7 +496,7 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>Configuration.</h2>
+  <h2>Two commands.<br>Everything changes.</h2>
   <div class="config-grid">
     <div class="config-card">
       <div class="config-card-header">Hotkey</div>
