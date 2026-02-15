@@ -89,10 +89,6 @@ die() {
     exit 1
 }
 
-run_quiet() {
-    "$@" </dev/null >/dev/null 2>&1
-}
-
 # ── Header ────────────────────────────────────────────────────────────
 printf "\n"
 printf "  ${BOLD}open-wispr${NC} ${DIM}— local voice dictation for macOS${NC}\n"
@@ -102,10 +98,10 @@ printf "  ${DIM}─────────────────────�
 step "Removing previous installation"
 start_spin "Cleaning up..."
 
-run_quiet brew services stop open-wispr || true
-run_quiet brew uninstall --force open-wispr || true
-run_quiet brew untap human37/open-wispr || true
-run_quiet tccutil reset Accessibility com.human37.open-wispr || true
+brew services stop open-wispr </dev/null >/dev/null 2>&1 || true
+brew uninstall --force open-wispr </dev/null >/dev/null 2>&1 || true
+brew untap human37/open-wispr </dev/null >/dev/null 2>&1 || true
+tccutil reset Accessibility com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
 rm -rf ~/Applications/OpenWispr.app
 
 stop_spin
@@ -115,30 +111,44 @@ ok "Clean"
 step "Installing"
 
 start_spin "Tapping human37/open-wispr..."
-run_quiet brew tap human37/open-wispr || die "Failed to tap. Check your internet connection."
+if ! brew tap human37/open-wispr </dev/null >/dev/null 2>&1; then
+    die "Failed to tap. Check your internet connection."
+fi
 stop_spin
 ok "Tapped ${DIM}human37/open-wispr${NC}"
 
 start_spin "Building from source (this takes a minute)..."
-run_quiet brew install open-wispr || run_quiet brew reinstall open-wispr || die "Failed to install. Run 'brew install open-wispr' manually."
+brew install open-wispr </dev/null >/dev/null 2>&1 || true
+brew reinstall open-wispr </dev/null >/dev/null 2>&1 || true
 stop_spin
+
+BREW_PREFIX="$(brew --prefix open-wispr 2>/dev/null)"
+APP_BIN="${BREW_PREFIX}/OpenWispr.app/Contents/MacOS/open-wispr"
+
+if [ ! -x "$APP_BIN" ]; then
+    die "Installation failed — binary not found. Run 'brew install open-wispr' manually."
+fi
 ok "Installed"
+
+mkdir -p ~/Applications
+ln -sf "${BREW_PREFIX}/OpenWispr.app" ~/Applications/OpenWispr.app 2>/dev/null || true
 
 # ── Step 3: Permissions ──────────────────────────────────────────────
 step "Setting up permissions"
-
-APP_BIN="$(brew --prefix open-wispr 2>/dev/null)/OpenWispr.app/Contents/MacOS/open-wispr"
-if [ ! -x "$APP_BIN" ]; then
-    die "App binary not found at: $APP_BIN"
-fi
-
 info "Starting app to request permissions...\n"
 
 "$APP_BIN" start </dev/null > "$LOG" 2>&1 &
 APP_PID=$!
 
-if ! wait_for_log "Microphone:" 20 "Requesting microphone access..."; then
-    die "Timed out waiting for app to start. Check: tail -f $LOG"
+sleep 1
+if ! kill -0 "$APP_PID" 2>/dev/null; then
+    fail "App crashed on startup"
+    die "Check: $APP_BIN start"
+fi
+
+if ! wait_for_log "Microphone:" 30 "Requesting microphone access..."; then
+    fail "Timed out waiting for microphone prompt"
+    die "Logs: tail -f $LOG"
 fi
 
 if grep -q "Microphone: granted" "$LOG" 2>/dev/null; then
@@ -151,7 +161,7 @@ else
     ok "Microphone"
 fi
 
-if wait_for_log "Accessibility: granted" 3; then
+if wait_for_log "Accessibility: granted" 5; then
     ok "Accessibility"
 else
     printf "\r\033[K"
@@ -169,7 +179,7 @@ if grep -q "Downloading" "$LOG" 2>/dev/null; then
     step "Downloading Whisper model"
 
     if ! wait_for_log "Ready\." 300 "Downloading model (~142 MB, one-time)..."; then
-        die "Download timed out. Check logs: tail -f /opt/homebrew/var/log/open-wispr.log"
+        die "Download timed out. Check: tail -f $LOG"
     fi
     ok "Model ready"
 fi
@@ -177,7 +187,7 @@ fi
 # ── Step 5: Wait for ready ───────────────────────────────────────────
 if ! grep -q "Ready\." "$LOG" 2>/dev/null; then
     if ! wait_for_log "Ready\." 30 "Finishing setup..."; then
-        die "Timed out. Check logs: tail -f /opt/homebrew/var/log/open-wispr.log"
+        die "Timed out. Check: tail -f $LOG"
     fi
 fi
 
@@ -188,9 +198,16 @@ APP_PID=""
 
 step "Starting background service"
 start_spin "Starting..."
-run_quiet brew services start open-wispr || die "Failed to start service."
+brew services start open-wispr </dev/null >/dev/null 2>&1 || true
 stop_spin
-ok "Running as background service"
+
+sleep 1
+if brew services list 2>/dev/null | grep -q "open-wispr.*started"; then
+    ok "Running as background service"
+else
+    ok "Service registered"
+    info "If not running, start manually: brew services start open-wispr"
+fi
 
 # ── Done ──────────────────────────────────────────────────────────────
 hotkey=$(grep "^Hotkey:" "$LOG" 2>/dev/null | tail -1 | sed 's/^Hotkey: //')
