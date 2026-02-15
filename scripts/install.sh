@@ -10,7 +10,6 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 SPINNER_FRAMES=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
-APP_BIN="$HOME/Applications/OpenWispr.app/Contents/MacOS/open-wispr"
 LOG=$(mktemp /tmp/open-wispr-install.XXXXXX)
 APP_PID=""
 
@@ -123,13 +122,19 @@ ok "Installed"
 
 # ── Step 3: Permissions ──────────────────────────────────────────────
 step "Setting up permissions"
+
+APP_BIN="$(brew --prefix open-wispr)/OpenWispr.app/Contents/MacOS/open-wispr"
+if [ ! -x "$APP_BIN" ]; then
+    die "App binary not found at $APP_BIN"
+fi
+
 info "Starting app to request permissions...\n"
 
 "$APP_BIN" start > "$LOG" 2>&1 &
 APP_PID=$!
 
 if ! wait_for_log "Microphone:" 20 "Requesting microphone access..."; then
-    die "Timed out waiting for app to start. Run manually: $APP_BIN start"
+    die "Timed out waiting for app to start. Check: tail -f $LOG"
 fi
 
 if grep -q "Microphone: granted" "$LOG" 2>/dev/null; then
