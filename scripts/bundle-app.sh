@@ -40,4 +40,6 @@ cat > "$APP_DIR/Contents/Info.plist" << PLIST
 </plist>
 PLIST
 
+codesign --force --sign - --identifier com.human37.open-wispr "$APP_DIR"
+
 echo "Built $APP_DIR"
