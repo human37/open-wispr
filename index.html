@@ -175,6 +175,57 @@
       display:inline-flex;align-items:center;gap:5px;
     }
 
+    /* DEMO */
+    .demo{max-width:1200px;margin:0 auto;padding:0 40px var(--sp)}
+    .demo-card{
+      border:var(--bw) solid var(--border);box-shadow:var(--shadow);
+      background:var(--surface);overflow:hidden;max-width:680px;
+    }
+    .demo-scene{padding:28px;display:flex;flex-direction:column;gap:20px}
+    .demo-status{
+      display:flex;align-items:center;gap:14px;
+      font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+    }
+    .demo-key{
+      display:inline-flex;align-items:center;gap:8px;
+      background:var(--code-bg);border:var(--bw) solid var(--border);
+      padding:6px 14px;font-size:12px;font-weight:500;font-family:var(--mono);
+      transition:all .2s;
+    }
+    .demo-key.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .demo-key svg{width:14px;height:14px;flex-shrink:0}
+    .demo-waveform{display:flex;align-items:center;gap:3px;height:20px}
+    .demo-waveform .bar{
+      width:4px;background:var(--border);opacity:.15;transition:opacity .2s;
+    }
+    .demo-waveform .bar:nth-child(1){height:6px}
+    .demo-waveform .bar:nth-child(2){height:10px}
+    .demo-waveform .bar:nth-child(3){height:14px}
+    .demo-waveform .bar:nth-child(4){height:10px}
+    .demo-waveform .bar:nth-child(5){height:6px}
+    .demo-waveform.active .bar{opacity:1;background:var(--accent);animation:wave .4s ease-in-out infinite alternate}
+    .demo-waveform.active .bar:nth-child(1){animation-delay:0s}
+    .demo-waveform.active .bar:nth-child(2){animation-delay:.06s}
+    .demo-waveform.active .bar:nth-child(3){animation-delay:.12s}
+    .demo-waveform.active .bar:nth-child(4){animation-delay:.18s}
+    .demo-waveform.active .bar:nth-child(5){animation-delay:.24s}
+    @keyframes wave{0%{transform:scaleY(.3)}100%{transform:scaleY(1)}}
+    .demo-label{font-size:11px;letter-spacing:.1em;transition:color .2s}
+    .demo-label.active{color:var(--accent);font-weight:500}
+    .demo-editor{
+      background:var(--code-bg);border:1px solid #e5e5e5;
+      padding:16px 20px;min-height:52px;
+      font-family:var(--mono);font-size:14px;line-height:1.7;
+    }
+    .demo-text{white-space:pre-wrap}
+    .demo-cursor{
+      display:inline-block;width:2px;height:1.1em;
+      background:var(--accent);vertical-align:text-bottom;
+      margin-left:1px;animation:blink 1s step-end infinite;
+    }
+    .demo-cursor.typing{animation:none;opacity:1}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
     /* STEPS */
     .how{max-width:1200px;margin:0 auto;padding:var(--sp) 40px}
     .steps-row{
@@ -390,6 +441,87 @@
   </div>
 </section>
 
+<section class="demo">
+  <p class="section-tag">See it in action</p>
+  <div class="demo-card">
+    <div class="card-header">
+      <span>Demo</span>
+      Looping animation
+    </div>
+    <div class="demo-scene">
+      <div class="demo-status">
+        <div class="demo-key" id="demoKey">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Globe
+        </div>
+        <div class="demo-waveform" id="demoWave">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+        <div class="demo-label" id="demoLabel">Idle</div>
+      </div>
+      <div class="demo-editor">
+        <span class="demo-text" id="demoText"></span><span class="demo-cursor" id="demoCursor"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var key=document.getElementById('demoKey');
+  var wave=document.getElementById('demoWave');
+  var label=document.getElementById('demoLabel');
+  var text=document.getElementById('demoText');
+  var cursor=document.getElementById('demoCursor');
+  var phrase='I need to refactor the authentication module to use JWT tokens instead of session cookies.';
+  var timer;
+
+  function reset(){
+    key.classList.remove('active');
+    wave.classList.remove('active');
+    label.classList.remove('active');
+    label.textContent='Idle';
+    text.textContent='';
+    cursor.classList.remove('typing');
+  }
+
+  function run(){
+    reset();
+
+    timer=setTimeout(function(){
+      key.classList.add('active');
+      wave.classList.add('active');
+      label.classList.add('active');
+      label.textContent='Recording';
+
+      timer=setTimeout(function(){
+        key.classList.remove('active');
+        wave.classList.remove('active');
+        label.textContent='Transcribing';
+        cursor.classList.add('typing');
+
+        var i=0;
+        function type(){
+          if(i<phrase.length){
+            text.textContent+=phrase[i];
+            i++;
+            timer=setTimeout(type,25+Math.random()*20);
+          }else{
+            cursor.classList.remove('typing');
+            label.classList.remove('active');
+            label.textContent='Done';
+            timer=setTimeout(run,3000);
+          }
+        }
+        timer=setTimeout(type,400);
+      },3000);
+    },1200);
+  }
+
+  run();
+})();
+</script>
+
 <section id="how" class="how">
   <p class="section-tag">How it works</p>
   <h2>Everything you need. Nothing you don't.</h2>
@@ -549,7 +681,7 @@ brew services restart open-wispr</pre>
 </section>
 
 <footer>
-  <p>&copy; 2025 human37 / MIT License</p>
+  <p>&copy; 2026 Ammon Taylor / MIT License</p>
   <div class="footer-links">
     <a href="https://github.com/human37/open-wispr">Source</a>
     <a href="https://github.com/human37/open-wispr/issues">Issues</a>
