@@ -2,7 +2,7 @@
 
 Push-to-talk voice dictation for macOS. Hold a key, speak, release — your words appear at the cursor.
 
-Uses [whisper.cpp](https://github.com/ggml-org/whisper.cpp) for fast, local speech-to-text with Metal acceleration on Apple Silicon.
+Runs locally using [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with Metal acceleration on Apple Silicon. No data leaves your machine.
 
 ## Install
 
@@ -11,120 +11,54 @@ brew tap human37/open-wispr
 brew install open-wispr
 ```
 
-Or build from source:
-
-```bash
-git clone https://github.com/human37/open-wispr.git
-cd open-wispr
-swift build -c release
-cp .build/release/open-wispr /usr/local/bin/
-bash scripts/bundle-app.sh .build/release/open-wispr /Applications/OpenWispr.app
-```
-
-### Dependencies
-
-- **whisper-cpp** — installed automatically via Homebrew, or install manually: `brew install whisper-cpp`
-- **macOS 13+** (Ventura or later)
-
-## Setup
-
-### 1. Download a Whisper model
-
-```bash
-open-wispr download-model base.en
-```
-
-Available models (smaller = faster, larger = more accurate):
-
-| Model | Size | Speed |
-|---|---|---|
-| `tiny.en` | 75 MB | Fastest |
-| `base.en` | 142 MB | Fast (recommended) |
-| `small.en` | 466 MB | Moderate |
-| `medium.en` | 1.5 GB | Slow |
-| `large` | 2.9 GB | Slowest |
-
-### 2. Set your hotkey
-
-```bash
-open-wispr set-hotkey globe        # Globe/fn key (bottom-left on Mac keyboards)
-open-wispr set-hotkey rightoption   # Right Option key (default)
-open-wispr set-hotkey f5            # F5 key
-open-wispr set-hotkey ctrl+space    # Ctrl + Space
-```
-
-### 3. Grant permissions
-
-On first run, macOS will automatically prompt for **Microphone** and **Accessibility** access. Grant both.
-
-OpenWispr appears as its own entry in **System Settings → Privacy & Security → Accessibility** — just toggle it on.
-
-### 4. Start
-
-**As a background service (recommended):**
+## Start
 
 ```bash
 brew services start open-wispr
 ```
 
-This runs open-wispr automatically on login. Manage it with:
+That's it. On first launch:
+- macOS prompts for **Microphone** and **Accessibility** — grant both
+- The Whisper model downloads automatically (~142 MB)
+- Restart the service after granting permissions: `brew services restart open-wispr`
+
+The default hotkey is the **Globe key** (bottom-left on Mac keyboards). Hold it, speak, release.
+
+## Change the hotkey
 
 ```bash
-brew services start open-wispr    # Start and enable on login
-brew services stop open-wispr     # Stop and disable
-brew services restart open-wispr  # Restart (e.g. after config change)
-brew services info open-wispr     # Check status
+open-wispr set-hotkey rightoption    # Right Option key
+open-wispr set-hotkey f5             # F5 key
+open-wispr set-hotkey ctrl+space     # Ctrl + Space
+brew services restart open-wispr     # Restart to apply
 ```
 
-Logs are written to `/opt/homebrew/var/log/open-wispr.log`.
+## Globe key setup
 
-**Or run manually in the foreground:**
+If your Globe key opens the emoji picker, disable that first:
 
-```bash
-open-wispr start
-```
-
-Hold your hotkey, speak, release. The transcribed text is typed at your cursor position.
-
-## Using the Globe key
-
-The Globe key (🌐) on Mac keyboards can be used as your push-to-talk key. First, prevent macOS from intercepting it:
-
-1. Open **System Settings → Keyboard**
+1. **System Settings → Keyboard**
 2. Set **"Press 🌐 key to"** → **"Do Nothing"**
-3. Then: `open-wispr set-hotkey globe`
 
-## Commands
+## Manage the service
 
-| Command | Description |
-|---|---|
-| `open-wispr start` | Start the dictation daemon |
-| `open-wispr set-hotkey <key>` | Set the push-to-talk hotkey |
-| `open-wispr get-hotkey` | Show current hotkey |
-| `open-wispr download-model [size]` | Download a Whisper model |
-| `open-wispr status` | Show config and dependency status |
-
-## Configuration
-
-Config is stored at `~/.config/open-wispr/config.json` and created automatically on first run.
-
-```json
-{
-  "hotkey": {
-    "keyCode": 63,
-    "modifiers": []
-  },
-  "modelSize": "base.en",
-  "language": "en"
-}
+```bash
+brew services start open-wispr      # Start + auto-launch on login
+brew services stop open-wispr       # Stop
+brew services restart open-wispr    # Restart after config changes
 ```
 
-## How it works
+Logs: `/opt/homebrew/var/log/open-wispr.log`
 
-1. A global event tap listens for your configured hotkey
-2. On key down, audio recording starts via AVAudioEngine (16kHz mono)
-3. On key up, the recording is saved and passed to whisper-cpp for transcription
-4. The transcribed text is placed on the clipboard and pasted at the cursor (Cmd+V), then the previous clipboard contents are restored
+## Build from source
+
+```bash
+git clone https://github.com/human37/open-wispr.git
+cd open-wispr
+brew install whisper-cpp
+swift build -c release
+.build/release/open-wispr start
+```
 
 ## License
 

@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 
-let version = "0.3.0"
+let version = "0.4.0"
 
 func printUsage() {
     print("""
@@ -16,17 +16,13 @@ func printUsage() {
         open-wispr --help             Show this help message
 
     HOTKEY EXAMPLES:
-        open-wispr set-hotkey rightoption       Right Option key (default)
-        open-wispr set-hotkey globe             Globe/fn key (bottom-left)
-        open-wispr set-hotkey f5                F5 key
-        open-wispr set-hotkey ctrl+space        Ctrl + Space
-        open-wispr set-hotkey cmd+shift+d       Cmd + Shift + D
+        open-wispr set-hotkey globe             Globe/fn key (default)
+        open-wispr set-hotkey rightoption        Right Option key
+        open-wispr set-hotkey f5                 F5 key
+        open-wispr set-hotkey ctrl+space         Ctrl + Space
 
     AVAILABLE MODELS:
         tiny.en, tiny, base.en, base, small.en, small, medium.en, medium, large
-
-    NOTE: Requires Accessibility permissions for global hotkey capture.
-          Go to System Settings → Privacy & Security → Accessibility
     """)
 }
 
@@ -35,6 +31,21 @@ func cmdStart() {
 
     if !Permissions.ensureAll() {
         exit(1)
+    }
+
+    if Transcriber.findWhisperBinary() == nil {
+        print("Error: whisper-cpp not found. Install it with: brew install whisper-cpp")
+        exit(1)
+    }
+
+    if !Transcriber.modelExists(modelSize: config.modelSize) {
+        print("Downloading \(config.modelSize) model (first run only)...")
+        do {
+            try ModelDownloader.download(modelSize: config.modelSize)
+        } catch {
+            print("Error downloading model: \(error.localizedDescription)")
+            exit(1)
+        }
     }
 
     let recorder = AudioRecorder()
@@ -59,7 +70,7 @@ func cmdStart() {
             onKeyDown: {
                 guard !isPressed else { return }
                 isPressed = true
-                print("🎙 Recording...")
+                print("Recording...")
                 do {
                     try recorder.startRecording()
                 } catch {
@@ -76,11 +87,11 @@ func cmdStart() {
                     return
                 }
 
-                print("⏳ Transcribing...")
+                print("Transcribing...")
                 do {
                     let text = try transcriber.transcribe(audioURL: audioURL)
                     if !text.isEmpty {
-                        print("✅ \"\(text)\"")
+                        print("-> \"\(text)\"")
                         inserter.insert(text: text)
                     } else {
                         print("(no speech detected)")
@@ -143,17 +154,11 @@ func cmdStatus() {
     let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
 
     print("open-wispr v\(version)")
-    print("Config: \(Config.configFile.path)")
-    print("Hotkey: \(hotkeyDesc)")
-    print("Model:  \(config.modelSize)")
-
-    let modelPath = "\(Config.configDir.path)/models/ggml-\(config.modelSize).bin"
-    let modelExists = FileManager.default.fileExists(atPath: modelPath)
-    print("Model downloaded: \(modelExists ? "yes" : "no")")
-
-    let whisperPaths = ["/opt/homebrew/bin/whisper-cpp", "/usr/local/bin/whisper-cpp"]
-    let whisperFound = whisperPaths.contains { FileManager.default.fileExists(atPath: $0) }
-    print("whisper-cpp installed: \(whisperFound ? "yes" : "no")")
+    print("Config:     \(Config.configFile.path)")
+    print("Hotkey:     \(hotkeyDesc)")
+    print("Model:      \(config.modelSize)")
+    print("Model ready: \(Transcriber.modelExists(modelSize: config.modelSize) ? "yes" : "no")")
+    print("whisper-cpp: \(Transcriber.findWhisperBinary() != nil ? "yes" : "no")")
 }
 
 let args = CommandLine.arguments

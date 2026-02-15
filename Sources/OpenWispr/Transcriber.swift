@@ -10,18 +10,11 @@ class Transcriber {
     }
 
     func transcribe(audioURL: URL) throws -> String {
-        let whisperPath = findWhisperCLI()
-        guard let whisperPath = whisperPath else {
+        guard let whisperPath = Transcriber.findWhisperBinary() else {
             throw TranscriberError.whisperNotFound
         }
 
-        var modelPath = findModel()
-        if modelPath == nil {
-            print("Model '\(modelSize)' not found, downloading automatically...")
-            try ModelDownloader.download(modelSize: modelSize)
-            modelPath = findModel()
-        }
-        guard let modelPath = modelPath else {
+        guard let modelPath = Transcriber.findModel(modelSize: modelSize) else {
             throw TranscriberError.modelNotFound(modelSize)
         }
 
@@ -52,14 +45,12 @@ class Transcriber {
         return output
     }
 
-    private func findWhisperCLI() -> String? {
+    static func findWhisperBinary() -> String? {
         let candidates = [
             "/opt/homebrew/bin/whisper-cli",
             "/usr/local/bin/whisper-cli",
             "/opt/homebrew/bin/whisper-cpp",
             "/usr/local/bin/whisper-cpp",
-            "/opt/homebrew/bin/whisper",
-            "/usr/local/bin/whisper",
         ]
 
         for path in candidates {
@@ -68,7 +59,7 @@ class Transcriber {
             }
         }
 
-        for name in ["whisper-cli", "whisper-cpp", "whisper"] {
+        for name in ["whisper-cli", "whisper-cpp"] {
             let which = Process()
             which.executableURL = URL(fileURLWithPath: "/usr/bin/which")
             which.arguments = [name]
@@ -89,7 +80,11 @@ class Transcriber {
         return nil
     }
 
-    private func findModel() -> String? {
+    static func modelExists(modelSize: String) -> Bool {
+        return findModel(modelSize: modelSize) != nil
+    }
+
+    static func findModel(modelSize: String) -> String? {
         let modelFileName = "ggml-\(modelSize).bin"
 
         let candidates = [

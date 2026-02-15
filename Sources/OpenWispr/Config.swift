@@ -7,7 +7,7 @@ struct Config: Codable {
     var language: String
 
     static let defaultConfig = Config(
-        hotkey: HotkeyConfig(keyCode: 61, modifiers: []),  // Option (right) key
+        hotkey: HotkeyConfig(keyCode: 63, modifiers: []),
         modelPath: nil,
         modelSize: "base.en",
         language: "en"
