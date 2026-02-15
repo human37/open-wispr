@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 enum OpenWispr {
-    static let version = "0.6.0"
+    static let version = "0.7.0"
 }
 
 let version = OpenWispr.version
@@ -34,9 +34,7 @@ func printUsage() {
 func cmdStart() {
     _ = Config.load()
 
-    if !Permissions.ensureAll() {
-        exit(1)
-    }
+    Permissions.ensureAll()
 
     if Transcriber.findWhisperBinary() == nil {
         print("Error: whisper-cpp not found. Install it with: brew install whisper-cpp")

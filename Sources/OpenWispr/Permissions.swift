@@ -6,11 +6,10 @@ struct Permissions {
     static func ensureAccessibility() -> Bool {
         if AXIsProcessTrusted() { return true }
 
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
-
-        print("  Accessibility: waiting for permission...")
-        print("  Grant access in the system dialog, then it will continue automatically.")
+        print("  Accessibility: not granted")
+        print("  Open System Settings → Privacy & Security → Accessibility")
+        print("  Enable 'OpenWispr', then it will start automatically.")
+        print("")
 
         while !AXIsProcessTrusted() {
             Thread.sleep(forTimeInterval: 2)
@@ -25,7 +24,6 @@ struct Permissions {
         case .authorized:
             return true
         case .notDetermined:
-            print("  Microphone: requesting...")
             let semaphore = DispatchSemaphore(value: 0)
             var granted = false
             AVCaptureDevice.requestAccess(for: .audio) { result in
@@ -33,27 +31,15 @@ struct Permissions {
                 semaphore.signal()
             }
             semaphore.wait()
-            if !granted {
-                print("  Microphone: denied — grant in System Settings → Privacy & Security → Microphone")
-            }
             return granted
         default:
-            print("  Microphone: denied — grant in System Settings → Privacy & Security → Microphone")
             return false
         }
     }
 
-    static func ensureAll() -> Bool {
-        print("Checking permissions...")
-
+    static func ensureAll() {
         let mic = ensureMicrophone()
-        if mic {
-            print("  Microphone: granted")
-        }
-
-        let accessibility = ensureAccessibility()
-
-        print("")
-        return mic && accessibility
+        print("  Microphone: \(mic ? "granted" : "denied")")
+        let _ = ensureAccessibility()
     }
 }
