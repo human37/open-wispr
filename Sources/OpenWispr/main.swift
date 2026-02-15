@@ -1,7 +1,11 @@
 import AppKit
 import Foundation
 
-let version = "0.4.0"
+enum OpenWispr {
+    static let version = "0.5.0"
+}
+
+let version = OpenWispr.version
 
 func printUsage() {
     print("""
@@ -11,7 +15,8 @@ func printUsage() {
         open-wispr start              Start the dictation daemon
         open-wispr set-hotkey <key>   Set the push-to-talk hotkey
         open-wispr get-hotkey         Show current hotkey
-        open-wispr download-model [size]  Download a Whisper model (default: base.en)
+        open-wispr set-model <size>   Set the Whisper model
+        open-wispr download-model [size]  Download a Whisper model
         open-wispr status             Show configuration and status
         open-wispr --help             Show this help message
 
@@ -48,70 +53,18 @@ func cmdStart() {
         }
     }
 
-    let recorder = AudioRecorder()
-    let transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
-    let inserter = TextInserter()
+    let app = NSApplication.shared
+    app.setActivationPolicy(.accessory)
 
-    let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
-    print("open-wispr v\(version)")
-    print("Hotkey: \(hotkeyDesc) (hold to record, release to transcribe)")
-    print("Model: \(config.modelSize)")
-    print("Press Ctrl+C to stop\n")
-
-    var isPressed = false
-
-    let hotkeyManager = HotkeyManager(
-        keyCode: config.hotkey.keyCode,
-        modifiers: config.hotkey.modifierFlags
-    )
-
-    do {
-        try hotkeyManager.start(
-            onKeyDown: {
-                guard !isPressed else { return }
-                isPressed = true
-                print("Recording...")
-                do {
-                    try recorder.startRecording()
-                } catch {
-                    print("Error starting recording: \(error.localizedDescription)")
-                    isPressed = false
-                }
-            },
-            onKeyUp: {
-                guard isPressed else { return }
-                isPressed = false
-
-                guard let audioURL = recorder.stopRecording() else {
-                    print("No audio recorded")
-                    return
-                }
-
-                print("Transcribing...")
-                do {
-                    let text = try transcriber.transcribe(audioURL: audioURL)
-                    if !text.isEmpty {
-                        print("-> \"\(text)\"")
-                        inserter.insert(text: text)
-                    } else {
-                        print("(no speech detected)")
-                    }
-                } catch {
-                    print("Error: \(error.localizedDescription)")
-                }
-            }
-        )
-    } catch {
-        print("Error: \(error.localizedDescription)")
-        exit(1)
-    }
+    let delegate = AppDelegate()
+    app.delegate = delegate
 
     signal(SIGINT) { _ in
         print("\nStopping open-wispr...")
         exit(0)
     }
 
-    RunLoop.current.run()
+    app.run()
 }
 
 func cmdSetHotkey(_ keyString: String) {
@@ -128,6 +81,29 @@ func cmdSetHotkey(_ keyString: String) {
         try config.save()
         let desc = KeyCodes.describe(keyCode: parsed.keyCode, modifiers: parsed.modifiers)
         print("Hotkey set to: \(desc)")
+    } catch {
+        print("Error saving config: \(error.localizedDescription)")
+        exit(1)
+    }
+}
+
+func cmdSetModel(_ size: String) {
+    let validSizes = ["tiny.en", "tiny", "base.en", "base", "small.en", "small", "medium.en", "medium", "large"]
+    guard validSizes.contains(size) else {
+        print("Error: Unknown model '\(size)'")
+        print("Available: \(validSizes.joined(separator: ", "))")
+        exit(1)
+    }
+
+    var config = Config.load()
+    config.modelSize = size
+
+    do {
+        try config.save()
+        print("Model set to: \(size)")
+        if !Transcriber.modelExists(modelSize: size) {
+            print("Model will be downloaded on next start.")
+        }
     } catch {
         print("Error saving config: \(error.localizedDescription)")
         exit(1)
@@ -154,9 +130,9 @@ func cmdStatus() {
     let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
 
     print("open-wispr v\(version)")
-    print("Config:     \(Config.configFile.path)")
-    print("Hotkey:     \(hotkeyDesc)")
-    print("Model:      \(config.modelSize)")
+    print("Config:      \(Config.configFile.path)")
+    print("Hotkey:      \(hotkeyDesc)")
+    print("Model:       \(config.modelSize)")
     print("Model ready: \(Transcriber.modelExists(modelSize: config.modelSize) ? "yes" : "no")")
     print("whisper-cpp: \(Transcriber.findWhisperBinary() != nil ? "yes" : "no")")
 }
@@ -173,6 +149,12 @@ case "set-hotkey":
         exit(1)
     }
     cmdSetHotkey(args[2])
+case "set-model":
+    guard args.count > 2 else {
+        print("Usage: open-wispr set-model <size>")
+        exit(1)
+    }
+    cmdSetModel(args[2])
 case "get-hotkey":
     cmdGetHotkey()
 case "download-model":
