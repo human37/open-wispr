@@ -17,6 +17,7 @@ func printUsage() {
 
     HOTKEY EXAMPLES:
         open-wispr set-hotkey rightoption       Right Option key (default)
+        open-wispr set-hotkey globe             Globe/fn key (bottom-left)
         open-wispr set-hotkey f5                F5 key
         open-wispr set-hotkey ctrl+space        Ctrl + Space
         open-wispr set-hotkey cmd+shift+d       Cmd + Shift + D

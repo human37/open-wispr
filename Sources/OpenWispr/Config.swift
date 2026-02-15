@@ -25,7 +25,9 @@ struct Config: Codable {
     static func load() -> Config {
         guard let data = try? Data(contentsOf: configFile),
               let config = try? JSONDecoder().decode(Config.self, from: data) else {
-            return .defaultConfig
+            let config = Config.defaultConfig
+            try? config.save()
+            return config
         }
         return config
     }

@@ -18,7 +18,7 @@ struct KeyCodes {
         "rightshift": 60,
         "rightoption": 61, "rightalt": 61,
         "rightctrl": 62, "rightcontrol": 62,
-        "fn": 63,
+        "fn": 63, "globe": 63,
         "f1": 122, "f2": 120, "f3": 99, "f4": 118, "f5": 96, "f6": 97,
         "f7": 98, "f8": 100, "f9": 101, "f10": 109, "f11": 103, "f12": 111,
         "f13": 105, "f14": 107, "f15": 113,

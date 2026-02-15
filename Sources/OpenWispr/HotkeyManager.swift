@@ -84,7 +84,7 @@ class HotkeyManager {
     }
 
     private func isModifierOnlyKey(_ code: UInt16) -> Bool {
-        return [54, 55, 56, 58, 59, 60, 61, 62].contains(code)
+        return [54, 55, 56, 58, 59, 60, 61, 62, 63].contains(code)
     }
 
     private func modifierMaskForKey(_ code: UInt16) -> UInt64 {
@@ -93,6 +93,7 @@ class HotkeyManager {
         case 56, 60: return UInt64(CGEventFlags.maskShift.rawValue)
         case 58, 61: return UInt64(CGEventFlags.maskAlternate.rawValue)
         case 59, 62: return UInt64(CGEventFlags.maskControl.rawValue)
+        case 63: return UInt64(CGEventFlags.maskSecondaryFn.rawValue)
         default: return 0
         }
     }
