@@ -72,19 +72,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             modifiers: config.hotkey.modifierFlags
         )
 
-        do {
-            try hotkeyManager?.start(
-                onKeyDown: { [weak self] in
-                    self?.handleKeyDown()
-                },
-                onKeyUp: { [weak self] in
-                    self?.handleKeyUp()
-                }
-            )
-        } catch {
-            print("Error: \(error.localizedDescription)")
-            return
-        }
+        hotkeyManager?.start(
+            onKeyDown: { [weak self] in
+                self?.handleKeyDown()
+            },
+            onKeyUp: { [weak self] in
+                self?.handleKeyUp()
+            }
+        )
 
         isReady = true
         statusBar.state = .idle

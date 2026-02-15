@@ -1,129 +1,74 @@
-import Carbon
-import CoreGraphics
+import AppKit
 import Foundation
 
 class HotkeyManager {
-    private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    private var globalMonitor: Any?
     private let keyCode: UInt16
     private let requiredModifiers: UInt64
     private var onKeyDown: (() -> Void)?
     private var onKeyUp: (() -> Void)?
+    private var modifierPressed = false
 
     init(keyCode: UInt16, modifiers: UInt64 = 0) {
         self.keyCode = keyCode
         self.requiredModifiers = modifiers
     }
 
-    func start(onKeyDown: @escaping () -> Void, onKeyUp: @escaping () -> Void) throws {
+    func start(onKeyDown: @escaping () -> Void, onKeyUp: @escaping () -> Void) {
         self.onKeyDown = onKeyDown
         self.onKeyUp = onKeyUp
 
-        let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue) |
-            (1 << CGEventType.keyUp.rawValue) |
-            (1 << CGEventType.flagsChanged.rawValue)
+        let mask: NSEvent.EventTypeMask = [.keyDown, .keyUp, .flagsChanged]
 
-        let refcon = Unmanaged.passUnretained(self).toOpaque()
-
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: mask,
-            callback: hotkeyCallback,
-            userInfo: refcon
-        ) else {
-            throw HotkeyError.accessibilityNotGranted
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] event in
+            self?.handleEvent(event)
         }
-
-        eventTap = tap
-        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
     }
 
     func stop() {
-        if let tap = eventTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
         }
-        if let source = runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
-        }
-        eventTap = nil
-        runLoopSource = nil
+        globalMonitor = nil
     }
 
-    fileprivate func handleEvent(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
-        let code = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
-
-        if keyCode == code || isModifierOnlyKey(keyCode) {
-            if isModifierOnlyKey(keyCode) {
-                let flags = event.flags.rawValue
-                let isPressed = (flags & modifierMaskForKey(keyCode)) != 0
-
-                if type == .flagsChanged {
-                    if isPressed {
-                        onKeyDown?()
-                    } else {
-                        onKeyUp?()
-                    }
-                    return nil
-                }
-            } else {
-                if type == .keyDown {
-                    onKeyDown?()
-                    return nil
-                } else if type == .keyUp {
-                    onKeyUp?()
-                    return nil
-                }
+    private func handleEvent(_ event: NSEvent) {
+        if isModifierOnlyKey(keyCode) {
+            guard event.type == .flagsChanged else { return }
+            let pressed = isModifierActive(event.modifierFlags)
+            if pressed && !modifierPressed {
+                modifierPressed = true
+                onKeyDown?()
+            } else if !pressed && modifierPressed {
+                modifierPressed = false
+                onKeyUp?()
+            }
+        } else {
+            guard event.keyCode == keyCode else { return }
+            if requiredModifiers != 0 {
+                let currentMods = UInt64(event.modifierFlags.rawValue) & 0x00FF0000
+                guard currentMods & requiredModifiers == requiredModifiers else { return }
+            }
+            if event.type == .keyDown {
+                onKeyDown?()
+            } else if event.type == .keyUp {
+                onKeyUp?()
             }
         }
+    }
 
-        return Unmanaged.passRetained(event)
+    private func isModifierActive(_ flags: NSEvent.ModifierFlags) -> Bool {
+        switch keyCode {
+        case 54, 55: return flags.contains(.command)
+        case 56, 60: return flags.contains(.shift)
+        case 58, 61: return flags.contains(.option)
+        case 59, 62: return flags.contains(.control)
+        case 63: return flags.contains(.function)
+        default: return false
+        }
     }
 
     private func isModifierOnlyKey(_ code: UInt16) -> Bool {
         return [54, 55, 56, 58, 59, 60, 61, 62, 63].contains(code)
-    }
-
-    private func modifierMaskForKey(_ code: UInt16) -> UInt64 {
-        switch code {
-        case 54, 55: return UInt64(CGEventFlags.maskCommand.rawValue)
-        case 56, 60: return UInt64(CGEventFlags.maskShift.rawValue)
-        case 58, 61: return UInt64(CGEventFlags.maskAlternate.rawValue)
-        case 59, 62: return UInt64(CGEventFlags.maskControl.rawValue)
-        case 63: return UInt64(CGEventFlags.maskSecondaryFn.rawValue)
-        default: return 0
-        }
-    }
-}
-
-private func hotkeyCallback(
-    proxy: CGEventTapProxy,
-    type: CGEventType,
-    event: CGEvent,
-    refcon: UnsafeMutableRawPointer?
-) -> Unmanaged<CGEvent>? {
-    guard let refcon = refcon else {
-        return Unmanaged.passRetained(event)
-    }
-
-    let manager = Unmanaged<HotkeyManager>.fromOpaque(refcon).takeUnretainedValue()
-    return manager.handleEvent(type: type, event: event)
-}
-
-enum HotkeyError: LocalizedError {
-    case accessibilityNotGranted
-
-    var errorDescription: String? {
-        switch self {
-        case .accessibilityNotGranted:
-            return """
-            Accessibility permission required.
-            Go to System Settings → Privacy & Security → Accessibility
-            and add open-wispr (or your terminal app).
-            """
-        }
     }
 }

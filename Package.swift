@@ -9,7 +9,6 @@ let package = Package(
             name: "open-wispr",
             path: "Sources/OpenWispr",
             linkerSettings: [
-                .linkedFramework("Carbon"),
                 .linkedFramework("CoreAudio"),
                 .linkedFramework("AVFoundation"),
                 .linkedFramework("AppKit"),
