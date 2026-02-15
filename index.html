@@ -139,7 +139,7 @@
     h1{
       font-family:var(--display);
       font-size:clamp(44px,8vw,84px);font-weight:800;
-      letter-spacing:-.04em;line-height:.95;
+      letter-spacing:-.04em;line-height:1.05;
       margin-bottom:28px;
       text-transform:uppercase;
     }
@@ -210,7 +210,7 @@
     h2{
       font-family:var(--display);
       font-size:clamp(28px,5vw,48px);font-weight:800;
-      letter-spacing:-.03em;line-height:1;
+      letter-spacing:-.03em;line-height:1.1;
       text-transform:uppercase;margin-bottom:48px;
     }
     .steps-row{
@@ -232,7 +232,7 @@
       font-size:14px;font-weight:600;text-transform:uppercase;
       letter-spacing:.06em;margin-bottom:8px;
     }
-    .step-desc{font-size:13px;color:var(--muted);line-height:1.6}
+    .step-desc{font-size:13px;color:var(--muted);line-height:1.7}
 
     /* FEATURES */
     .features{max-width:1000px;margin:0 auto;padding:0 24px 100px}
@@ -242,7 +242,7 @@
       box-shadow:var(--shadow);
     }
     .feature-cell{
-      padding:28px 24px;
+      padding:32px 28px;
       background:var(--surface);
       border-bottom:var(--bw) solid var(--border);
       border-right:var(--bw) solid var(--border);
@@ -252,9 +252,9 @@
     .feature-cell h3{
       font-family:var(--display);font-size:18px;font-weight:800;
       text-transform:uppercase;letter-spacing:-.01em;
-      margin-bottom:6px;
+      margin-bottom:10px;
     }
-    .feature-cell p{font-size:13px;color:var(--muted);line-height:1.6}
+    .feature-cell p{font-size:13px;color:var(--muted);line-height:1.7}
     .feature-marker{
       display:inline-block;width:10px;height:10px;
       background:var(--highlight);border:var(--bw) solid var(--border);
@@ -307,12 +307,34 @@
       font-family:var(--display);font-size:20px;font-weight:800;
       color:var(--accent);flex-shrink:0;width:32px;
     }
-    .flow-text{font-size:14px;line-height:1.6}
+    .flow-text{font-size:14px;line-height:1.7}
     .flow-text strong{font-weight:600}
     .flow-text code{
       background:var(--code-bg);
       border:1px solid var(--border);
       padding:2px 6px;font-size:12px;
+    }
+
+    /* TESTIMONIAL */
+    .testimonial{max-width:1000px;margin:0 auto;padding:0 24px 100px}
+    .testimonial-card{
+      border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow);
+      background:var(--surface);
+      padding:32px 32px 28px;
+      max-width:600px;
+    }
+    .testimonial-quote{
+      font-size:16px;line-height:1.75;
+      margin-bottom:20px;font-style:italic;
+    }
+    .testimonial-author{
+      font-size:13px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.06em;
+    }
+    .testimonial-role{
+      font-size:12px;color:var(--muted);
+      margin-top:2px;
     }
 
     /* FOOTER */
@@ -396,7 +418,7 @@
 
 <section id="how" class="how">
   <p class="section-tag">How it works</p>
-  <h2>Three steps. Zero config.</h2>
+  <h2>Three steps.</h2>
   <div class="steps-row">
     <div class="step-card">
       <div class="step-num">01</div>
@@ -418,7 +440,7 @@
 
 <section class="flow">
   <p class="section-tag">Install flow</p>
-  <h2>Guided setup.<br>Under a minute.</h2>
+  <h2>Setup in under a minute.</h2>
   <div class="flow-steps">
     <div class="flow-step">
       <div class="flow-num">01</div>
@@ -445,7 +467,7 @@
 
 <section id="features" class="features">
   <p class="section-tag">Features</p>
-  <h2>Nothing extra.<br>Nothing missing.</h2>
+  <h2>What you get.</h2>
   <div class="feature-grid">
     <div class="feature-cell">
       <h3><span class="feature-marker"></span>Private</h3>
@@ -476,7 +498,7 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>Two commands.<br>Everything changes.</h2>
+  <h2>Configuration.</h2>
   <div class="config-grid">
     <div class="config-card">
       <div class="config-card-header">Hotkey</div>
@@ -496,6 +518,15 @@ brew services restart open-wispr</pre>
 
 brew services restart open-wispr</pre>
     </div>
+  </div>
+</section>
+
+<section class="testimonial">
+  <p class="section-tag">What people say</p>
+  <div class="testimonial-card">
+    <p class="testimonial-quote">"I use this with Claude Code every day. Hold the key, say what I want, and it just types it out. No more switching between keyboard and some dictation app. It's perfect for long prompts."</p>
+    <div class="testimonial-author">Tanner Thorne</div>
+    <div class="testimonial-role">Software Engineer</div>
   </div>
 </section>
 
