@@ -24,11 +24,10 @@ The default hotkey is the **Globe key** (🌐, bottom-left). Hold it, speak, rel
 ## Uninstall
 
 ```bash
-brew services stop open-wispr
-brew uninstall open-wispr
-brew untap human37/open-wispr
-rm -rf ~/.config/open-wispr ~/Applications/OpenWispr.app
+bash <(curl -s https://raw.githubusercontent.com/human37/open-wispr/main/scripts/uninstall.sh)
 ```
+
+This stops the service, removes the formula, tap, config, models, app bundle, and logs.
 
 ## Configuration
 
