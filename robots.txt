@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://human37.github.io/open-wispr/sitemap.xml
+Sitemap: https://open-wispr.pages.dev/sitemap.xml
