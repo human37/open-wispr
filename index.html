@@ -7,19 +7,19 @@
   <meta name="description" content="Free, private voice-to-text for macOS. Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device. No cloud, no accounts, no telemetry.">
   <meta name="keywords" content="voice dictation, speech to text, macOS, whisper, on-device, privacy, open source, Apple Silicon, voice typing, dictation app">
   <meta name="author" content="human37">
-  <link rel="canonical" href="https://human37.github.io/open-wispr/">
+  <link rel="canonical" href="https://open-wispr.pages.dev/">
 
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://human37.github.io/open-wispr/">
+  <meta property="og:url" content="https://open-wispr.pages.dev/">
   <meta property="og:title" content="open-wispr — Free Local Voice Dictation for macOS">
   <meta property="og:description" content="Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device. No audio ever leaves your Mac.">
-  <meta property="og:image" content="https://human37.github.io/open-wispr/og.png">
+  <meta property="og:image" content="https://open-wispr.pages.dev/og.png">
   <meta property="og:site_name" content="open-wispr">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="open-wispr — Free Local Voice Dictation for macOS">
   <meta name="twitter:description" content="Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device.">
-  <meta name="twitter:image" content="https://human37.github.io/open-wispr/og.png">
+  <meta name="twitter:image" content="https://open-wispr.pages.dev/og.png">
 
   <script type="application/ld+json">
   {
@@ -30,26 +30,58 @@
     "applicationCategory": "UtilitiesApplication",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "description": "Free, private voice-to-text for macOS. Powered by Whisper AI, runs entirely on-device.",
-    "url": "https://human37.github.io/open-wispr/",
-    "downloadUrl": "https://human37.github.io/open-wispr/#install",
+    "url": "https://open-wispr.pages.dev/",
+    "downloadUrl": "https://open-wispr.pages.dev/#install",
     "softwareVersion": "0.3.1",
     "author": { "@type": "Organization", "name": "human37" },
     "license": "https://opensource.org/licenses/MIT"
   }
   </script>
+  <meta name="color-scheme" content="light dark">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
     :root{
-      --bg:#0a0a0a;
-      --surface:#141414;
-      --border:#222;
-      --text:#e8e8e8;
-      --muted:#888;
-      --accent:#3b82f6;
-      --accent-hover:#2563eb;
-      --green:#22c55e;
+      --bg:#fafafa;
+      --surface:#fff;
+      --border:#e2e2e2;
+      --text:#111;
+      --muted:#666;
+      --accent:#2563eb;
+      --accent-hover:#1d4ed8;
+      --green:#16a34a;
       --radius:12px;
+      --nav-bg:rgba(250,250,250,.85);
+      --code-bg:#f4f4f5;
+      --step-bg:rgba(37,99,235,.06);
+      --step-border:rgba(37,99,235,.15);
+      --demo-glow:rgba(37,99,235,.03);
+      --btn-primary-bg:#111;
+      --btn-primary-color:#fff;
+      --btn-primary-hover:#000;
     }
+
+    @media(prefers-color-scheme:dark){
+      :root{
+        --bg:#0a0a0a;
+        --surface:#141414;
+        --border:#222;
+        --text:#e8e8e8;
+        --muted:#888;
+        --accent:#3b82f6;
+        --accent-hover:#2563eb;
+        --green:#22c55e;
+        --nav-bg:rgba(10,10,10,.8);
+        --code-bg:#0a0a0a;
+        --step-bg:rgba(59,130,246,.1);
+        --step-border:rgba(59,130,246,.2);
+        --demo-glow:rgba(59,130,246,.04);
+        --btn-primary-bg:#e8e8e8;
+        --btn-primary-color:#0a0a0a;
+        --btn-primary-hover:#fff;
+      }
+    }
+
     html{scroll-behavior:smooth}
     body{
       font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
@@ -61,11 +93,10 @@
     a{color:var(--accent);text-decoration:none}
     a:hover{text-decoration:underline}
 
-    /* Nav */
     nav{
       position:fixed;top:0;left:0;right:0;z-index:100;
       backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-      background:rgba(10,10,10,.8);
+      background:var(--nav-bg);
       border-bottom:1px solid var(--border);
     }
     .nav-inner{
@@ -78,7 +109,6 @@
     .nav-links a{color:var(--muted);font-size:14px;transition:color .2s}
     .nav-links a:hover{color:var(--text);text-decoration:none}
 
-    /* Hero */
     .hero{
       max-width:1100px;margin:0 auto;padding:160px 24px 100px;
       text-align:center;
@@ -96,7 +126,7 @@
       margin-bottom:24px;
     }
     h1 .gradient{
-      background:linear-gradient(135deg,#60a5fa,#a78bfa,#f472b6);
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899);
       -webkit-background-clip:text;-webkit-text-fill-color:transparent;
       background-clip:text;
     }
@@ -110,12 +140,11 @@
       padding:14px 28px;border-radius:var(--radius);font-size:15px;font-weight:600;
       border:none;cursor:pointer;transition:all .2s;text-decoration:none;
     }
-    .btn-primary{background:var(--text);color:var(--bg)}
-    .btn-primary:hover{background:#fff;text-decoration:none;transform:translateY(-1px)}
+    .btn-primary{background:var(--btn-primary-bg);color:var(--btn-primary-color)}
+    .btn-primary:hover{background:var(--btn-primary-hover);text-decoration:none;transform:translateY(-1px)}
     .btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-    .btn-secondary:hover{border-color:#444;text-decoration:none;transform:translateY(-1px)}
+    .btn-secondary:hover{border-color:var(--muted);text-decoration:none;transform:translateY(-1px)}
 
-    /* Install command */
     .install-cmd{
       margin:48px auto 0;max-width:700px;
       background:var(--surface);border:1px solid var(--border);
@@ -128,11 +157,21 @@
     .install-cmd button{
       background:none;border:1px solid var(--border);border-radius:8px;
       color:var(--muted);cursor:pointer;padding:6px 12px;font-size:13px;
-      transition:all .2s;flex-shrink:0;
+      transition:all .2s;flex-shrink:0;font-family:inherit;
     }
-    .install-cmd button:hover{border-color:#555;color:var(--text)}
+    .install-cmd button:hover{border-color:var(--muted);color:var(--text)}
 
-    /* Demo */
+    .tip-inline{
+      margin:20px auto 0;max-width:700px;
+      display:flex;align-items:center;justify-content:center;gap:12px;
+    }
+    .tip-inline a{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:13px;color:var(--muted);transition:color .2s;
+    }
+    .tip-inline a:hover{color:var(--accent);text-decoration:none}
+    .tip-inline span{font-size:13px;color:var(--muted)}
+
     .demo{
       max-width:800px;margin:80px auto 0;
       background:var(--surface);border:1px solid var(--border);
@@ -141,7 +180,7 @@
     }
     .demo::before{
       content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
-      background:radial-gradient(circle at center,rgba(59,130,246,.04),transparent 60%);
+      background:radial-gradient(circle at center,var(--demo-glow),transparent 60%);
       pointer-events:none;
     }
     .demo-steps{
@@ -151,7 +190,7 @@
     .step{display:flex;flex-direction:column;align-items:center;gap:12px}
     .step-icon{
       width:56px;height:56px;border-radius:14px;
-      background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);
+      background:var(--step-bg);border:1px solid var(--step-border);
       display:flex;align-items:center;justify-content:center;font-size:24px;
     }
     .step-label{font-size:14px;color:var(--muted)}
@@ -160,7 +199,6 @@
       display:flex;align-items:center;
     }
 
-    /* Features */
     .features{max-width:1100px;margin:0 auto;padding:120px 24px}
     .section-label{
       font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
@@ -176,12 +214,11 @@
       border-radius:var(--radius);padding:28px;
       transition:border-color .2s;
     }
-    .feature-card:hover{border-color:#333}
+    .feature-card:hover{border-color:var(--muted)}
     .feature-icon{font-size:28px;margin-bottom:16px}
     .feature-card h3{font-size:17px;font-weight:600;margin-bottom:8px}
     .feature-card p{font-size:14px;color:var(--muted);line-height:1.6}
 
-    /* Config */
     .config{max-width:1100px;margin:0 auto;padding:80px 24px 120px}
     .config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:32px}
     .config-block{
@@ -190,30 +227,13 @@
     }
     .config-block h3{font-size:15px;font-weight:600;margin-bottom:16px}
     .config-block pre{
-      background:var(--bg);border:1px solid var(--border);border-radius:8px;
+      background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
       padding:16px;font-size:13px;overflow-x:auto;
       font-family:'SF Mono',SFMono-Regular,Menlo,monospace;
       color:var(--muted);line-height:1.7;
     }
     .config-block pre span{color:var(--text)}
 
-    /* Support */
-    .support{
-      max-width:700px;margin:0 auto;padding:80px 24px 120px;text-align:center;
-    }
-    .support .section-title{margin-bottom:16px}
-    .support p{color:var(--muted);font-size:16px;margin-bottom:40px;line-height:1.7}
-    .support-btn{
-      display:inline-flex;align-items:center;gap:10px;
-      padding:16px 32px;border-radius:var(--radius);
-      font-size:16px;font-weight:600;cursor:pointer;
-      background:linear-gradient(135deg,#3b82f6,#8b5cf6);
-      color:#fff;border:none;transition:all .2s;text-decoration:none;
-    }
-    .support-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,.3);text-decoration:none}
-    .support-note{font-size:13px;color:var(--muted);margin-top:16px}
-
-    /* Footer */
     footer{
       border-top:1px solid var(--border);
       max-width:1100px;margin:0 auto;padding:32px 24px;
@@ -241,7 +261,6 @@
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#install">Install</a>
-      <a href="#support">Support</a>
       <a href="https://github.com/human37/open-wispr">GitHub</a>
     </div>
   </div>
@@ -262,6 +281,14 @@
   <div id="install" class="install-cmd">
     <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"</code>
     <button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim());this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)">Copy</button>
+  </div>
+
+  <div class="tip-inline">
+    <span>Free &amp; open source.</span>
+    <a href="https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      Leave a tip
+    </a>
   </div>
 
   <div class="demo">
@@ -342,17 +369,6 @@ brew services restart open-wispr</pre>
   </div>
 </section>
 
-<section id="support" class="support">
-  <p class="section-label">Support</p>
-  <h2 class="section-title">open-wispr is free and open source</h2>
-  <p>This project is built and maintained independently. If it saves you time or you just want to say thanks, you can leave an optional tip. No account required.</p>
-  <a href="#" class="support-btn" id="support-link">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    Leave a tip
-  </a>
-  <p class="support-note">Totally optional — open-wispr is free forever.</p>
-</section>
-
 <footer>
   <p>&copy; 2025 human37. MIT License.</p>
   <div class="footer-links">
@@ -360,15 +376,6 @@ brew services restart open-wispr</pre>
     <a href="https://github.com/human37/open-wispr/issues">Issues</a>
   </div>
 </footer>
-
-<script>
-// Stripe Payment Link — replace with your actual Stripe payment link
-// Create one at https://dashboard.stripe.com/payment-links
-// Use "customer chooses price" mode for pay-what-you-want
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/YOUR_PAYMENT_LINK_HERE';
-
-document.getElementById('support-link').href = STRIPE_PAYMENT_LINK;
-</script>
 
 </body>
 </html>
