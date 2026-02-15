@@ -37,222 +37,310 @@
     "license": "https://opensource.org/licenses/MIT"
   }
   </script>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='26' fill='%23111'/%3E%3Cg transform='translate(60,60)'%3E%3Crect x='-38' y='-10' width='10' height='20' rx='4' fill='%23fff'/%3E%3Crect x='-19' y='-20' width='10' height='40' rx='4' fill='%23fff'/%3E%3Crect x='-5' y='-30' width='10' height='60' rx='4' fill='%23fff'/%3E%3Crect x='9' y='-20' width='10' height='40' rx='4' fill='%23fff'/%3E%3Crect x='28' y='-10' width='10' height='20' rx='4' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='26' fill='%23111'/%3E%3Cg transform='translate(60,60)'%3E%3Crect x='-38' y='-10' width='10' height='20' rx='4' fill='%23fff'/%3E%3Crect x='-19' y='-20' width='10' height='40' rx='4' fill='%23fff'/%3E%3Crect x='-5' y='-30' width='10' height='60' rx='4' fill='%23fff'/%3E%3Crect x='9' y='-20' width='10' height='40' rx='4' fill='%23fff'/%3E%3Crect x='28' y='-10' width='10' height='20' rx='4' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='0' fill='%23111'/%3E%3Cg transform='translate(60,60)'%3E%3Crect x='-38' y='-10' width='10' height='20' rx='0' fill='%23fff'/%3E%3Crect x='-19' y='-20' width='10' height='40' rx='0' fill='%23fff'/%3E%3Crect x='-5' y='-30' width='10' height='60' rx='0' fill='%23fff'/%3E%3Crect x='9' y='-20' width='10' height='40' rx='0' fill='%23fff'/%3E%3Crect x='28' y='-10' width='10' height='20' rx='0' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='0' fill='%23111'/%3E%3Cg transform='translate(60,60)'%3E%3Crect x='-38' y='-10' width='10' height='20' rx='0' fill='%23fff'/%3E%3Crect x='-19' y='-20' width='10' height='40' rx='0' fill='%23fff'/%3E%3Crect x='-5' y='-30' width='10' height='60' rx='0' fill='%23fff'/%3E%3Crect x='9' y='-20' width='10' height='40' rx='0' fill='%23fff'/%3E%3Crect x='28' y='-10' width='10' height='20' rx='0' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
   <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
     :root{
-      --bg:#fafafa;
+      --bg:#FFFEF5;
       --surface:#fff;
-      --border:#e2e2e2;
-      --text:#111;
-      --muted:#666;
-      --accent:#2563eb;
-      --accent-hover:#1d4ed8;
-      --green:#16a34a;
-      --radius:12px;
-      --nav-bg:rgba(250,250,250,.85);
-      --code-bg:#f4f4f5;
-      --step-bg:rgba(37,99,235,.06);
-      --step-border:rgba(37,99,235,.15);
-      --demo-glow:rgba(37,99,235,.03);
-      --btn-primary-bg:#111;
-      --btn-primary-color:#fff;
-      --btn-primary-hover:#000;
+      --border:#000;
+      --text:#000;
+      --muted:#555;
+      --accent:#0055FF;
+      --accent-bg:#CCDDFF;
+      --highlight:#BFFF00;
+      --shadow:4px 4px 0 #000;
+      --shadow-lg:6px 6px 0 #000;
+      --shadow-hover:2px 2px 0 #000;
+      --bw:2.5px;
+      --mono:'IBM Plex Mono',monospace;
+      --display:'Syne',sans-serif;
+      --nav-bg:rgba(255,254,245,.92);
+      --code-bg:#F0F0E8;
+      --tag-bg:#BFFF00;
+      --tag-text:#000;
     }
 
     @media(prefers-color-scheme:dark){
       :root{
-        --bg:#0a0a0a;
-        --surface:#141414;
-        --border:#222;
-        --text:#e8e8e8;
-        --muted:#888;
-        --accent:#3b82f6;
-        --accent-hover:#2563eb;
-        --green:#22c55e;
-        --nav-bg:rgba(10,10,10,.8);
-        --code-bg:#0a0a0a;
-        --step-bg:rgba(59,130,246,.1);
-        --step-border:rgba(59,130,246,.2);
-        --demo-glow:rgba(59,130,246,.04);
-        --btn-primary-bg:#e8e8e8;
-        --btn-primary-color:#0a0a0a;
-        --btn-primary-hover:#fff;
+        --bg:#111;
+        --surface:#1a1a1a;
+        --border:#fff;
+        --text:#f0f0f0;
+        --muted:#999;
+        --accent:#5B9DFF;
+        --accent-bg:#1a2a44;
+        --highlight:#BFFF00;
+        --shadow:4px 4px 0 #fff;
+        --shadow-lg:6px 6px 0 #fff;
+        --shadow-hover:2px 2px 0 #fff;
+        --nav-bg:rgba(17,17,17,.92);
+        --code-bg:#222;
+        --tag-bg:#BFFF00;
+        --tag-text:#000;
       }
     }
 
     html{scroll-behavior:smooth}
     body{
-      font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+      font-family:var(--mono);
       background:var(--bg);
       color:var(--text);
-      line-height:1.6;
-      -webkit-font-smoothing:antialiased;
+      line-height:1.65;
+      font-size:15px;
     }
-    a{color:var(--accent);text-decoration:none}
-    a:hover{text-decoration:underline}
+    a{color:var(--accent);text-decoration:none;font-weight:500}
+    a:hover{text-decoration:underline;text-underline-offset:3px}
 
+    /* NAV */
     nav{
       position:fixed;top:0;left:0;right:0;z-index:100;
-      backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
       background:var(--nav-bg);
-      border-bottom:1px solid var(--border);
+      border-bottom:var(--bw) solid var(--border);
     }
     .nav-inner{
-      max-width:1100px;margin:0 auto;padding:16px 24px;
+      max-width:1000px;margin:0 auto;padding:14px 24px;
       display:flex;align-items:center;justify-content:space-between;
     }
-    .logo{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--text);display:flex;align-items:center;gap:8px}
-    .logo-icon{flex-shrink:0;border-radius:5px}
-    .logo span{color:var(--muted);font-weight:400}
-    .nav-links{display:flex;gap:24px;align-items:center}
-    .nav-links a{color:var(--muted);font-size:14px;transition:color .2s}
-    .nav-links a:hover{color:var(--text);text-decoration:none}
+    .logo{
+      font-family:var(--display);font-size:20px;font-weight:800;
+      color:var(--text);display:flex;align-items:center;gap:10px;
+      letter-spacing:-.02em;
+    }
+    .logo-icon{flex-shrink:0}
+    .nav-links{display:flex;gap:20px;align-items:center}
+    .nav-links a{
+      color:var(--text);font-size:13px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.06em;
+      text-decoration:none;padding:4px 0;
+      border-bottom:var(--bw) solid transparent;
+      transition:border-color .15s;
+    }
+    .nav-links a:hover{border-color:var(--text);text-decoration:none}
 
+    /* HERO */
     .hero{
-      max-width:1100px;margin:0 auto;padding:160px 24px 100px;
-      text-align:center;
+      max-width:1000px;margin:0 auto;padding:140px 24px 80px;
     }
-    .badge{
-      display:inline-flex;align-items:center;gap:8px;
-      background:var(--surface);border:1px solid var(--border);
-      border-radius:100px;padding:6px 16px;font-size:13px;color:var(--muted);
-      margin-bottom:32px;
+    .tag{
+      display:inline-block;
+      background:var(--tag-bg);color:var(--tag-text);
+      border:var(--bw) solid var(--border);
+      padding:4px 14px;font-size:12px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.08em;
+      margin-bottom:28px;
     }
-    .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
     h1{
-      font-size:clamp(40px,7vw,72px);font-weight:800;
-      letter-spacing:-.03em;line-height:1.05;
-      margin-bottom:24px;
+      font-family:var(--display);
+      font-size:clamp(44px,8vw,84px);font-weight:800;
+      letter-spacing:-.04em;line-height:.95;
+      margin-bottom:28px;
+      text-transform:uppercase;
     }
-    h1 .gradient{
-      background:linear-gradient(135deg,#3b82f6,#8b5cf6,#ec4899);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-      background-clip:text;
+    .hero-sub{
+      font-size:16px;color:var(--muted);
+      max-width:540px;line-height:1.7;
+      margin-bottom:48px;
     }
-    .subtitle{
-      font-size:clamp(16px,2.5vw,20px);color:var(--muted);
-      max-width:600px;margin:0 auto 48px;line-height:1.6;
-    }
-    .cta-group{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
-    .btn{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:14px 28px;border-radius:var(--radius);font-size:15px;font-weight:600;
-      border:none;cursor:pointer;transition:all .2s;text-decoration:none;
-    }
-    .btn-primary{background:var(--btn-primary-bg);color:var(--btn-primary-color)}
-    .btn-primary:hover{background:var(--btn-primary-hover);text-decoration:none;transform:translateY(-1px)}
-    .btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-    .btn-secondary:hover{border-color:var(--muted);text-decoration:none;transform:translateY(-1px)}
 
-    .install-cmd{
-      margin:48px auto 0;max-width:700px;
-      background:var(--surface);border:1px solid var(--border);
-      border-radius:var(--radius);padding:16px 24px;
-      font-family:'SF Mono',SFMono-Regular,Menlo,monospace;font-size:14px;
+    /* INSTALL BLOCK */
+    .install-block{
+      border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow-lg);
+      padding:0;margin-bottom:16px;
+      max-width:720px;
+      transition:box-shadow .15s,transform .15s;
+    }
+    .install-block:hover{
+      box-shadow:var(--shadow-hover);
+      transform:translate(2px,2px);
+    }
+    .install-header{
+      background:var(--text);color:var(--bg);
+      padding:10px 20px;font-size:12px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.08em;
+      border-bottom:var(--bw) solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .install-header span{opacity:.6}
+    .install-body{
+      padding:20px;background:var(--surface);
       display:flex;align-items:center;justify-content:space-between;gap:16px;
-      color:var(--muted);
     }
-    .install-cmd code{color:var(--text);word-break:break-all}
-    .install-cmd button{
-      background:none;border:1px solid var(--border);border-radius:8px;
-      color:var(--muted);cursor:pointer;padding:6px 12px;font-size:13px;
-      transition:all .2s;flex-shrink:0;font-family:inherit;
+    .install-body code{
+      font-family:var(--mono);font-size:13px;
+      color:var(--text);word-break:break-all;line-height:1.5;
     }
-    .install-cmd button:hover{border-color:var(--muted);color:var(--text)}
+    .copy-btn{
+      font-family:var(--mono);
+      background:var(--text);color:var(--bg);
+      border:none;padding:8px 16px;font-size:12px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.06em;
+      cursor:pointer;flex-shrink:0;
+      transition:opacity .15s;
+    }
+    .copy-btn:hover{opacity:.8}
 
-    .tip-inline{
-      margin:20px auto 0;max-width:700px;
-      display:flex;align-items:center;justify-content:center;gap:12px;
+    .tip-row{
+      max-width:720px;
+      display:flex;align-items:center;gap:12px;
+      font-size:12px;color:var(--muted);
+      text-transform:uppercase;letter-spacing:.06em;
+      margin-bottom:80px;
     }
-    .tip-inline a{
-      display:inline-flex;align-items:center;gap:6px;
-      font-size:13px;color:var(--muted);transition:color .2s;
-    }
-    .tip-inline a:hover{color:var(--accent);text-decoration:none}
-    .tip-inline span{font-size:13px;color:var(--muted)}
-
-    .demo{
-      max-width:800px;margin:80px auto 0;
-      background:var(--surface);border:1px solid var(--border);
-      border-radius:16px;padding:32px;text-align:center;
-      position:relative;overflow:hidden;
-    }
-    .demo::before{
-      content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
-      background:radial-gradient(circle at center,var(--demo-glow),transparent 60%);
-      pointer-events:none;
-    }
-    .demo-steps{
-      display:flex;justify-content:center;gap:48px;flex-wrap:wrap;
-      position:relative;z-index:1;
-    }
-    .step{display:flex;flex-direction:column;align-items:center;gap:12px}
-    .step-icon{
-      width:56px;height:56px;border-radius:14px;
-      background:var(--step-bg);border:1px solid var(--step-border);
-      display:flex;align-items:center;justify-content:center;font-size:24px;
-    }
-    .step-label{font-size:14px;color:var(--muted)}
-    .step-arrow{
-      color:var(--border);font-size:24px;align-self:center;
-      display:flex;align-items:center;
+    .tip-row a{
+      color:var(--accent);font-weight:600;
+      display:inline-flex;align-items:center;gap:5px;
     }
 
-    .features{max-width:1100px;margin:0 auto;padding:120px 24px}
-    .section-label{
-      font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--accent);margin-bottom:16px;text-align:center;
+    /* HOW IT WORKS */
+    .how{
+      max-width:1000px;margin:0 auto;padding:0 24px 100px;
     }
-    .section-title{
-      font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-.02em;
-      text-align:center;margin-bottom:64px;
+    .section-tag{
+      font-size:12px;font-weight:600;text-transform:uppercase;
+      letter-spacing:.1em;color:var(--accent);margin-bottom:20px;
     }
-    .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
-    .feature-card{
-      background:var(--surface);border:1px solid var(--border);
-      border-radius:var(--radius);padding:28px;
-      transition:border-color .2s;
+    h2{
+      font-family:var(--display);
+      font-size:clamp(28px,5vw,48px);font-weight:800;
+      letter-spacing:-.03em;line-height:1;
+      text-transform:uppercase;margin-bottom:48px;
     }
-    .feature-card:hover{border-color:var(--muted)}
-    .feature-icon{font-size:28px;margin-bottom:16px}
-    .feature-card h3{font-size:17px;font-weight:600;margin-bottom:8px}
-    .feature-card p{font-size:14px;color:var(--muted);line-height:1.6}
+    .steps-row{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+      border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow);
+    }
+    .step-card{
+      padding:32px 24px;
+      border-right:var(--bw) solid var(--border);
+      background:var(--surface);
+    }
+    .step-card:last-child{border-right:none}
+    .step-num{
+      font-family:var(--display);font-size:48px;font-weight:800;
+      line-height:1;margin-bottom:12px;color:var(--accent);
+    }
+    .step-title{
+      font-size:14px;font-weight:600;text-transform:uppercase;
+      letter-spacing:.06em;margin-bottom:8px;
+    }
+    .step-desc{font-size:13px;color:var(--muted);line-height:1.6}
 
-    .config{max-width:1100px;margin:0 auto;padding:80px 24px 120px}
-    .config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:32px}
-    .config-block{
-      background:var(--surface);border:1px solid var(--border);
-      border-radius:var(--radius);padding:24px;
+    /* FEATURES */
+    .features{max-width:1000px;margin:0 auto;padding:0 24px 100px}
+    .feature-grid{
+      display:grid;grid-template-columns:repeat(2,1fr);gap:0;
+      border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow);
     }
-    .config-block h3{font-size:15px;font-weight:600;margin-bottom:16px}
-    .config-block pre{
-      background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
-      padding:16px;font-size:13px;overflow-x:auto;
-      font-family:'SF Mono',SFMono-Regular,Menlo,monospace;
-      color:var(--muted);line-height:1.7;
+    .feature-cell{
+      padding:28px 24px;
+      background:var(--surface);
+      border-bottom:var(--bw) solid var(--border);
+      border-right:var(--bw) solid var(--border);
     }
-    .config-block pre span{color:var(--text)}
+    .feature-cell:nth-child(2n){border-right:none}
+    .feature-cell:nth-last-child(-n+2){border-bottom:none}
+    .feature-cell h3{
+      font-family:var(--display);font-size:18px;font-weight:800;
+      text-transform:uppercase;letter-spacing:-.01em;
+      margin-bottom:6px;
+    }
+    .feature-cell p{font-size:13px;color:var(--muted);line-height:1.6}
+    .feature-marker{
+      display:inline-block;width:10px;height:10px;
+      background:var(--highlight);border:var(--bw) solid var(--border);
+      margin-right:8px;vertical-align:middle;
+    }
 
+    /* CONFIG */
+    .config{max-width:1000px;margin:0 auto;padding:0 24px 100px}
+    .config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0}
+    .config-card{
+      border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow);
+      background:var(--surface);
+      transition:box-shadow .15s,transform .15s;
+    }
+    .config-card:first-child{
+      border-right:0;
+    }
+    .config-card:hover{
+      box-shadow:var(--shadow-hover);
+      transform:translate(2px,2px);
+    }
+    .config-card-header{
+      background:var(--text);color:var(--bg);
+      padding:10px 20px;font-size:12px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.08em;
+      border-bottom:var(--bw) solid var(--border);
+    }
+    .config-card pre{
+      padding:20px;font-family:var(--mono);font-size:13px;
+      color:var(--muted);line-height:1.8;overflow-x:auto;
+      background:var(--code-bg);margin:0;
+    }
+    .config-card pre b{color:var(--text);font-weight:500}
+
+    /* INSTALL FLOW */
+    .flow{max-width:1000px;margin:0 auto;padding:0 24px 100px}
+    .flow-steps{
+      border:var(--bw) solid var(--border);
+      box-shadow:var(--shadow);
+      background:var(--surface);
+    }
+    .flow-step{
+      display:flex;align-items:baseline;gap:20px;
+      padding:20px 24px;
+      border-bottom:var(--bw) solid var(--border);
+    }
+    .flow-step:last-child{border-bottom:none}
+    .flow-num{
+      font-family:var(--display);font-size:20px;font-weight:800;
+      color:var(--accent);flex-shrink:0;width:32px;
+    }
+    .flow-text{font-size:14px;line-height:1.6}
+    .flow-text strong{font-weight:600}
+    .flow-text code{
+      background:var(--code-bg);
+      border:1px solid var(--border);
+      padding:2px 6px;font-size:12px;
+    }
+
+    /* FOOTER */
     footer{
-      border-top:1px solid var(--border);
-      max-width:1100px;margin:0 auto;padding:32px 24px;
+      border-top:var(--bw) solid var(--border);
+      max-width:1000px;margin:0 auto;padding:24px;
       display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
     }
-    footer p{font-size:13px;color:var(--muted)}
+    footer p{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
     .footer-links{display:flex;gap:20px}
-    .footer-links a{font-size:13px;color:var(--muted)}
+    .footer-links a{
+      font-size:12px;color:var(--muted);font-weight:600;
+      text-transform:uppercase;letter-spacing:.06em;
+    }
     .footer-links a:hover{color:var(--text)}
 
-    @media(max-width:640px){
-      .demo-steps{gap:24px}
-      .step-arrow{display:none}
-      .nav-links{gap:16px}
-      .cta-group{flex-direction:column;align-items:center}
-      .btn{width:100%;max-width:280px;justify-content:center}
+    @media(max-width:700px){
+      .steps-row{grid-template-columns:1fr}
+      .step-card{border-right:none;border-bottom:var(--bw) solid var(--border)}
+      .step-card:last-child{border-bottom:none}
+      .feature-grid{grid-template-columns:1fr}
+      .feature-cell{border-right:none}
+      .feature-cell:nth-last-child(-n+2){border-bottom:var(--bw) solid var(--border)}
+      .feature-cell:last-child{border-bottom:none}
+      .config-grid{grid-template-columns:1fr}
+      .config-card:first-child{border-right:var(--bw) solid var(--border);border-bottom:0}
+      .nav-links{gap:14px}
+      .nav-links a{font-size:11px}
     }
   </style>
 </head>
@@ -260,8 +348,21 @@
 
 <nav>
   <div class="nav-inner">
-    <div class="logo"><svg class="logo-icon" width="22" height="22" viewBox="0 0 120 120" fill="none"><rect width="120" height="120" rx="26" fill="var(--btn-primary-bg)"/><g transform="translate(60,60)"><rect x="-38" y="-10" width="10" height="20" rx="4" fill="var(--btn-primary-color)"/><rect x="-19" y="-20" width="10" height="40" rx="4" fill="var(--btn-primary-color)"/><rect x="-5" y="-30" width="10" height="60" rx="4" fill="var(--btn-primary-color)"/><rect x="9" y="-20" width="10" height="40" rx="4" fill="var(--btn-primary-color)"/><rect x="28" y="-10" width="10" height="20" rx="4" fill="var(--btn-primary-color)"/></g></svg> open-wispr <span>for macOS</span></div>
+    <div class="logo">
+      <svg class="logo-icon" width="24" height="24" viewBox="0 0 120 120" fill="none">
+        <rect width="120" height="120" fill="var(--text)"/>
+        <g transform="translate(60,60)">
+          <rect x="-38" y="-10" width="10" height="20" fill="var(--bg)"/>
+          <rect x="-19" y="-20" width="10" height="40" fill="var(--bg)"/>
+          <rect x="-5" y="-30" width="10" height="60" fill="var(--bg)"/>
+          <rect x="9" y="-20" width="10" height="40" fill="var(--bg)"/>
+          <rect x="28" y="-10" width="10" height="20" fill="var(--bg)"/>
+        </g>
+      </svg>
+      open-wispr
+    </div>
     <div class="nav-links">
+      <a href="#how">How</a>
       <a href="#features">Features</a>
       <a href="#install">Install</a>
       <a href="https://github.com/human37/open-wispr">GitHub</a>
@@ -270,113 +371,140 @@
 </nav>
 
 <section class="hero">
-  <div class="badge"><span class="dot"></span> 100% local &middot; no cloud &middot; no telemetry</div>
-  <h1>Voice to text,<br><span class="gradient">entirely on-device.</span></h1>
-  <p class="subtitle">Hold a key, speak, release — your words appear at the cursor. Powered by whisper.cpp with Metal acceleration. Nothing ever leaves your Mac.</p>
-  <div class="cta-group">
-    <a href="#install" class="btn btn-primary">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Install
-    </a>
-    <a href="#features" class="btn btn-secondary">Learn more</a>
+  <div class="tag">100% local / no cloud / MIT license</div>
+  <h1>Voice to text.<br>On your Mac.<br>That's it.</h1>
+  <p class="hero-sub">Hold a key, speak, release. Your words appear at the cursor. Powered by whisper.cpp with Metal acceleration. No audio or text ever leaves your machine.</p>
+
+  <div id="install" class="install-block">
+    <div class="install-header">
+      <span>Terminal</span>
+      One command install
+    </div>
+    <div class="install-body">
+      <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"</code>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim());this.textContent='COPIED';setTimeout(()=>this.textContent='COPY',2000)">COPY</button>
+    </div>
   </div>
 
-  <div id="install" class="install-cmd">
-    <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"</code>
-    <button onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim());this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)">Copy</button>
-  </div>
-
-  <div class="tip-inline">
-    <span>Free &amp; open source.</span>
+  <div class="tip-row">
+    <span>Free &amp; open source forever.</span>
     <a href="https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-      Leave a tip
+      Leave a tip &rarr;
     </a>
   </div>
+</section>
 
-  <div class="demo">
-    <div class="demo-steps">
-      <div class="step">
-        <div class="step-icon">🌐</div>
-        <div class="step-label">Hold Globe key</div>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-icon">🎙</div>
-        <div class="step-label">Speak</div>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-icon">✨</div>
-        <div class="step-label">Text appears</div>
-      </div>
+<section id="how" class="how">
+  <p class="section-tag">How it works</p>
+  <h2>Three steps. Zero config.</h2>
+  <div class="steps-row">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-title">Hold</div>
+      <div class="step-desc">Press and hold the Globe key. Recording starts instantly. A waveform animates in your menu bar.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-title">Speak</div>
+      <div class="step-desc">Talk naturally. Whisper runs on your GPU via Metal. No network latency, no cloud processing.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-title">Release</div>
+      <div class="step-desc">Let go. Transcribed text is typed at your cursor. Works in any app. The temp audio file is deleted.</div>
+    </div>
+  </div>
+</section>
+
+<section class="flow">
+  <p class="section-tag">Install flow</p>
+  <h2>Guided setup.<br>Under a minute.</h2>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="flow-num">01</div>
+      <div class="flow-text"><strong>Paste the install command.</strong> It taps the Homebrew formula and installs the binary. Everything downloads behind a spinner.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">02</div>
+      <div class="flow-text"><strong>Grant Accessibility permission.</strong> The installer opens System Settings for you and waits. Toggle the switch, come back.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">03</div>
+      <div class="flow-text"><strong>Grant Microphone permission.</strong> A system dialog appears. Click Allow. One time only.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">04</div>
+      <div class="flow-text"><strong>Model downloads automatically.</strong> The default <code>base.en</code> model (142 MB) downloads on first launch. You can change this later.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">05</div>
+      <div class="flow-text"><strong>Service starts.</strong> A waveform icon appears in your menu bar. Hold Globe, speak, release. Done.</div>
     </div>
   </div>
 </section>
 
 <section id="features" class="features">
-  <p class="section-label">Features</p>
-  <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+  <p class="section-tag">Features</p>
+  <h2>Nothing extra.<br>Nothing missing.</h2>
   <div class="feature-grid">
-    <div class="feature-card">
-      <div class="feature-icon">🔒</div>
-      <h3>Completely private</h3>
+    <div class="feature-cell">
+      <h3><span class="feature-marker"></span>Private</h3>
       <p>Audio is recorded to a temp file, transcribed locally, and deleted. Zero network requests. No accounts, no telemetry, no cloud.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon">⚡</div>
-      <h3>Metal accelerated</h3>
-      <p>Runs on Apple Silicon GPU via whisper.cpp. Transcription is fast — real-time or faster on M1 and above.</p>
+    <div class="feature-cell">
+      <h3><span class="feature-marker"></span>Fast</h3>
+      <p>Runs on Apple Silicon GPU via whisper.cpp and Metal. Transcription is real-time or faster on M1 and above.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon">🎯</div>
-      <h3>Works everywhere</h3>
-      <p>Text appears at your cursor in any app — editors, browsers, terminals, Slack, email. No app-specific integrations needed.</p>
+    <div class="feature-cell">
+      <h3><span class="feature-marker"></span>Universal</h3>
+      <p>Text appears at your cursor in any app. Editors, browsers, terminals, Slack, email. No plugins or integrations needed.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon">⌨️</div>
-      <h3>Configurable hotkey</h3>
-      <p>Use Globe, Right Option, F5, or any key combo. One command to change, one restart to apply.</p>
+    <div class="feature-cell">
+      <h3><span class="feature-marker"></span>Configurable</h3>
+      <p>Choose your hotkey, model size, and language. One command to change, one restart to apply. Everything in the terminal.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon">🧠</div>
-      <h3>Multiple models</h3>
-      <p>Choose from tiny (75 MB, fastest) to medium (1.5 GB, most accurate). Switch with a single command.</p>
+    <div class="feature-cell">
+      <h3><span class="feature-marker"></span>Multilingual</h3>
+      <p>Supports 99 languages via Whisper's multilingual models. Set an ISO 639-1 code in the config and use a non-.en model.</p>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon">🌍</div>
-      <h3>Multilingual</h3>
-      <p>Supports 99 languages via Whisper's multilingual models. Set your language code and go.</p>
+    <div class="feature-cell">
+      <h3><span class="feature-marker"></span>Lightweight</h3>
+      <p>No Electron. No app bundle to drag. Installs via Homebrew, runs as a background service. Sits quietly in your menu bar.</p>
     </div>
   </div>
 </section>
 
 <section class="config">
+  <p class="section-tag">Configuration</p>
+  <h2>Two commands.<br>Everything changes.</h2>
   <div class="config-grid">
-    <div class="config-block">
-      <h3>Change hotkey</h3>
-      <pre><span>open-wispr set-hotkey globe</span>          # default
-<span>open-wispr set-hotkey rightoption</span>   # Right Option
-<span>open-wispr set-hotkey f5</span>            # F5
-<span>open-wispr set-hotkey ctrl+space</span>    # Ctrl + Space
+    <div class="config-card">
+      <div class="config-card-header">Hotkey</div>
+      <pre><b>open-wispr set-hotkey globe</b>          # default
+<b>open-wispr set-hotkey rightoption</b>   # Right Option
+<b>open-wispr set-hotkey f5</b>            # F5
+<b>open-wispr set-hotkey ctrl+space</b>    # Ctrl + Space
+
 brew services restart open-wispr</pre>
     </div>
-    <div class="config-block">
-      <h3>Switch model</h3>
-      <pre><span>open-wispr set-model tiny.en</span>       # 75 MB
-<span>open-wispr set-model base.en</span>       # 142 MB (default)
-<span>open-wispr set-model small.en</span>      # 466 MB
-<span>open-wispr set-model medium.en</span>     # 1.5 GB
+    <div class="config-card">
+      <div class="config-card-header">Model</div>
+      <pre><b>open-wispr set-model tiny.en</b>        # 75 MB, fastest
+<b>open-wispr set-model base.en</b>        # 142 MB, default
+<b>open-wispr set-model small.en</b>       # 466 MB, accurate
+<b>open-wispr set-model medium.en</b>      # 1.5 GB, best
+
 brew services restart open-wispr</pre>
     </div>
   </div>
 </section>
 
 <footer>
-  <p>&copy; 2025 human37. MIT License.</p>
+  <p>&copy; 2025 human37 / MIT License</p>
   <div class="footer-links">
     <a href="https://github.com/human37/open-wispr">Source</a>
     <a href="https://github.com/human37/open-wispr/issues">Issues</a>
+    <a href="https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00">Tip</a>
   </div>
 </footer>
 
