@@ -1,5 +1,6 @@
 .build/
 .swiftpm/
 *.xcodeproj
+*.app
 .DS_Store
 .beads

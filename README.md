@@ -18,6 +18,7 @@ git clone https://github.com/human37/open-wispr.git
 cd open-wispr
 swift build -c release
 cp .build/release/open-wispr /usr/local/bin/
+bash scripts/bundle-app.sh .build/release/open-wispr /Applications/OpenWispr.app
 ```
 
 ### Dependencies
@@ -52,11 +53,11 @@ open-wispr set-hotkey f5            # F5 key
 open-wispr set-hotkey ctrl+space    # Ctrl + Space
 ```
 
-### 3. Grant Accessibility permissions
+### 3. Grant permissions
 
-open-wispr needs Accessibility access to capture global hotkeys and type text.
+On first run, macOS will automatically prompt for **Microphone** and **Accessibility** access. Grant both.
 
-**System Settings → Privacy & Security → Accessibility** → add your terminal app (or the `open-wispr` binary).
+OpenWispr appears as its own entry in **System Settings → Privacy & Security → Accessibility** — just toggle it on.
 
 ### 4. Start
 

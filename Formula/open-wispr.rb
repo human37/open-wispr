@@ -1,7 +1,7 @@
 class OpenWispr < Formula
   desc "Push-to-talk voice dictation for macOS using Whisper"
   homepage "https://github.com/human37/open-wispr"
-  url "https://github.com/human37/open-wispr.git", tag: "v0.2.0"
+  url "https://github.com/human37/open-wispr.git", tag: "v0.3.0"
   license "MIT"
 
   depends_on "whisper-cpp"
@@ -10,10 +10,16 @@ class OpenWispr < Formula
   def install
     system "swift", "build", "-c", "release", "--disable-sandbox"
     bin.install ".build/release/open-wispr"
+    system "bash", "scripts/bundle-app.sh", ".build/release/open-wispr", "OpenWispr.app", version.to_s
+    prefix.install "OpenWispr.app"
+  end
+
+  def post_install
+    ln_sf prefix/"OpenWispr.app", "/Applications/OpenWispr.app"
   end
 
   service do
-    run [opt_bin/"open-wispr", "start"]
+    run [opt_prefix/"OpenWispr.app/Contents/MacOS/open-wispr", "start"]
     keep_alive true
     log_path var/"log/open-wispr.log"
     error_log_path var/"log/open-wispr.log"
@@ -22,18 +28,14 @@ class OpenWispr < Formula
 
   def caveats
     <<~EOS
-      open-wispr requires Accessibility permissions for global hotkey capture.
-      Go to System Settings → Privacy & Security → Accessibility
-      and add the open-wispr binary:
-        #{opt_bin}/open-wispr
+      OpenWispr.app has been linked to /Applications.
+      On first run, macOS will prompt for Accessibility and Microphone permissions.
+      Grant both, then restart the service.
 
       Quick start:
         open-wispr download-model base.en
         open-wispr set-hotkey globe
         brew services start open-wispr
-
-      Or run manually:
-        open-wispr start
     EOS
   end
 
