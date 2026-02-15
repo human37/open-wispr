@@ -45,12 +45,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.statusBar.state = .waitingForPermission
                 self.statusBar.buildMenu()
             }
+            print("Accessibility: not granted")
             Permissions.promptAccessibility()
+            Permissions.openAccessibilitySettings()
             print("Waiting for Accessibility permission...")
-            print("Enable OpenWispr in System Settings → Privacy & Security → Accessibility")
             while !AXIsProcessTrusted() {
                 Thread.sleep(forTimeInterval: 2)
             }
+            print("Accessibility: granted")
+        } else {
             print("Accessibility: granted")
         }
 

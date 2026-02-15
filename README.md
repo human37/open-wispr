@@ -7,15 +7,10 @@ Powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with Metal acc
 ## Install
 
 ```bash
-brew tap human37/open-wispr
-brew install open-wispr
-brew services start open-wispr
+bash <(curl -s https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)
 ```
 
-On first launch:
-1. Grant **Microphone** access when prompted
-2. Enable **OpenWispr** in **System Settings → Privacy & Security → Accessibility**
-3. The Whisper model downloads automatically (~142 MB, one time only)
+The script handles everything: installs via Homebrew, walks you through granting permissions, downloads the Whisper model, and starts the service. You'll see live feedback as each step completes.
 
 A waveform icon appears in your menu bar when it's running.
 
@@ -65,6 +60,7 @@ Edit `~/.config/open-wispr/config.json` and set `language` to an [ISO 639-1 code
 | Recording | Animated waveform (bars dance) |
 | Transcribing | Bouncing dots |
 | Downloading model | Animated download arrow |
+| Waiting for permission | Lock |
 
 ## Privacy
 
@@ -79,6 +75,28 @@ brew install whisper-cpp
 swift build -c release
 .build/release/open-wispr start
 ```
+
+## Releasing a new version
+
+1. Bump the version string in two files:
+   - `Sources/OpenWispr/main.swift` — `static let version = "X.Y.Z"`
+   - `Formula/open-wispr.rb` — `tag: "vX.Y.Z"`
+
+2. Run the deploy script:
+   ```bash
+   bash scripts/deploy.sh X.Y.Z
+   ```
+
+   This will:
+   - Verify the version in `main.swift` matches
+   - Build a release binary
+   - Commit, tag `vX.Y.Z`, and push the main repo
+   - Update and push the [tap formula](https://github.com/human37/homebrew-open-wispr)
+
+3. Users update with:
+   ```bash
+   brew update && brew upgrade open-wispr
+   ```
 
 ## License
 
