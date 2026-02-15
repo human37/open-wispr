@@ -1,0 +1,118 @@
+import Foundation
+
+class Transcriber {
+    private let modelSize: String
+    private let language: String
+
+    init(modelSize: String = "base.en", language: String = "en") {
+        self.modelSize = modelSize
+        self.language = language
+    }
+
+    func transcribe(audioURL: URL) throws -> String {
+        let whisperPath = findWhisperCLI()
+        guard let whisperPath = whisperPath else {
+            throw TranscriberError.whisperNotFound
+        }
+
+        let modelPath = findModel()
+        guard let modelPath = modelPath else {
+            throw TranscriberError.modelNotFound(modelSize)
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: whisperPath)
+        process.arguments = [
+            "-m", modelPath,
+            "-f", audioURL.path,
+            "-l", language,
+            "--no-timestamps",
+            "-nt",
+        ]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+
+        try process.run()
+        process.waitUntilExit()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if process.terminationStatus != 0 {
+            throw TranscriberError.transcriptionFailed
+        }
+
+        return output
+    }
+
+    private func findWhisperCLI() -> String? {
+        let candidates = [
+            "/opt/homebrew/bin/whisper-cpp",
+            "/usr/local/bin/whisper-cpp",
+            "/opt/homebrew/bin/whisper",
+            "/usr/local/bin/whisper",
+        ]
+
+        for path in candidates {
+            if FileManager.default.fileExists(atPath: path) {
+                return path
+            }
+        }
+
+        let which = Process()
+        which.executableURL = URL(fileURLWithPath: "/usr/bin/which")
+        which.arguments = ["whisper-cpp"]
+        let pipe = Pipe()
+        which.standardOutput = pipe
+        which.standardError = Pipe()
+        try? which.run()
+        which.waitUntilExit()
+
+        let result = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let result = result, !result.isEmpty {
+            return result
+        }
+
+        return nil
+    }
+
+    private func findModel() -> String? {
+        let modelFileName = "ggml-\(modelSize).bin"
+
+        let candidates = [
+            "\(Config.configDir.path)/models/\(modelFileName)",
+            "/opt/homebrew/share/whisper-cpp/models/\(modelFileName)",
+            "/usr/local/share/whisper-cpp/models/\(modelFileName)",
+            "\(FileManager.default.homeDirectoryForCurrentUser.path)/.cache/whisper/\(modelFileName)",
+        ]
+
+        for path in candidates {
+            if FileManager.default.fileExists(atPath: path) {
+                return path
+            }
+        }
+
+        return nil
+    }
+}
+
+enum TranscriberError: LocalizedError {
+    case whisperNotFound
+    case modelNotFound(String)
+    case transcriptionFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .whisperNotFound:
+            return "whisper-cpp not found. Install it with: brew install whisper-cpp"
+        case .modelNotFound(let size):
+            return "Whisper model '\(size)' not found. Download it with: open-wispr download-model \(size)"
+        case .transcriptionFailed:
+            return "Transcription failed"
+        }
+    }
+}
