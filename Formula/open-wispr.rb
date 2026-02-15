@@ -15,7 +15,9 @@ class OpenWispr < Formula
   end
 
   def post_install
-    ln_sf prefix/"OpenWispr.app", "/Applications/OpenWispr.app"
+    target = Pathname.new("#{Dir.home}/Applications/OpenWispr.app")
+    target.dirname.mkpath
+    ln_sf prefix/"OpenWispr.app", target
   end
 
   service do
