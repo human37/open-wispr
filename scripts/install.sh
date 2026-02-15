@@ -103,7 +103,7 @@ step "Removing previous installation"
 start_spin "Cleaning up..."
 
 run_quiet brew services stop open-wispr || true
-run_quiet brew uninstall open-wispr || true
+run_quiet brew uninstall --force open-wispr || true
 run_quiet brew untap human37/open-wispr || true
 run_quiet tccutil reset Accessibility com.human37.open-wispr || true
 rm -rf ~/Applications/OpenWispr.app
@@ -120,7 +120,7 @@ stop_spin
 ok "Tapped ${DIM}human37/open-wispr${NC}"
 
 start_spin "Building from source (this takes a minute)..."
-run_quiet brew install open-wispr || die "Failed to install. Run 'brew install open-wispr' manually."
+run_quiet brew install open-wispr || run_quiet brew reinstall open-wispr || die "Failed to install. Run 'brew install open-wispr' manually."
 stop_spin
 ok "Installed"
 
