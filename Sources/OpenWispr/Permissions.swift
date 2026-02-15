@@ -3,43 +3,18 @@ import ApplicationServices
 import Foundation
 
 struct Permissions {
-    static func ensureAccessibility() -> Bool {
-        if AXIsProcessTrusted() { return true }
-
-        print("  Accessibility: not granted")
-        print("  Open System Settings → Privacy & Security → Accessibility")
-        print("  Enable 'OpenWispr', then it will start automatically.")
-        print("")
-
-        while !AXIsProcessTrusted() {
-            Thread.sleep(forTimeInterval: 2)
-        }
-
-        print("  Accessibility: granted")
-        return true
-    }
-
-    static func ensureMicrophone() -> Bool {
+    static func ensureMicrophone() {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
-            return true
+            return
         case .notDetermined:
             let semaphore = DispatchSemaphore(value: 0)
-            var granted = false
-            AVCaptureDevice.requestAccess(for: .audio) { result in
-                granted = result
+            AVCaptureDevice.requestAccess(for: .audio) { _ in
                 semaphore.signal()
             }
             semaphore.wait()
-            return granted
         default:
-            return false
+            print("Microphone denied. Grant in System Settings → Privacy & Security → Microphone")
         }
-    }
-
-    static func ensureAll() {
-        let mic = ensureMicrophone()
-        print("  Microphone: \(mic ? "granted" : "denied")")
-        let _ = ensureAccessibility()
     }
 }

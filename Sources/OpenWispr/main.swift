@@ -32,15 +32,6 @@ func printUsage() {
 }
 
 func cmdStart() {
-    _ = Config.load()
-
-    Permissions.ensureAll()
-
-    if Transcriber.findWhisperBinary() == nil {
-        print("Error: whisper-cpp not found. Install it with: brew install whisper-cpp")
-        exit(1)
-    }
-
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
 
