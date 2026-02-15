@@ -60,6 +60,25 @@ open-wispr needs Accessibility access to capture global hotkeys and type text.
 
 ### 4. Start
 
+**As a background service (recommended):**
+
+```bash
+brew services start open-wispr
+```
+
+This runs open-wispr automatically on login. Manage it with:
+
+```bash
+brew services start open-wispr    # Start and enable on login
+brew services stop open-wispr     # Stop and disable
+brew services restart open-wispr  # Restart (e.g. after config change)
+brew services info open-wispr     # Check status
+```
+
+Logs are written to `/opt/homebrew/var/log/open-wispr.log`.
+
+**Or run manually in the foreground:**
+
 ```bash
 open-wispr start
 ```

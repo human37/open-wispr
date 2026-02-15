@@ -12,15 +12,27 @@ class OpenWispr < Formula
     bin.install ".build/release/open-wispr"
   end
 
+  service do
+    run [opt_bin/"open-wispr", "start"]
+    keep_alive true
+    log_path var/"log/open-wispr.log"
+    error_log_path var/"log/open-wispr.log"
+    process_type :interactive
+  end
+
   def caveats
     <<~EOS
       open-wispr requires Accessibility permissions for global hotkey capture.
       Go to System Settings → Privacy & Security → Accessibility
-      and add your terminal app or the open-wispr binary.
+      and add the open-wispr binary:
+        #{opt_bin}/open-wispr
 
       Quick start:
         open-wispr download-model base.en
-        open-wispr set-hotkey rightoption
+        open-wispr set-hotkey globe
+        brew services start open-wispr
+
+      Or run manually:
         open-wispr start
     EOS
   end
