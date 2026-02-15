@@ -1,7 +1,7 @@
 class OpenWispr < Formula
   desc "Push-to-talk voice dictation for macOS using Whisper"
   homepage "https://github.com/human37/open-wispr"
-  url "https://github.com/human37/open-wispr.git", tag: "v0.5.0"
+  url "https://github.com/human37/open-wispr.git", tag: "v0.5.1"
   license "MIT"
 
   depends_on "whisper-cpp"
@@ -9,8 +9,8 @@ class OpenWispr < Formula
 
   def install
     system "swift", "build", "-c", "release", "--disable-sandbox"
-    bin.install ".build/release/open-wispr"
     system "bash", "scripts/bundle-app.sh", ".build/release/open-wispr", "OpenWispr.app", version.to_s
+    bin.install ".build/release/open-wispr"
     prefix.install "OpenWispr.app"
   end
 
