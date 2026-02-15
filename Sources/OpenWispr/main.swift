@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 enum OpenWispr {
-    static let version = "0.5.0"
+    static let version = "0.6.0"
 }
 
 let version = OpenWispr.version
@@ -32,7 +32,7 @@ func printUsage() {
 }
 
 func cmdStart() {
-    let config = Config.load()
+    _ = Config.load()
 
     if !Permissions.ensureAll() {
         exit(1)
@@ -41,16 +41,6 @@ func cmdStart() {
     if Transcriber.findWhisperBinary() == nil {
         print("Error: whisper-cpp not found. Install it with: brew install whisper-cpp")
         exit(1)
-    }
-
-    if !Transcriber.modelExists(modelSize: config.modelSize) {
-        print("Downloading \(config.modelSize) model (first run only)...")
-        do {
-            try ModelDownloader.download(modelSize: config.modelSize)
-        } catch {
-            print("Error downloading model: \(error.localizedDescription)")
-            exit(1)
-        }
     }
 
     let app = NSApplication.shared
