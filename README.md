@@ -1,6 +1,6 @@
 # open-wispr
 
-**[open-wispr.pages.dev](https://open-wispr.pages.dev)**
+**[open-wispr.com](https://open-wispr.com)**
 
 Local, private voice dictation for macOS. Hold a key, speak, release — your words appear at the cursor. Everything runs on-device. No audio or text ever leaves your machine.
 
