@@ -551,28 +551,37 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>Two commands.</h2>
+  <h2>One file. Four options.</h2>
   <div class="config-grid">
     <div class="config-card">
-      <div class="card-header">Hotkey</div>
-      <pre><b>open-wispr set-hotkey globe</b>          # default
-<b>open-wispr set-hotkey rightoption</b>   # Right Option
-<b>open-wispr set-hotkey f5</b>            # F5
-<b>open-wispr set-hotkey ctrl+space</b>    # Ctrl + Space
-
-brew services restart open-wispr</pre>
+      <div class="card-header">~/.config/open-wispr/config.json</div>
+      <pre>{
+  "<b>hotkey</b>": {
+    "<b>keyCode</b>": 63,
+    "<b>modifiers</b>": []
+  },
+  "<b>modelSize</b>": "base.en",
+  "<b>language</b>": "en"
+}</pre>
     </div>
     <div class="config-card">
-      <div class="card-header">Model</div>
-      <pre><b>open-wispr set-model tiny.en</b>        # 75 MB, fastest
-<b>open-wispr set-model base.en</b>        # 142 MB, default
-<b>open-wispr set-model small.en</b>       # 466 MB, accurate
-<b>open-wispr set-model medium.en</b>      # 1.5 GB, best
+      <div class="card-header">Options</div>
+      <pre><b>hotkey</b>     Globe (63), Right Option (61),
+           F5 (96), or any key code
 
-brew services restart open-wispr</pre>
+<b>modifiers</b>  "cmd", "ctrl", "shift", "opt"
+           Combine for chords: ["ctrl","shift"]
+
+<b>modelSize</b>  tiny.en (75 MB, fastest)
+           base.en (142 MB, default)
+           small.en (466 MB, accurate)
+           medium.en (1.5 GB, best)
+
+<b>language</b>   Any ISO 639-1 code. Use a
+           non-.en model for other languages.</pre>
     </div>
   </div>
-  <p class="config-note">Or edit the config file directly at <code>~/.config/open-wispr/config.json</code> and restart the service.</p>
+  <p class="config-note">Edit the file, then restart: <code>brew services restart open-wispr</code></p>
 </section>
 
 <section class="testimonial">
