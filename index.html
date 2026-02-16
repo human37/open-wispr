@@ -182,11 +182,19 @@
       padding:14px 0;height:68px;
       font-family:var(--mono);font-size:13px;line-height:1.7;
       overflow:hidden;
+      display:flex;align-items:baseline;gap:10px;
     }
     .demo-hint{
       color:var(--muted);font-size:12px;font-style:italic;
-      display:inline;
+      flex-shrink:0;
     }
+    .demo-output{
+      flex:1;min-width:0;
+      border-left:3px solid var(--accent);
+      padding-left:12px;
+      opacity:0;transition:opacity .2s;
+    }
+    .demo-output.visible{opacity:1}
     .demo-text{white-space:pre-wrap}
     .demo-cursor{
       display:inline-block;width:2px;height:1.1em;
@@ -403,7 +411,7 @@
 
   <div class="demo-inline">
     <div class="demo-editor">
-      <span class="demo-hint" id="demoHint"></span><span class="demo-text" id="demoText"></span><span class="demo-cursor" id="demoCursor"></span>
+      <span class="demo-hint" id="demoHint"></span><span class="demo-output"><span class="demo-text" id="demoText"></span><span class="demo-cursor" id="demoCursor"></span></span>
     </div>
   </div>
   <div class="tag">100% local / no cloud / MIT license</div>
@@ -605,6 +613,7 @@
 <script>
 (function(){
   var hint=document.getElementById('demoHint');
+  var output=document.querySelector('.demo-output');
   var text=document.getElementById('demoText');
   var cursor=document.getElementById('demoCursor');
   var phrases=[
@@ -634,10 +643,11 @@
     var words=phrase.split(' ');
     hint.textContent='listening...';
     text.textContent='';
+    output.classList.remove('visible');
     cursor.classList.remove('typing');
     cursor.style.visibility='visible';
     timer=setTimeout(function(){
-      hint.textContent='';
+      output.classList.add('visible');
       cursor.classList.add('typing');
       var i=0;
       function typeWord(){
