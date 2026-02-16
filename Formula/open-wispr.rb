@@ -19,6 +19,8 @@ class OpenWispr < Formula
     target.dirname.mkpath
     target.rmtree if target.exist?
     cp_r prefix/"OpenWispr.app", target
+    system "codesign", "--remove-signature", "#{target}/Contents/MacOS/open-wispr"
+    system "tccutil", "reset", "Accessibility", "com.human37.open-wispr"
   end
 
   service do

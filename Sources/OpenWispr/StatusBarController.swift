@@ -148,16 +148,50 @@ class StatusBarController {
         }
     }
 
-    // MARK: - Transcribing animation: dots cycle
+    // MARK: - Transcribing animation: smooth wave dots
+
+    private static let transcribeFrameCount = 30
+
+    private static func prerenderTranscribeFrames() -> [NSImage] {
+        let count = transcribeFrameCount
+        let maxBounce: CGFloat = 3.0
+        return (0..<count).map { frame in
+            let t = Double(frame) / Double(count)
+
+            let size = NSSize(width: 18, height: 18)
+            let image = NSImage(size: size, flipped: false) { rect in
+                NSColor.black.setFill()
+
+                let dotSize: CGFloat = 3
+                let gap: CGFloat = 3.0
+                let centerY = rect.midY - dotSize / 2
+                let totalWidth = 3 * dotSize + 2 * gap
+                let startX = rect.midX - totalWidth / 2
+
+                for i in 0..<3 {
+                    let phase = t - Double(i) * 0.15
+                    let bounce = maxBounce * CGFloat(max(0, sin(phase * 2.0 * .pi)))
+                    let x = startX + CGFloat(i) * (dotSize + gap)
+                    let y = centerY + bounce
+                    let dotRect = NSRect(x: x, y: y, width: dotSize, height: dotSize)
+                    NSBezierPath(ovalIn: dotRect).fill()
+                }
+                return true
+            }
+            image.isTemplate = true
+            return image
+        }
+    }
 
     private func startTranscribingAnimation() {
         animationFrame = 0
-        setIcon(StatusBarController.drawTranscribingFrame(0))
+        animationFrames = StatusBarController.prerenderTranscribeFrames()
+        setIcon(animationFrames[0])
 
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.animationFrame = (self.animationFrame + 1) % 3
-            self.setIcon(StatusBarController.drawTranscribingFrame(self.animationFrame))
+            self.animationFrame = (self.animationFrame + 1) % StatusBarController.transcribeFrameCount
+            self.setIcon(self.animationFrames[self.animationFrame])
         }
     }
 
@@ -217,29 +251,6 @@ class StatusBarController {
                     path.lineWidth = 1.2
                     path.stroke()
                 }
-            }
-            return true
-        }
-        image.isTemplate = true
-        return image
-    }
-
-    static func drawTranscribingFrame(_ frame: Int) -> NSImage {
-        let size = NSSize(width: 18, height: 18)
-        let image = NSImage(size: size, flipped: false) { rect in
-            NSColor.black.setFill()
-
-            let dotSize: CGFloat = 3
-            let gap: CGFloat = 3.0
-            let centerY = rect.midY - dotSize / 2
-            let totalWidth = 3 * dotSize + 2 * gap
-            let startX = rect.midX - totalWidth / 2
-
-            for i in 0..<3 {
-                let x = startX + CGFloat(i) * (dotSize + gap)
-                let y = centerY + (i == frame ? 2 : 0)
-                let dotRect = NSRect(x: x, y: y, width: dotSize, height: dotSize)
-                NSBezierPath(ovalIn: dotRect).fill()
             }
             return true
         }

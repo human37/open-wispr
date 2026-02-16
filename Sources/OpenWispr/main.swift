@@ -5,7 +5,7 @@ setvbuf(stdout, nil, _IOLBF, 0)
 setvbuf(stderr, nil, _IOLBF, 0)
 
 enum OpenWispr {
-    static let version = "0.9.4"
+    static let version = "0.9.5"
 }
 
 let version = OpenWispr.version
