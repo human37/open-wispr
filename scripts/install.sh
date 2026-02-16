@@ -133,7 +133,7 @@ ok "Installed"
 mkdir -p ~/Applications
 rm -rf ~/Applications/OpenWispr.app
 cp -R "${BREW_PREFIX}/OpenWispr.app" ~/Applications/OpenWispr.app
-codesign --remove-signature ~/Applications/OpenWispr.app/Contents/MacOS/open-wispr 2>/dev/null || true
+codesign --force --sign - ~/Applications/OpenWispr.app/Contents/MacOS/open-wispr 2>/dev/null || true
 APP_BIN=~/Applications/OpenWispr.app/Contents/MacOS/open-wispr
 
 # ── Step 3: Permissions ──────────────────────────────────────────────
