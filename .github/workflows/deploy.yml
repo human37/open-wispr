@@ -3,6 +3,13 @@ name: Deploy to Cloudflare Pages
 on:
   push:
     branches: [main]
+    paths:
+      - 'index.html'
+      - 'demo.html'
+      - 'robots.txt'
+      - 'sitemap.xml'
+      - 'logo.svg'
+      - 'og.png'
 
 jobs:
   deploy:
