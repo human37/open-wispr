@@ -292,32 +292,34 @@
     }
     .step-desc{font-size:13px;color:var(--muted);line-height:1.8}
 
-    /* ABOUT */
-    .about{max-width:1200px;margin:0 auto;padding:var(--sp) 40px}
-    .about-grid{
-      display:grid;grid-template-columns:1fr 1fr;gap:0;
+    /* COMPARE */
+    .compare{max-width:1200px;margin:0 auto;padding:var(--sp) 40px}
+    .compare-table{
+      width:100%;border-collapse:collapse;
       border:var(--bw) solid var(--border);box-shadow:var(--shadow);
+      background:var(--surface);font-size:13px;
     }
-    .about-text{
-      padding:32px 28px;background:var(--surface);
-      border-right:var(--bw) solid var(--border);
+    .compare-table thead th{
+      background:var(--text);color:var(--bg);
+      padding:12px 16px;font-size:11px;font-weight:500;
+      text-transform:uppercase;letter-spacing:.1em;text-align:left;
     }
-    .about-text p{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:16px}
-    .about-text p:last-child{margin-bottom:0}
-    .about-text a{font-weight:500}
-    .about-compare{padding:32px 28px;background:var(--surface)}
-    .about-compare h3{
-      font-family:var(--sans);font-size:15px;font-weight:800;
-      margin-bottom:20px;
+    .compare-table thead th:first-child{width:1%}
+    .compare-table tbody td{
+      padding:12px 16px;border-bottom:1px solid #e5e5e5;
+      vertical-align:middle;
     }
-    .compare-row{
-      display:flex;justify-content:space-between;align-items:baseline;
-      padding:9px 0;border-bottom:1px solid #e5e5e5;font-size:13px;
+    .compare-table tbody tr:last-child td{border-bottom:none}
+    .compare-table tbody td:first-child{
+      font-weight:500;white-space:nowrap;color:var(--muted);
     }
-    .compare-row:last-child{border-bottom:none}
-    .compare-label{color:var(--muted)}
-    .compare-val{font-weight:500}
-    .compare-val.good{color:var(--accent)}
+    .compare-table .highlight{
+      background:var(--accent-light);
+    }
+    .compare-table .highlight td{font-weight:500}
+    .compare-table .check{color:var(--accent);font-weight:700}
+    .compare-table .muted{color:var(--muted)}
+    .compare-table .price-free{color:var(--accent);font-weight:700}
 
     /* INSTALL FLOW */
     .flow{max-width:1200px;margin:0 auto;padding:var(--sp) 40px}
@@ -468,7 +470,7 @@
 
     @media(max-width:768px){
       :root{--sp:60px}
-      .hero,.how,.about,.flow,.features,.config,.testimonial,.faq{padding-left:20px;padding-right:20px}
+      .hero,.how,.compare,.flow,.features,.config,.testimonial,.faq{padding-left:20px;padding-right:20px}
       .nav-inner{padding:14px 20px}
       footer{padding:28px 20px}
       .steps-row,.feature-grid{grid-template-columns:1fr}
@@ -485,8 +487,10 @@
       .config-table td{padding:2px 0;border:none}
       .config-table td:first-child{font-size:14px;margin-bottom:4px}
       .config-table td:nth-child(2){color:var(--accent);margin-bottom:4px}
-      .about-grid{grid-template-columns:1fr}
-      .about-text{border-right:none;border-bottom:var(--bw) solid var(--border)}
+      .compare-table{display:block;overflow-x:auto}
+      .compare-table thead{font-size:10px}
+      .compare-table thead th{padding:10px 12px}
+      .compare-table tbody td{padding:10px 12px;font-size:12px}
       .nav-links{gap:16px}
       .nav-links a{font-size:11px}
       .install-block{width:100%}
@@ -573,47 +577,95 @@
   </div>
 </section>
 
-<section class="about">
-  <p class="section-tag">Powered by Whisper</p>
-  <h2>Better than Apple Dictation.</h2>
-  <div class="about-grid">
-    <div class="about-text">
-      <p><a href="https://github.com/openai/whisper">Whisper</a> is an open-source speech recognition model from OpenAI, trained on 680,000 hours of multilingual audio. It's widely regarded as the most accurate general-purpose transcription model available.</p>
-      <p>open-wispr runs Whisper locally through <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a>, a high-performance C/C++ port by Georgi Gerganov that takes advantage of Apple's Metal GPU framework for hardware-accelerated inference on Apple Silicon.</p>
-      <p>Unlike Apple's built-in dictation, Whisper handles punctuation, technical jargon, code terms, and accented speech far more reliably. And unlike cloud dictation services, nothing is ever sent to a server.</p>
-    </div>
-    <div class="about-compare">
-      <h3>vs. Apple Dictation</h3>
-      <div class="compare-row">
-        <span class="compare-label">Accuracy</span>
-        <span class="compare-val good">Significantly better</span>
-      </div>
-      <div class="compare-row">
-        <span class="compare-label">Punctuation</span>
-        <span class="compare-val good">Automatic</span>
-      </div>
-      <div class="compare-row">
-        <span class="compare-label">Technical terms</span>
-        <span class="compare-val good">Handles well</span>
-      </div>
-      <div class="compare-row">
-        <span class="compare-label">Privacy</span>
-        <span class="compare-val good">100% on-device</span>
-      </div>
-      <div class="compare-row">
-        <span class="compare-label">Internet required</span>
-        <span class="compare-val good">No</span>
-      </div>
-      <div class="compare-row">
-        <span class="compare-label">Languages</span>
-        <span class="compare-val good">99 supported</span>
-      </div>
-      <div class="compare-row">
-        <span class="compare-label">Works in any app</span>
-        <span class="compare-val good">Yes</span>
-      </div>
-    </div>
-  </div>
+<section class="compare">
+  <p class="section-tag">Compare</p>
+  <h2>Why open-wispr?</h2>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>open-wispr</th>
+        <th>Wispr Flow</th>
+        <th>Superwhisper</th>
+        <th>MacWhisper</th>
+        <th>Apple Dictation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Price</td>
+        <td class="price-free">Free forever</td>
+        <td>$10/mo</td>
+        <td>$249 lifetime</td>
+        <td>$80 lifetime</td>
+        <td>Free</td>
+      </tr>
+      <tr>
+        <td>Open source</td>
+        <td class="check">Yes</td>
+        <td class="muted">No</td>
+        <td class="muted">No</td>
+        <td class="muted">No</td>
+        <td class="muted">No</td>
+      </tr>
+      <tr>
+        <td>100% on-device</td>
+        <td class="check">Yes</td>
+        <td class="muted">No</td>
+        <td class="check">Yes</td>
+        <td class="check">Yes</td>
+        <td class="muted">Partial</td>
+      </tr>
+      <tr>
+        <td>Works in any app</td>
+        <td class="check">Yes</td>
+        <td class="check">Yes</td>
+        <td class="check">Yes</td>
+        <td class="muted">Own app only</td>
+        <td class="check">Yes</td>
+      </tr>
+      <tr>
+        <td>Push-to-talk</td>
+        <td class="check">Yes</td>
+        <td class="check">Yes</td>
+        <td class="check">Yes</td>
+        <td class="muted">No</td>
+        <td class="muted">No</td>
+      </tr>
+      <tr>
+        <td>Whisper engine</td>
+        <td class="check">Yes</td>
+        <td class="muted">Cloud AI</td>
+        <td class="check">Yes</td>
+        <td class="check">Yes</td>
+        <td class="muted">Apple model</td>
+      </tr>
+      <tr>
+        <td>Account required</td>
+        <td class="check">No</td>
+        <td class="muted">Yes</td>
+        <td class="muted">Yes</td>
+        <td class="check">No</td>
+        <td class="muted">Apple ID</td>
+      </tr>
+      <tr>
+        <td>Languages</td>
+        <td>99</td>
+        <td>100+</td>
+        <td>99</td>
+        <td>100+</td>
+        <td>60+</td>
+      </tr>
+      <tr>
+        <td>Install method</td>
+        <td>Homebrew</td>
+        <td>App Store</td>
+        <td>App Store</td>
+        <td>App Store</td>
+        <td>Built-in</td>
+      </tr>
+    </tbody>
+  </table>
 </section>
 
 <section class="flow">
