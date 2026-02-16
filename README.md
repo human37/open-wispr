@@ -28,31 +28,26 @@ This stops the service, removes the formula, tap, config, models, app bundle, an
 
 ## Configuration
 
-### Hotkey
+Edit `~/.config/open-wispr/config.json`:
 
-```bash
-open-wispr set-hotkey globe          # Globe/fn key (default)
-open-wispr set-hotkey rightoption    # Right Option key
-open-wispr set-hotkey f5             # F5 key
-open-wispr set-hotkey ctrl+space     # Ctrl + Space
-brew services restart open-wispr     # Restart to apply
+```json
+{
+  "hotkey": { "keyCode": 63, "modifiers": [] },
+  "modelSize": "base.en",
+  "language": "en"
+}
 ```
+
+Then restart: `brew services restart open-wispr`
+
+| Option | Default | Values |
+|---|---|---|
+| **hotkey** | `63` | Globe (`63`), Right Option (`61`), F5 (`96`), or any key code |
+| **modifiers** | `[]` | `"cmd"`, `"ctrl"`, `"shift"`, `"opt"` — combine for chords |
+| **modelSize** | `"base.en"` | `tiny.en` (75 MB) · `base.en` (142 MB) · `small.en` (466 MB) · `medium.en` (1.5 GB) |
+| **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes). Use a non-`.en` model for other languages. |
 
 If the Globe key opens the emoji picker: **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
-
-### Model
-
-```bash
-open-wispr set-model tiny.en        # 75 MB, fastest
-open-wispr set-model base.en        # 142 MB, fast (default)
-open-wispr set-model small.en       # 466 MB, more accurate
-open-wispr set-model medium.en      # 1.5 GB, slow
-brew services restart open-wispr    # Restart to apply
-```
-
-### Language
-
-Edit `~/.config/open-wispr/config.json` and set `language` to an [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) (`es`, `fr`, `de`, `ja`, etc). Use a non-`.en` model for multilingual support.
 
 ## Menu bar
 
