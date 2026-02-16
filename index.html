@@ -186,8 +186,19 @@
     }
     .demo-hint{
       color:var(--muted);font-size:12px;font-style:italic;
-      flex-shrink:0;
+      flex-shrink:0;display:inline-flex;align-items:center;gap:8px;
     }
+    .demo-hint .waveform{display:inline-flex;align-items:center;gap:2px;height:14px}
+    .demo-hint .waveform span{
+      display:block;width:3px;background:var(--accent);
+      animation:wave .4s ease-in-out infinite alternate;
+    }
+    .demo-hint .waveform span:nth-child(1){height:4px;animation-delay:0s}
+    .demo-hint .waveform span:nth-child(2){height:8px;animation-delay:.06s}
+    .demo-hint .waveform span:nth-child(3){height:14px;animation-delay:.12s}
+    .demo-hint .waveform span:nth-child(4){height:8px;animation-delay:.18s}
+    .demo-hint .waveform span:nth-child(5){height:4px;animation-delay:.24s}
+    @keyframes wave{0%{transform:scaleY(.3)}100%{transform:scaleY(1)}}
     .demo-output{
       flex:1;min-width:0;
       border-left:3px solid var(--accent);
@@ -670,13 +681,13 @@
   function run(){
     var phrase=pick();
     var words=phrase.split(' ');
-    hint.textContent='listening...';
+    hint.innerHTML='<div class="waveform"><span></span><span></span><span></span><span></span><span></span></div> listening...';
     text.textContent='';
     output.classList.remove('visible');
     cursor.classList.remove('typing');
     cursor.style.visibility='visible';
     timer=setTimeout(function(){
-      hint.textContent='';
+      hint.innerHTML='';
       output.classList.add('visible');
       cursor.classList.add('typing');
       var i=0;
