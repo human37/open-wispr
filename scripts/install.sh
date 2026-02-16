@@ -123,15 +123,17 @@ brew reinstall open-wispr </dev/null >/dev/null 2>&1 || true
 stop_spin
 
 BREW_PREFIX="$(brew --prefix open-wispr 2>/dev/null)"
-APP_BIN="${BREW_PREFIX}/OpenWispr.app/Contents/MacOS/open-wispr"
+CELLAR_BIN="${BREW_PREFIX}/OpenWispr.app/Contents/MacOS/open-wispr"
 
-if [ ! -x "$APP_BIN" ]; then
+if [ ! -x "$CELLAR_BIN" ]; then
     die "Installation failed — binary not found. Run 'brew install open-wispr' manually."
 fi
 ok "Installed"
 
 mkdir -p ~/Applications
-ln -sf "${BREW_PREFIX}/OpenWispr.app" ~/Applications/OpenWispr.app 2>/dev/null || true
+rm -rf ~/Applications/OpenWispr.app
+cp -R "${BREW_PREFIX}/OpenWispr.app" ~/Applications/OpenWispr.app
+APP_BIN=~/Applications/OpenWispr.app/Contents/MacOS/open-wispr
 
 # ── Step 3: Permissions ──────────────────────────────────────────────
 step "Setting up permissions"

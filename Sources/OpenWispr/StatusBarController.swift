@@ -104,9 +104,9 @@ class StatusBarController {
         animationFrame = 0
         setIcon(StatusBarController.drawRecordingPulseFrame(0))
 
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { [weak self] _ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.animationFrame = (self.animationFrame + 1) % 20
+            self.animationFrame = (self.animationFrame + 1) % 12
             self.setIcon(StatusBarController.drawRecordingPulseFrame(self.animationFrame))
         }
     }
@@ -187,7 +187,7 @@ class StatusBarController {
     }
 
     static func drawRecordingPulseFrame(_ frame: Int) -> NSImage {
-        let t = Double(frame) / 20.0
+        let t = Double(frame) / 12.0
         let scale = 0.85 + 0.15 * sin(t * 2.0 * .pi)
 
         let size = NSSize(width: 18, height: 18)

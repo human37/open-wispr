@@ -647,6 +647,7 @@
     cursor.classList.remove('typing');
     cursor.style.visibility='visible';
     timer=setTimeout(function(){
+      hint.textContent='';
       output.classList.add('visible');
       cursor.classList.add('typing');
       var i=0;
