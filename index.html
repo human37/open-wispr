@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>open-wispr — Free Local Voice Dictation for macOS</title>
-  <meta name="description" content="Free, private voice-to-text for macOS. Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device. No cloud, no accounts, no telemetry.">
+  <title>open-wispr — Free Voice Dictation for macOS (100% Local, No Cloud)</title>
+  <meta name="description" content="The best free speech-to-text app for Mac. Hold a key, speak, release — text appears instantly. Powered by Whisper AI, runs 100% on-device. No cloud, no accounts, no subscription. Open source.">
   <meta name="keywords" content="voice dictation, speech to text, macOS, whisper, on-device, privacy, open source, Apple Silicon, voice typing, dictation app">
   <meta name="author" content="human37">
   <link rel="canonical" href="https://open-wispr.pages.dev/">
 
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://open-wispr.pages.dev/">
-  <meta property="og:title" content="open-wispr — Free Local Voice Dictation for macOS">
-  <meta property="og:description" content="Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device. No audio ever leaves your Mac.">
+  <meta property="og:title" content="open-wispr — Free Voice Dictation for macOS (100% Local)">
+  <meta property="og:description" content="The best free speech-to-text for Mac. Hold a key, speak, release — text appears instantly. Whisper AI, 100% on-device. No cloud, no subscription.">
   <meta property="og:image" content="https://open-wispr.pages.dev/og.png">
   <meta property="og:site_name" content="open-wispr">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="open-wispr — Free Local Voice Dictation for macOS">
-  <meta name="twitter:description" content="Hold a key, speak, release — your words appear at the cursor. Powered by Whisper AI, 100% on-device.">
+  <meta name="twitter:title" content="open-wispr — Free Voice Dictation for macOS (100% Local)">
+  <meta name="twitter:description" content="The best free speech-to-text for Mac. Hold a key, speak, release — text appears instantly. Whisper AI, 100% on-device. No subscription.">
   <meta name="twitter:image" content="https://open-wispr.pages.dev/og.png">
 
   <script type="application/ld+json">
@@ -32,9 +32,65 @@
     "description": "Free, private voice-to-text for macOS. Powered by Whisper AI, runs entirely on-device.",
     "url": "https://open-wispr.pages.dev/",
     "downloadUrl": "https://open-wispr.pages.dev/#install",
-    "softwareVersion": "0.3.1",
+    "softwareVersion": "0.9.5",
     "author": { "@type": "Organization", "name": "human37" },
     "license": "https://opensource.org/licenses/MIT"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is open-wispr really free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, completely free and open source under the MIT license. No subscriptions, no usage limits, no premium tier."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does any audio or text leave my computer?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Everything runs 100% on-device. Audio is recorded to a temporary file, transcribed locally by Whisper, and the file is immediately deleted. There are zero network requests."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does this compare to Whisper Flow, Superwhisper, or MacWhisper?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "open-wispr is the free, open-source alternative. It provides the same core experience — push-to-talk local dictation powered by Whisper — without a price tag. It installs via Homebrew, runs as a lightweight background service, and has no GUI overhead."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What Macs are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Any Mac with Apple Silicon (M1 or later) running macOS 13+. Whisper uses Metal GPU acceleration for fast inference. Intel Macs are not supported."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How accurate is it compared to Apple Dictation?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Significantly better. Whisper handles punctuation, technical jargon, code terms, and accented speech far more reliably than Apple's built-in dictation. It supports 99 languages."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use it in any app?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. open-wispr types transcribed text at your cursor position, so it works in any application — editors, browsers, terminals, Slack, email, and more."
+        }
+      }
+    ]
   }
   </script>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='0' fill='%23111'/%3E%3Cg transform='translate(60,60)'%3E%3Crect x='-38' y='-10' width='10' height='20' rx='0' fill='%23fff'/%3E%3Crect x='-19' y='-20' width='10' height='40' rx='0' fill='%23fff'/%3E%3Crect x='-5' y='-30' width='10' height='60' rx='0' fill='%23fff'/%3E%3Crect x='9' y='-20' width='10' height='40' rx='0' fill='%23fff'/%3E%3Crect x='28' y='-10' width='10' height='20' rx='0' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
@@ -135,7 +191,7 @@
       border:var(--bw) solid var(--border);
       padding:5px 14px;font-size:11px;font-weight:500;
       text-transform:uppercase;letter-spacing:.1em;
-      margin:20px 0 52px;
+      margin:16px 0 0;
     }
     h1{
       font-family:var(--sans);
@@ -372,6 +428,29 @@
     }
     .testimonial-role{font-size:12px;color:var(--muted);margin-top:2px}
 
+    /* FAQ */
+    .faq{max-width:1200px;margin:0 auto;padding:var(--sp) 40px}
+    .faq-list{
+      border:var(--bw) solid var(--border);box-shadow:var(--shadow);
+      background:var(--surface);
+    }
+    .faq-item{border-bottom:1px solid #e5e5e5}
+    .faq-item:last-child{border-bottom:none}
+    .faq-item summary{
+      padding:18px 28px;font-size:14px;font-weight:500;
+      cursor:pointer;list-style:none;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{
+      content:'+';font-size:18px;font-weight:700;color:var(--accent);
+      flex-shrink:0;margin-left:16px;
+    }
+    .faq-item[open] summary::after{content:'\2212'}
+    .faq-item p{
+      padding:0 28px 18px;font-size:13px;color:var(--muted);line-height:1.8;
+    }
+
     /* FOOTER */
     footer{
       border-top:var(--bw) solid var(--border);
@@ -389,7 +468,7 @@
 
     @media(max-width:768px){
       :root{--sp:60px}
-      .hero,.how,.about,.flow,.features,.config,.testimonial{padding-left:20px;padding-right:20px}
+      .hero,.how,.about,.flow,.features,.config,.testimonial,.faq{padding-left:20px;padding-right:20px}
       .nav-inner{padding:14px 20px}
       footer{padding:28px 20px}
       .steps-row,.feature-grid{grid-template-columns:1fr}
@@ -438,12 +517,14 @@
     <div class="nav-links">
       <a href="#how">How</a>
       <a href="#features">Features</a>
+      <a href="#faq">FAQ</a>
       <a href="#install">Install</a>
       <a href="https://github.com/human37/open-wispr">GitHub</a>
     </div>
   </div>
 </nav>
 
+<main>
 <section class="hero">
   <h1>Voice to text, entirely on-device.</h1>
 
@@ -452,8 +533,6 @@
       <span class="demo-hint" id="demoHint"></span><span class="demo-output"><span class="demo-text" id="demoText"></span><span class="demo-cursor" id="demoCursor"></span></span>
     </div>
   </div>
-  <div class="tag">100% local / no cloud / MIT license</div>
-
   <p class="hero-sub">Hold a key, speak, release. Your words appear at the cursor. Powered by <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a> with Metal acceleration. No audio or text ever leaves your machine.</p>
 
   <div id="install" class="install-block card">
@@ -465,6 +544,7 @@
       <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim());this.textContent='COPIED';setTimeout(()=>this.textContent='COPY',2000)">COPY</button>
     </div>
   </div>
+  <div class="tag">100% local / no cloud / MIT license</div>
 
   <div class="tip-row">
     <span>Free & open source forever.</span>
@@ -640,6 +720,38 @@
     <div class="testimonial-role">Software Engineer</div>
   </div>
 </section>
+
+<section id="faq" class="faq">
+  <p class="section-tag">FAQ</p>
+  <h2>Common questions.</h2>
+  <div class="faq-list">
+    <details class="faq-item" open>
+      <summary>Is open-wispr really free?</summary>
+      <p>Yes, completely free and open source under the MIT license. No subscriptions, no usage limits, no premium tier. You can <a href="https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00">leave a tip</a> if you want to support development.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Does any audio or text leave my computer?</summary>
+      <p>No. Everything runs 100% on-device. Audio is recorded to a temporary file, transcribed locally by Whisper, and the file is immediately deleted. There are zero network requests — no cloud, no accounts, no telemetry.</p>
+    </details>
+    <details class="faq-item">
+      <summary>How does this compare to Whisper Flow, Superwhisper, or MacWhisper?</summary>
+      <p>open-wispr is the free, open-source alternative. It provides the same core experience — push-to-talk local dictation powered by Whisper — without a price tag. It installs via Homebrew, runs as a lightweight background service, and has no GUI overhead.</p>
+    </details>
+    <details class="faq-item">
+      <summary>What Macs are supported?</summary>
+      <p>Any Mac with Apple Silicon (M1 or later) running macOS 13+. Whisper uses Metal GPU acceleration for fast inference. Intel Macs are not supported.</p>
+    </details>
+    <details class="faq-item">
+      <summary>How accurate is it compared to Apple Dictation?</summary>
+      <p>Significantly better. Whisper handles punctuation, technical jargon, code terms, and accented speech far more reliably than Apple's built-in dictation. It supports 99 languages and produces properly punctuated output by default.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Can I use it in any app?</summary>
+      <p>Yes. open-wispr types transcribed text at your cursor position, so it works in any application — editors, browsers, terminals, Slack, email, and more. No plugins or integrations required.</p>
+    </details>
+  </div>
+</section>
+</main>
 
 <footer>
   <p>&copy; <script>document.write(new Date().getFullYear())</script> Ammon Taylor / MIT License</p>
