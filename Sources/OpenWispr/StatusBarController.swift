@@ -4,6 +4,7 @@ class StatusBarController {
     private var statusItem: NSStatusItem
     private var animationTimer: Timer?
     private var animationFrame = 0
+    private var animationFrames: [NSImage] = []
     private var downloadProgress: String?
 
     enum State {
@@ -98,16 +99,52 @@ class StatusBarController {
         }
     }
 
-    // MARK: - Recording animation: logo scale pulse
+    // MARK: - Recording animation: logo bounce
+
+    private static let bounceFrameCount = 24
+
+    private static func prerenderBounceFrames() -> [NSImage] {
+        let count = bounceFrameCount
+        let maxOffset: CGFloat = 3.0
+        return (0..<count).map { frame in
+            let t = Double(frame) / Double(count)
+            let offset = maxOffset * CGFloat(sin(t * 2.0 * .pi))
+
+            let size = NSSize(width: 18, height: 18)
+            let image = NSImage(size: size, flipped: false) { rect in
+                NSColor.black.setFill()
+
+                let barWidth: CGFloat = 2.0
+                let gap: CGFloat = 2.5
+                let centerX = rect.midX
+                let centerY = rect.midY + offset
+
+                let heights: [CGFloat] = [4, 8, 12, 8, 4]
+                let totalWidth = CGFloat(heights.count) * barWidth + CGFloat(heights.count - 1) * gap
+                let startX = centerX - totalWidth / 2
+
+                for (i, height) in heights.enumerated() {
+                    let x = startX + CGFloat(i) * (barWidth + gap)
+                    let y = centerY - height / 2
+                    let barRect = NSRect(x: x, y: y, width: barWidth, height: height)
+                    NSBezierPath(roundedRect: barRect, xRadius: 1, yRadius: 1).fill()
+                }
+                return true
+            }
+            image.isTemplate = true
+            return image
+        }
+    }
 
     private func startRecordingAnimation() {
         animationFrame = 0
-        setIcon(StatusBarController.drawRecordingPulseFrame(0))
+        animationFrames = StatusBarController.prerenderBounceFrames()
+        setIcon(animationFrames[0])
 
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.animationFrame = (self.animationFrame + 1) % 12
-            self.setIcon(StatusBarController.drawRecordingPulseFrame(self.animationFrame))
+            self.animationFrame = (self.animationFrame + 1) % StatusBarController.bounceFrameCount
+            self.setIcon(self.animationFrames[self.animationFrame])
         }
     }
 
@@ -140,6 +177,7 @@ class StatusBarController {
     private func stopAnimation() {
         animationTimer?.invalidate()
         animationTimer = nil
+        animationFrames = []
     }
 
     private func setIcon(_ image: NSImage) {
@@ -179,41 +217,6 @@ class StatusBarController {
                     path.lineWidth = 1.2
                     path.stroke()
                 }
-            }
-            return true
-        }
-        image.isTemplate = true
-        return image
-    }
-
-    static func drawRecordingPulseFrame(_ frame: Int) -> NSImage {
-        let t = Double(frame) / 12.0
-        let scale = 0.85 + 0.15 * sin(t * 2.0 * .pi)
-
-        let size = NSSize(width: 18, height: 18)
-        let image = NSImage(size: size, flipped: false) { rect in
-            NSColor.black.setFill()
-
-            let barWidth: CGFloat = 2.0
-            let gap: CGFloat = 2.5
-            let centerX = rect.midX
-            let centerY = rect.midY
-
-            let heights: [CGFloat] = [4, 8, 12, 8, 4]
-            let totalWidth = CGFloat(heights.count) * barWidth + CGFloat(heights.count - 1) * gap
-            let startX = centerX - totalWidth / 2
-
-            let transform = NSAffineTransform()
-            transform.translateX(by: centerX, yBy: centerY)
-            transform.scaleX(by: CGFloat(scale), yBy: CGFloat(scale))
-            transform.translateX(by: -centerX, yBy: -centerY)
-            transform.concat()
-
-            for (i, height) in heights.enumerated() {
-                let x = startX + CGFloat(i) * (barWidth + gap)
-                let y = centerY - height / 2
-                let barRect = NSRect(x: x, y: y, width: barWidth, height: height)
-                NSBezierPath(roundedRect: barRect, xRadius: 1, yRadius: 1).fill()
             }
             return true
         }

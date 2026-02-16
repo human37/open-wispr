@@ -301,20 +301,42 @@
 
     /* CONFIG */
     .config{max-width:1200px;margin:0 auto;padding:var(--sp) 40px}
-    .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
-    .config-card{
+    .config-example{
+      border:var(--bw) solid var(--border);box-shadow:var(--shadow);
+      background:var(--surface);margin-bottom:24px;max-width:480px;
+    }
+    .config-example pre{
+      padding:20px 24px;font-family:var(--mono);font-size:12px;
+      color:var(--muted);line-height:1.9;margin:0;
+      background:var(--code-bg);
+    }
+    .config-example pre b{color:var(--text);font-weight:500}
+    .config-table{
+      width:100%;border-collapse:collapse;
       border:var(--bw) solid var(--border);box-shadow:var(--shadow);
       background:var(--surface);
-      transition:box-shadow .12s,transform .12s;
     }
-    .config-card:first-child{border-right:0}
-    .config-card:hover{box-shadow:var(--shadow-hover);transform:translate(1px,1px)}
-    .config-card pre{
-      padding:20px 24px;font-family:var(--mono);font-size:12px;
-      color:var(--muted);line-height:1.9;overflow-x:auto;
-      background:var(--code-bg);margin:0;
+    .config-table th{
+      background:var(--text);color:var(--bg);
+      padding:10px 20px;font-size:11px;font-weight:500;
+      text-transform:uppercase;letter-spacing:.1em;text-align:left;
     }
-    .config-card pre b{color:var(--text);font-weight:500}
+    .config-table td{
+      padding:14px 20px;font-size:13px;
+      border-bottom:1px solid #e5e5e5;vertical-align:top;
+    }
+    .config-table tr:last-child td{border-bottom:none}
+    .config-table td:first-child{
+      font-weight:500;white-space:nowrap;width:1%;
+    }
+    .config-table td:nth-child(2){
+      font-family:var(--mono);font-size:12px;color:var(--accent);
+    }
+    .config-table td:nth-child(3){color:var(--muted);font-size:12px}
+    .config-table code{
+      background:var(--code-bg);border:1px solid #e5e5e5;
+      padding:2px 6px;font-size:11px;
+    }
     .config-note{
       margin-top:20px;font-size:13px;color:var(--muted);line-height:1.7;
     }
@@ -365,8 +387,14 @@
       .feature-cell{border-right:none}
       .feature-cell:nth-last-child(-n+3){border-bottom:var(--bw) solid var(--border)}
       .feature-cell:last-child{border-bottom:none}
-      .config-grid{grid-template-columns:1fr}
-      .config-card:first-child{border-right:var(--bw) solid var(--border);border-bottom:0}
+      .config-table{display:block;overflow-x:auto}
+      .config-table tr,.config-table th,.config-table td{display:block}
+      .config-table thead{display:none}
+      .config-table tr{padding:14px 20px;border-bottom:1px solid #e5e5e5}
+      .config-table tr:last-child{border-bottom:none}
+      .config-table td{padding:2px 0;border:none}
+      .config-table td:first-child{font-size:14px;margin-bottom:4px}
+      .config-table td:nth-child(2){color:var(--accent);margin-bottom:4px}
       .about-grid{grid-template-columns:1fr}
       .about-text{border-right:none;border-bottom:var(--bw) solid var(--border)}
       .nav-links{gap:16px}
@@ -375,7 +403,6 @@
       .install-body{flex-direction:column;align-items:stretch;gap:12px}
       .install-body code{font-size:11px;word-break:break-all;white-space:normal}
       .copy-btn{align-self:flex-start}
-      .config-card pre{font-size:11px;padding:16px}
       .demo-editor{height:90px}
     }
   </style>
@@ -560,36 +587,38 @@
 <section class="config">
   <p class="section-tag">Configuration</p>
   <h2>One file. Four options.</h2>
-  <div class="config-grid">
-    <div class="config-card">
-      <div class="card-header">~/.config/open-wispr/config.json</div>
-      <pre>{
-  "<b>hotkey</b>": {
-    "<b>keyCode</b>": 63,
-    "<b>modifiers</b>": []
-  },
+  <div class="config-example">
+    <div class="card-header">~/.config/open-wispr/config.json</div>
+    <pre>{
+  "<b>hotkey</b>": { "<b>keyCode</b>": 63, "<b>modifiers</b>": [] },
   "<b>modelSize</b>": "base.en",
   "<b>language</b>": "en"
 }</pre>
-    </div>
-    <div class="config-card">
-      <div class="card-header">Options</div>
-      <pre><b>hotkey</b>     Globe (63), Right Option (61),
-           F5 (96), or any key code
-
-<b>modifiers</b>  "cmd", "ctrl", "shift", "opt"
-           Combine for chords: ["ctrl","shift"]
-
-<b>modelSize</b>  tiny.en (75 MB, fastest)
-           base.en (142 MB, default)
-           small.en (466 MB, accurate)
-           medium.en (1.5 GB, best)
-
-<b>language</b>   Any ISO 639-1 code. Use a
-           non-.en model for other languages.</pre>
-    </div>
   </div>
-  <p class="config-note">Edit the file, then restart: <code>brew services restart open-wispr</code></p>
+  <table class="config-table">
+    <tr><th>Option</th><th>Default</th><th>Values</th></tr>
+    <tr>
+      <td>hotkey</td>
+      <td>63</td>
+      <td>Globe (63), Right Option (61), F5 (96), or any key code</td>
+    </tr>
+    <tr>
+      <td>modifiers</td>
+      <td>[]</td>
+      <td><code>cmd</code> <code>ctrl</code> <code>shift</code> <code>opt</code> &mdash; combine for chords</td>
+    </tr>
+    <tr>
+      <td>modelSize</td>
+      <td>"base.en"</td>
+      <td>tiny.en (75 MB) &middot; base.en (142 MB) &middot; small.en (466 MB) &middot; medium.en (1.5 GB)</td>
+    </tr>
+    <tr>
+      <td>language</td>
+      <td>"en"</td>
+      <td>Any ISO 639-1 code. Use a non-.en model for other languages.</td>
+    </tr>
+  </table>
+  <p class="config-note">Edit <code>~/.config/open-wispr/config.json</code>, then restart: <code>brew services restart open-wispr</code></p>
 </section>
 
 <section class="testimonial">
