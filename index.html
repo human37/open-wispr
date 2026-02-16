@@ -179,9 +179,9 @@
     /* DEMO */
     .demo-inline{margin-bottom:0;max-width:680px}
     .demo-editor{
-      border-bottom:var(--bw) solid var(--border);
-      padding:14px 0;min-height:48px;
+      padding:14px 0;height:68px;
       font-family:var(--mono);font-size:13px;line-height:1.7;
+      overflow:hidden;
     }
     .demo-hint{
       color:var(--muted);font-size:12px;font-style:italic;
@@ -368,6 +368,7 @@
       .install-body code{font-size:11px;word-break:break-all;white-space:normal}
       .copy-btn{align-self:flex-start}
       .config-card pre{font-size:11px;padding:16px}
+      .demo-editor{height:90px}
     }
   </style>
 </head>
@@ -597,11 +598,31 @@ brew services restart open-wispr</pre>
   var hint=document.getElementById('demoHint');
   var text=document.getElementById('demoText');
   var cursor=document.getElementById('demoCursor');
-  var phrase="Can you refactor the auth module? It should use JWT tokens instead of session cookies.";
-  var words=phrase.split(' ');
+  var phrases=[
+    "Jesse, we need to refactor the authentication module. Use JWT tokens, not session cookies.",
+    "The batch purity is at 96%, but the API response times are still too slow. Add Redis caching.",
+    "Gus wants the deployment pipeline locked down. Add branch protection rules and require two approvals.",
+    "I am the one who writes the database migrations. Add an index on the created_at column.",
+    "We need to cook up a WebSocket connection for real-time order tracking. Use exponential backoff on reconnect.",
+    "Saul says the client wants rate limiting on all public endpoints. Use a sliding window algorithm, 100 requests per minute.",
+    "Jesse, stop pushing directly to main. Set up a CI pipeline that runs linting and tests before merge.",
+    "The carwash needs a new frontend. Migrate the dashboard from JavaScript to TypeScript, and add strict mode.",
+    "Hank keeps running the wrong queries. Write integration tests for the payment processing pipeline.",
+    "Say my name. Then refactor the GraphQL schema to support nullable fields and add proper error handling."
+  ];
+  var last=-1;
   var timer;
 
+  function pick(){
+    var i;
+    do{i=Math.floor(Math.random()*phrases.length)}while(i===last);
+    last=i;
+    return phrases[i];
+  }
+
   function run(){
+    var phrase=pick();
+    var words=phrase.split(' ');
     hint.textContent='listening...';
     text.textContent='';
     cursor.classList.remove('typing');
