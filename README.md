@@ -1,5 +1,7 @@
 # open-wispr
 
+**[open-wispr.pages.dev](https://open-wispr.pages.dev)**
+
 Local, private voice dictation for macOS. Hold a key, speak, release — your words appear at the cursor. Everything runs on-device. No audio or text ever leaves your machine.
 
 Powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with Metal acceleration on Apple Silicon.
@@ -57,8 +59,8 @@ Edit `~/.config/open-wispr/config.json` and set `language` to an [ISO 639-1 code
 | State | Icon |
 |---|---|
 | Idle | Waveform outline |
-| Recording | Animated waveform (bars dance) |
-| Transcribing | Bouncing dots |
+| Recording | Bouncing waveform |
+| Transcribing | Wave dots |
 | Downloading model | Animated download arrow |
 | Waiting for permission | Lock |
 
@@ -75,28 +77,6 @@ brew install whisper-cpp
 swift build -c release
 .build/release/open-wispr start
 ```
-
-## Releasing a new version
-
-1. Bump the version string in two files:
-   - `Sources/OpenWispr/main.swift` — `static let version = "X.Y.Z"`
-   - `Formula/open-wispr.rb` — `tag: "vX.Y.Z"`
-
-2. Run the deploy script:
-   ```bash
-   bash scripts/deploy.sh X.Y.Z
-   ```
-
-   This will:
-   - Verify the version in `main.swift` matches
-   - Build a release binary
-   - Commit, tag `vX.Y.Z`, and push the main repo
-   - Update and push the [tap formula](https://github.com/human37/homebrew-open-wispr)
-
-3. Users update with:
-   ```bash
-   brew update && brew upgrade open-wispr
-   ```
 
 ## License
 
