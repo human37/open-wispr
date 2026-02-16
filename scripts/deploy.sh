@@ -22,7 +22,7 @@ if [ "$current" != "$VERSION" ]; then
 fi
 
 echo "==> Building release..."
-swift build -C "${REPO_DIR}" -c release --disable-sandbox
+swift build --package-path "${REPO_DIR}" -c release --disable-sandbox
 
 echo "==> Committing, tagging, and pushing main repo..."
 git -C "${REPO_DIR}" add -A

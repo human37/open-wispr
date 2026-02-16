@@ -98,16 +98,16 @@ class StatusBarController {
         }
     }
 
-    // MARK: - Recording animation: logo pulses with sound waves
+    // MARK: - Recording animation: logo scale pulse
 
     private func startRecordingAnimation() {
         animationFrame = 0
-        setIcon(StatusBarController.drawRecordingFrame(0))
+        setIcon(StatusBarController.drawRecordingPulseFrame(0))
 
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: true) { [weak self] _ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.animationFrame = (self.animationFrame + 1) % 4
-            self.setIcon(StatusBarController.drawRecordingFrame(self.animationFrame))
+            self.animationFrame = (self.animationFrame + 1) % 20
+            self.setIcon(StatusBarController.drawRecordingPulseFrame(self.animationFrame))
         }
     }
 
@@ -186,7 +186,10 @@ class StatusBarController {
         return image
     }
 
-    static func drawRecordingFrame(_ frame: Int) -> NSImage {
+    static func drawRecordingPulseFrame(_ frame: Int) -> NSImage {
+        let t = Double(frame) / 20.0
+        let scale = 0.85 + 0.15 * sin(t * 2.0 * .pi)
+
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size, flipped: false) { rect in
             NSColor.black.setFill()
@@ -196,19 +199,17 @@ class StatusBarController {
             let centerX = rect.midX
             let centerY = rect.midY
 
-            let baseHeights: [CGFloat] = [4, 8, 12, 8, 4]
-            let offsets: [[CGFloat]] = [
-                [0, 2, 0, -2, 0],
-                [2, 0, -2, 0, 2],
-                [0, -2, 0, 2, 0],
-                [-2, 0, 2, 0, -2],
-            ]
-
-            let totalWidth = CGFloat(baseHeights.count) * barWidth + CGFloat(baseHeights.count - 1) * gap
+            let heights: [CGFloat] = [4, 8, 12, 8, 4]
+            let totalWidth = CGFloat(heights.count) * barWidth + CGFloat(heights.count - 1) * gap
             let startX = centerX - totalWidth / 2
 
-            for (i, baseHeight) in baseHeights.enumerated() {
-                let height = max(3, baseHeight + offsets[frame][i])
+            let transform = NSAffineTransform()
+            transform.translateX(by: centerX, yBy: centerY)
+            transform.scaleX(by: CGFloat(scale), yBy: CGFloat(scale))
+            transform.translateX(by: -centerX, yBy: -centerY)
+            transform.concat()
+
+            for (i, height) in heights.enumerated() {
                 let x = startX + CGFloat(i) * (barWidth + gap)
                 let y = centerY - height / 2
                 let barRect = NSRect(x: x, y: y, width: barWidth, height: height)
