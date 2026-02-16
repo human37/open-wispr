@@ -544,7 +544,7 @@
       Install on Mac
     </div>
     <div class="install-body">
-      <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"</code>
+      <code>curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh | bash</code>
       <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.trim());this.textContent='COPIED';setTimeout(()=>this.textContent='COPY',2000)">COPY</button>
     </div>
   </div>

@@ -34,7 +34,7 @@ class OpenWispr < Formula
   def caveats
     <<~EOS
       Recommended: use the install script for guided setup:
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"
+        curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh | bash
 
       Or start manually:
         brew services start open-wispr

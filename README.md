@@ -9,7 +9,7 @@ Powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with Metal acc
 ## Install
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"
+curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh | bash
 ```
 
 The script handles everything: installs via Homebrew, walks you through granting permissions, downloads the Whisper model, and starts the service. You'll see live feedback as each step completes.
@@ -21,7 +21,7 @@ The default hotkey is the **Globe key** (🌐, bottom-left). Hold it, speak, rel
 ## Uninstall
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/human37/open-wispr/main/scripts/uninstall.sh)
+curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/uninstall.sh | bash
 ```
 
 This stops the service, removes the formula, tap, config, models, app bundle, and logs.
