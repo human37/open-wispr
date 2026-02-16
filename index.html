@@ -65,11 +65,12 @@
       --sp:80px;
     }
 
-    html{scroll-behavior:smooth;scroll-padding-top:72px}
+    html{scroll-behavior:smooth;scroll-padding-top:72px;overflow-x:hidden}
     body{
       font-family:var(--mono);
       background:var(--bg);color:var(--text);
       line-height:1.65;font-size:14px;
+      overflow-x:hidden;
     }
     a{color:var(--accent);text-decoration:none;font-weight:500}
     a:hover{text-decoration:underline;text-underline-offset:3px}
@@ -177,41 +178,14 @@
 
     /* DEMO */
     .demo-inline{margin-bottom:0;max-width:680px}
-    .demo-card{background:transparent;overflow:hidden}
-    .demo-scene{padding:10px 0;display:flex;flex-direction:column;gap:10px}
-    .demo-steps{
-      display:flex;align-items:center;gap:10px;
-      font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;
-    }
-    .demo-step{
-      color:var(--muted);transition:color .2s;
-      display:flex;align-items:center;gap:6px;
-    }
-    .demo-step.active{color:var(--accent)}
-    .demo-step.done{color:var(--text)}
-    .demo-step-num{
-      display:inline-flex;align-items:center;justify-content:center;
-      width:20px;height:20px;border:var(--bw) solid var(--border);
-      font-family:var(--sans);font-size:11px;font-weight:800;
-      background:var(--bg);transition:all .2s;
-    }
-    .demo-step.active .demo-step-num{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .demo-step.done .demo-step-num{background:var(--text);color:var(--bg);border-color:var(--text)}
-    .demo-waveicon{color:var(--muted);flex-shrink:0}
-    .demo-step.active .demo-waveicon{color:var(--accent)}
-    .demo-step.active .demo-waveicon rect{animation:waveBar .4s ease-in-out infinite alternate}
-    .demo-step.active .demo-waveicon rect:nth-child(1){animation-delay:0s}
-    .demo-step.active .demo-waveicon rect:nth-child(2){animation-delay:.06s}
-    .demo-step.active .demo-waveicon rect:nth-child(3){animation-delay:.12s}
-    .demo-step.active .demo-waveicon rect:nth-child(4){animation-delay:.18s}
-    .demo-step.active .demo-waveicon rect:nth-child(5){animation-delay:.24s}
-    @keyframes waveBar{0%{transform:scaleY(.3);transform-origin:center}100%{transform:scaleY(1);transform-origin:center}}
-    .demo-step-arrow{color:var(--muted);opacity:.3;font-size:14px}
-    .demo-step-arrow.active{opacity:1;color:var(--accent)}
     .demo-editor{
-      background:var(--code-bg);border:1px solid #e5e5e5;
-      padding:14px 16px;min-height:44px;
+      border-bottom:var(--bw) solid var(--border);
+      padding:14px 0;min-height:48px;
       font-family:var(--mono);font-size:13px;line-height:1.7;
+    }
+    .demo-hint{
+      color:var(--muted);font-size:12px;font-style:italic;
+      display:inline;
     }
     .demo-text{white-space:pre-wrap}
     .demo-cursor{
@@ -374,6 +348,9 @@
 
     @media(max-width:768px){
       :root{--sp:60px}
+      .hero,.how,.about,.flow,.features,.config,.testimonial{padding-left:20px;padding-right:20px}
+      .nav-inner{padding:14px 20px}
+      footer{padding:28px 20px}
       .steps-row,.feature-grid{grid-template-columns:1fr}
       .step-card{border-right:none;border-bottom:var(--bw) solid var(--border)}
       .step-card:last-child{border-bottom:none}
@@ -386,6 +363,11 @@
       .about-text{border-right:none;border-bottom:var(--bw) solid var(--border)}
       .nav-links{gap:16px}
       .nav-links a{font-size:11px}
+      .install-block{width:100%}
+      .install-body{flex-direction:column;align-items:stretch;gap:12px}
+      .install-body code{font-size:11px;word-break:break-all;white-space:normal}
+      .copy-btn{align-self:flex-start}
+      .config-card pre{font-size:11px;padding:16px}
     }
   </style>
 </head>
@@ -416,25 +398,11 @@
 </nav>
 
 <section class="hero">
-  <h1>Local dictation for macOS.</h1>
+  <h1>Voice to text, entirely on-device.</h1>
 
   <div class="demo-inline">
-    <div class="demo-card">
-      <div class="demo-scene">
-        <div class="demo-steps">
-          <div class="demo-step" id="demoStep1"><span class="demo-step-num">1</span> Hold key &amp; speak</div>
-          <div class="demo-step-arrow" id="demoArrow1">&rarr;</div>
-          <div class="demo-step" id="demoStep2">
-            <span class="demo-step-num">2</span> open-wispr
-            <svg class="demo-waveicon" id="demoWaveIcon" width="22" height="16" viewBox="0 0 22 16"><rect x="0" y="5" width="3" height="6" fill="currentColor"/><rect x="5" y="2" width="3" height="12" fill="currentColor"/><rect x="10" y="0" width="3" height="16" fill="currentColor"/><rect x="15" y="2" width="3" height="12" fill="currentColor"/><rect x="20" y="5" width="3" height="6" fill="currentColor"/></svg>
-          </div>
-          <div class="demo-step-arrow" id="demoArrow2">&rarr;</div>
-          <div class="demo-step" id="demoStep3"><span class="demo-step-num">3</span> Text at cursor</div>
-        </div>
-        <div class="demo-editor">
-          <span class="demo-text" id="demoText"></span><span class="demo-cursor" id="demoCursor"></span>
-        </div>
-      </div>
+    <div class="demo-editor">
+      <span class="demo-hint" id="demoHint"></span><span class="demo-text" id="demoText"></span><span class="demo-cursor" id="demoCursor"></span>
     </div>
   </div>
   <div class="tag">100% local / no cloud / MIT license</div>
@@ -443,8 +411,7 @@
 
   <div id="install" class="install-block card">
     <div class="card-header">
-      <span>Terminal</span>
-      One command install
+      Install on Mac
     </div>
     <div class="install-body">
       <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh)"</code>
@@ -627,46 +594,35 @@ brew services restart open-wispr</pre>
 
 <script>
 (function(){
-  var s1=document.getElementById('demoStep1');
-  var s2=document.getElementById('demoStep2');
-  var s3=document.getElementById('demoStep3');
-  var a1=document.getElementById('demoArrow1');
-  var a2=document.getElementById('demoArrow2');
+  var hint=document.getElementById('demoHint');
   var text=document.getElementById('demoText');
   var cursor=document.getElementById('demoCursor');
   var phrase="Can you refactor the auth module? It should use JWT tokens instead of session cookies.";
+  var words=phrase.split(' ');
   var timer;
 
-  function reset(){
-    [s1,s2,s3].forEach(function(s){s.classList.remove('active','done')});
-    [a1,a2].forEach(function(a){a.classList.remove('active')});
+  function run(){
+    hint.textContent='listening...';
     text.textContent='';
     cursor.classList.remove('typing');
     cursor.style.visibility='visible';
-  }
-
-  function run(){
-    reset();
     timer=setTimeout(function(){
-      s1.classList.add('active');
-      timer=setTimeout(function(){
-        s1.classList.remove('active');
-        s1.classList.add('done');
-        a1.classList.add('active');
-        s2.classList.add('active');
-        cursor.classList.add('typing');
-        timer=setTimeout(function(){
-          s2.classList.remove('active');
-          s2.classList.add('done');
-          a2.classList.add('active');
-          s3.classList.add('active');
-          text.textContent=phrase;
+      hint.textContent='';
+      cursor.classList.add('typing');
+      var i=0;
+      function typeWord(){
+        if(i<words.length){
+          text.textContent+=(i>0?' ':'')+words[i];
+          i++;
+          timer=setTimeout(typeWord,30+Math.random()*30);
+        }else{
           cursor.classList.remove('typing');
           cursor.style.visibility='hidden';
           timer=setTimeout(run,7000);
-        },1800);
-      },2000);
-    },800);
+        }
+      }
+      typeWord();
+    },2000);
   }
 
   run();

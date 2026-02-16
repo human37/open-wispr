@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>open-wispr demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#FDFCF8;--surface:#fff;--border:#1a1a1a;--text:#1a1a1a;
+      --muted:#6b6b6b;--accent:#7C3AED;--accent-light:#EDE9FE;
+      --shadow:3px 3px 0 var(--border);--bw:2px;
+      --mono:'IBM Plex Mono',monospace;--sans:'DM Sans',sans-serif;
+      --code-bg:#F5F3EE;
+    }
+    body{font-family:var(--mono);background:var(--bg);color:var(--text);font-size:14px;line-height:1.65}
+
+    .demo-card{
+      border:var(--bw) solid var(--border);box-shadow:var(--shadow);
+      background:var(--surface);overflow:hidden;max-width:680px;
+    }
+    .card-header{
+      background:var(--text);color:var(--bg);
+      padding:10px 20px;font-size:11px;font-weight:500;
+      text-transform:uppercase;letter-spacing:.1em;
+      border-bottom:var(--bw) solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .card-header span{opacity:.5}
+    .demo-scene{padding:20px;display:flex;flex-direction:column;gap:14px}
+
+    .demo-status{
+      display:flex;align-items:center;gap:14px;
+      font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+    }
+
+    .demo-keyboard{display:flex;align-items:center;gap:6px}
+    .demo-key{
+      display:inline-flex;align-items:center;justify-content:center;
+      gap:6px;min-width:44px;height:34px;padding:0 10px;
+      background:linear-gradient(180deg,#f8f8f6 0%,#e8e7e3 100%);
+      border:1px solid #c4c4c2;border-bottom:3px solid #a8a8a6;
+      border-radius:5px;
+      font-size:11px;font-weight:500;font-family:var(--mono);
+      color:var(--text);transition:all .12s;
+      box-shadow:0 1px 2px rgba(0,0,0,.08);
+    }
+    .demo-key svg{width:13px;height:13px;flex-shrink:0;opacity:.7}
+    .demo-key.active{
+      background:var(--accent);color:#fff;
+      border-color:var(--accent);border-bottom-width:1px;
+      transform:translateY(2px);box-shadow:none;
+    }
+    .demo-key.active svg{opacity:1}
+    .demo-key-hint{
+      font-size:10px;color:var(--muted);letter-spacing:.06em;
+      opacity:0;transition:opacity .2s;
+    }
+    .demo-key-hint.active{opacity:1;color:var(--accent)}
+
+    .demo-waveform{display:flex;align-items:center;gap:3px;height:18px}
+    .demo-waveform .bar{width:3px;background:var(--border);opacity:.12;transition:opacity .2s}
+    .demo-waveform .bar:nth-child(1){height:5px}
+    .demo-waveform .bar:nth-child(2){height:9px}
+    .demo-waveform .bar:nth-child(3){height:13px}
+    .demo-waveform .bar:nth-child(4){height:9px}
+    .demo-waveform .bar:nth-child(5){height:5px}
+    .demo-waveform.active .bar{opacity:1;background:var(--accent);animation:wave .4s ease-in-out infinite alternate}
+    .demo-waveform.active .bar:nth-child(1){animation-delay:0s}
+    .demo-waveform.active .bar:nth-child(2){animation-delay:.06s}
+    .demo-waveform.active .bar:nth-child(3){animation-delay:.12s}
+    .demo-waveform.active .bar:nth-child(4){animation-delay:.18s}
+    .demo-waveform.active .bar:nth-child(5){animation-delay:.24s}
+    @keyframes wave{0%{transform:scaleY(.3)}100%{transform:scaleY(1)}}
+
+    .demo-label{font-size:11px;letter-spacing:.1em;transition:color .2s}
+    .demo-label.active{color:var(--accent);font-weight:500}
+
+    .demo-editor{
+      background:var(--code-bg);border:1px solid #e5e5e5;
+      padding:14px 16px;min-height:44px;
+      font-family:var(--mono);font-size:13px;line-height:1.7;
+    }
+    .demo-text{white-space:pre-wrap}
+    .demo-cursor{
+      display:inline-block;width:2px;height:1.1em;
+      background:var(--accent);vertical-align:text-bottom;
+      margin-left:1px;animation:blink 1s step-end infinite;
+    }
+    .demo-cursor.typing{animation:none;opacity:1}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  </style>
+</head>
+<body>
+
+<div class="demo-card">
+  <div class="demo-scene">
+    <div class="demo-status">
+      <div class="demo-keyboard">
+        <div class="demo-key" id="demoKey">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Globe
+        </div>
+        <div class="demo-key-hint" id="demoHint">holding</div>
+      </div>
+      <div class="demo-waveform" id="demoWave">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+      <div class="demo-label" id="demoLabel">Idle</div>
+    </div>
+    <div class="demo-editor">
+      <span class="demo-text" id="demoText"></span><span class="demo-cursor" id="demoCursor"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var key=document.getElementById('demoKey');
+  var hint=document.getElementById('demoHint');
+  var wave=document.getElementById('demoWave');
+  var label=document.getElementById('demoLabel');
+  var text=document.getElementById('demoText');
+  var cursor=document.getElementById('demoCursor');
+  var phrase="Can you refactor the auth module? It should use JWT tokens instead of session cookies.";
+  var words=phrase.split(' ');
+  var timer;
+
+  function reset(){
+    key.classList.remove('active');
+    hint.classList.remove('active');
+    wave.classList.remove('active');
+    label.classList.remove('active');
+    label.textContent='Idle';
+    text.textContent='';
+    cursor.classList.remove('typing');
+  }
+
+  function run(){
+    reset();
+    timer=setTimeout(function(){
+      key.classList.add('active');
+      hint.classList.add('active');
+      wave.classList.add('active');
+      label.classList.add('active');
+      label.textContent='Recording';
+      timer=setTimeout(function(){
+        key.classList.remove('active');
+        hint.classList.remove('active');
+        wave.classList.remove('active');
+        label.textContent='Dictating...';
+        cursor.classList.add('typing');
+        timer=setTimeout(function(){
+          text.textContent=phrase;
+          cursor.classList.remove('typing');
+          label.classList.remove('active');
+          label.textContent='Done';
+          timer=setTimeout(run,2500);
+        },1000);
+      },2000);
+    },800);
+  }
+
+  run();
+})();
+</script>
+
+</body>
+</html>
