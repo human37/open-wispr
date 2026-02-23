@@ -17,22 +17,28 @@ trap "rm -rf ${DL_DIR}" EXIT
 echo "==> Downloading bottles from release ${TAG}..."
 gh release download "${TAG}" --pattern "*.bottle.tar.gz" --dir "${DL_DIR}" --repo human37/open-wispr
 
-ARM64_SHA=""
-INTEL_SHA=""
+BOTTLE_LINES=""
 
 for file in "${DL_DIR}"/*.bottle.tar.gz; do
   filename=$(basename "$file")
   sha=$(shasum -a 256 "$file" | awk '{print $1}')
   if [[ "$filename" == *"arm64_sequoia"* ]]; then
-    ARM64_SHA="$sha"
+    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, arm64_sequoia: \"${sha}\"\n"
+    echo "    arm64_sequoia: ${sha}"
   elif [[ "$filename" == *"ventura"* ]]; then
-    INTEL_SHA="$sha"
+    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, ventura: \"${sha}\"\n"
+    echo "    ventura: ${sha}"
+  elif [[ "$filename" == *"sonoma"* ]]; then
+    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, sonoma: \"${sha}\"\n"
+    echo "    sonoma: ${sha}"
+  elif [[ "$filename" == *"sequoia"* ]]; then
+    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, sequoia: \"${sha}\"\n"
+    echo "    sequoia: ${sha}"
   fi
 done
 
-if [ -z "$ARM64_SHA" ] || [ -z "$INTEL_SHA" ]; then
-  echo "Error: Missing bottle files. Found:"
-  command ls "${DL_DIR}"
+if [ -z "$BOTTLE_LINES" ]; then
+  echo "Error: No bottle files found in release ${TAG}"
   exit 1
 fi
 
@@ -48,8 +54,7 @@ ruby -e '
   formula.gsub!(/\n  bottle do.*?  end\n/m, "\n")
   bottle = "\n  bottle do\n" \
            "    root_url \"https://github.com/human37/open-wispr/releases/download/'"${TAG}"'\"\n" \
-           "    sha256 cellar: :any, arm64_sequoia: \"'"${ARM64_SHA}"'\"\n" \
-           "    sha256 cellar: :any, ventura: \"'"${INTEL_SHA}"'\"\n" \
+           "'"${BOTTLE_LINES}"'" \
            "  end\n"
   formula.sub!(/^(  license "MIT"\n)/) { $1 + bottle }
   File.write(ARGV[0], formula)
@@ -61,5 +66,3 @@ git -C "${TAP_DIR}" diff --cached --quiet && echo "Tap already up to date." || \
 git -C "${TAP_DIR}" push origin main
 
 echo "==> Bottle update complete"
-echo "    arm64_sequoia: ${ARM64_SHA}"
-echo "    ventura: ${INTEL_SHA}"

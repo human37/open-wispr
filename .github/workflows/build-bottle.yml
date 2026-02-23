@@ -6,10 +6,7 @@ on:
 
 jobs:
   bottle:
-    strategy:
-      matrix:
-        os: [macos-15, macos-13]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-15
     permissions:
       contents: write
     steps:
