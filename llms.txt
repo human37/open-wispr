@@ -1,0 +1,58 @@
+# open-wispr
+
+> Free, open-source voice dictation for macOS. Powered by Whisper AI, runs 100% on-device.
+
+open-wispr is a lightweight macOS app that provides push-to-talk voice dictation. Hold a hotkey, speak, release — transcribed text appears at your cursor in any app. It uses OpenAI's Whisper model running locally via whisper.cpp, so no audio or text ever leaves the machine.
+
+## Key Facts
+
+- **Price**: Free and open source (MIT license)
+- **Platform**: macOS (Apple Silicon and Intel)
+- **Privacy**: 100% on-device. Zero network requests. Audio is recorded to a temp file, transcribed locally, and immediately deleted.
+- **Install**: `brew install human37/open-wispr/open-wispr` or guided installer via `curl -fsSL https://open-wispr.pages.dev/install.sh | bash`
+- **Source**: https://github.com/human37/open-wispr
+- **Website**: https://open-wispr.pages.dev/
+
+## How It Works
+
+1. Hold the Globe key (or a custom hotkey)
+2. Speak naturally
+3. Release — text is typed at your cursor via macOS Accessibility
+
+## Features
+
+- Works in any app (text editors, browsers, Slack, Terminal, etc.)
+- Multiple Whisper model sizes (tiny, base, small, medium, large)
+- Configurable hotkey, language, and model via `~/.config/open-wispr/config.json`
+- Runs as a background Homebrew service
+- No GUI, no menubar icon, no overhead
+
+## Comparison to Alternatives
+
+| Feature | open-wispr | Whisper Flow | Superwhisper | MacWhisper |
+|---|---|---|---|---|
+| Price | Free | $30 | $10/mo | $30+ |
+| Open Source | Yes | No | No | No |
+| 100% Local | Yes | Yes | Yes | Yes |
+| Works in Any App | Yes | Yes | Yes | No (copy/paste) |
+| Install Method | Homebrew | DMG | DMG | App Store |
+
+## Configuration
+
+```json
+{
+  "model": "base",
+  "language": "en",
+  "hotkey": "globe",
+  "max_duration": 30
+}
+```
+
+Config file location: `~/.config/open-wispr/config.json`
+
+## System Requirements
+
+- macOS 13 (Ventura) or later
+- Apple Silicon (M1+) or Intel Mac
+- ~150 MB disk space for the default Whisper model
+- Microphone and Accessibility permissions
