@@ -17,27 +17,33 @@ trap "rm -rf ${DL_DIR}" EXIT
 echo "==> Downloading bottles from release ${TAG}..."
 gh release download "${TAG}" --pattern "*.bottle.tar.gz" --dir "${DL_DIR}" --repo human37/open-wispr
 
-BOTTLE_LINES=""
+BOTTLES_JSON="{"
+FIRST=true
 
 for file in "${DL_DIR}"/*.bottle.tar.gz; do
   filename=$(basename "$file")
   sha=$(shasum -a 256 "$file" | awk '{print $1}')
+  os_tag=""
   if [[ "$filename" == *"arm64_sequoia"* ]]; then
-    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, arm64_sequoia: \"${sha}\"\n"
-    echo "    arm64_sequoia: ${sha}"
+    os_tag="arm64_sequoia"
   elif [[ "$filename" == *"ventura"* ]]; then
-    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, ventura: \"${sha}\"\n"
-    echo "    ventura: ${sha}"
+    os_tag="ventura"
   elif [[ "$filename" == *"sonoma"* ]]; then
-    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, sonoma: \"${sha}\"\n"
-    echo "    sonoma: ${sha}"
+    os_tag="sonoma"
   elif [[ "$filename" == *"sequoia"* ]]; then
-    BOTTLE_LINES="${BOTTLE_LINES}    sha256 cellar: :any, sequoia: \"${sha}\"\n"
-    echo "    sequoia: ${sha}"
+    os_tag="sequoia"
+  fi
+  if [ -n "$os_tag" ]; then
+    echo "    ${os_tag}: ${sha}"
+    $FIRST || BOTTLES_JSON="${BOTTLES_JSON},"
+    BOTTLES_JSON="${BOTTLES_JSON}\"${os_tag}\":\"${sha}\""
+    FIRST=false
   fi
 done
 
-if [ -z "$BOTTLE_LINES" ]; then
+BOTTLES_JSON="${BOTTLES_JSON}}"
+
+if [ "$BOTTLES_JSON" = "{}" ]; then
   echo "Error: No bottle files found in release ${TAG}"
   exit 1
 fi
@@ -50,15 +56,25 @@ fi
 git -C "${TAP_DIR}" pull --rebase
 
 ruby -e '
-  formula = File.read(ARGV[0])
+  require "json"
+  formula_path = ARGV[0]
+  tag = ARGV[1]
+  bottles = JSON.parse(ARGV[2])
+
+  formula = File.read(formula_path)
   formula.gsub!(/\n  bottle do.*?  end\n/m, "\n")
-  bottle = "\n  bottle do\n" \
-           "    root_url \"https://github.com/human37/open-wispr/releases/download/'"${TAG}"'\"\n" \
-           "'"${BOTTLE_LINES}"'" \
-           "  end\n"
-  formula.sub!(/^(  license "MIT"\n)/) { $1 + bottle }
-  File.write(ARGV[0], formula)
-' "$FORMULA"
+
+  lines = ["  bottle do"]
+  lines << "    root_url \"https://github.com/human37/open-wispr/releases/download/#{tag}\""
+  bottles.each do |os_tag, sha|
+    lines << "    sha256 cellar: :any, #{os_tag}: \"#{sha}\""
+  end
+  lines << "  end"
+
+  bottle_block = "\n" + lines.join("\n") + "\n"
+  formula.sub!(/^(  license "MIT"\n)/) { $1 + bottle_block }
+  File.write(formula_path, formula)
+' "$FORMULA" "$TAG" "$BOTTLES_JSON"
 
 git -C "${TAP_DIR}" add open-wispr.rb
 git -C "${TAP_DIR}" diff --cached --quiet && echo "Tap already up to date." || \
