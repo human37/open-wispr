@@ -1,0 +1,22 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/index.html
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+/demo.html
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+/logo.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/robots.txt
+  Cache-Control: public, max-age=86400
+
+/sitemap.xml
+  Cache-Control: public, max-age=86400
+
+/llms.txt
+  Cache-Control: public, max-age=86400
