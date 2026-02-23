@@ -42,6 +42,29 @@ git -C "${TAP_DIR}" diff --cached --quiet && echo "Tap already up to date." || \
   git -C "${TAP_DIR}" commit -m "Bump to ${TAG}"
 git -C "${TAP_DIR}" push origin main
 
+echo "==> Creating GitHub Release..."
+gh release create "${TAG}" --generate-notes --repo human37/open-wispr
+
+echo "==> Waiting for bottle builds..."
+sleep 15
+RUN_ID=""
+for i in $(seq 1 30); do
+  RUN_ID=$(gh run list --workflow=build-bottle.yml --event=release --limit=1 --json databaseId --jq '.[0].databaseId' --repo human37/open-wispr 2>/dev/null)
+  if [ -n "$RUN_ID" ]; then
+    break
+  fi
+  sleep 5
+done
+
+if [ -z "$RUN_ID" ]; then
+  echo "Warning: Could not find bottle build workflow. Skipping bottle update."
+  echo "Run 'bash scripts/update-bottles.sh ${VERSION}' manually after bottles are built."
+else
+  echo "==> Watching bottle build (run ${RUN_ID})..."
+  gh run watch "$RUN_ID" --repo human37/open-wispr
+  bash "${REPO_DIR}/scripts/update-bottles.sh" "$VERSION"
+fi
+
 echo ""
 echo "==> Deployed ${TAG}"
 echo "Users can update with: brew update && brew upgrade open-wispr"

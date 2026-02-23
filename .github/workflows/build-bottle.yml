@@ -1,0 +1,26 @@
+name: Build Bottles
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  bottle:
+    strategy:
+      matrix:
+        os: [macos-15, macos-13]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - name: Build bottle
+        run: |
+          brew tap human37/open-wispr
+          brew install --build-bottle human37/open-wispr/open-wispr
+          brew bottle --no-rebuild human37/open-wispr/open-wispr
+
+      - name: Upload bottle to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" open-wispr--*.bottle.tar.gz --repo human37/open-wispr

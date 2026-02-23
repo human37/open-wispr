@@ -10,6 +10,8 @@ on:
       - 'sitemap.xml'
       - 'logo.svg'
       - 'og.png'
+      - '_headers'
+      - 'llms.txt'
 
 jobs:
   deploy:
