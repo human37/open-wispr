@@ -20,4 +20,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" open-wispr--*.bottle.tar.gz --repo human37/open-wispr
+          for f in open-wispr--*.bottle.tar.gz; do
+            mv "$f" "$(echo "$f" | sed 's/--/-/')"
+          done
+          gh release upload "${{ github.event.release.tag_name }}" open-wispr-*.bottle.tar.gz --repo human37/open-wispr

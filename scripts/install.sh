@@ -119,7 +119,7 @@ fi
 stop_spin
 ok "Tapped ${DIM}human37/open-wispr${NC}"
 
-start_spin "Building from source (this takes a minute)..."
+start_spin "Installing open-wispr..."
 brew install open-wispr </dev/null >/dev/null 2>&1 || true
 brew reinstall open-wispr </dev/null >/dev/null 2>&1 || true
 stop_spin
