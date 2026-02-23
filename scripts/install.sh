@@ -95,17 +95,19 @@ printf "  ${BOLD}open-wispr${NC} ${DIM}— local voice dictation for macOS${NC}\
 printf "  ${DIM}────────────────────────────────────────────${NC}\n"
 
 # ── Step 1: Clean up ─────────────────────────────────────────────────
-step "Removing previous installation"
-start_spin "Cleaning up..."
+if brew list open-wispr &>/dev/null || [ -d ~/Applications/OpenWispr.app ]; then
+    step "Removing previous installation"
+    start_spin "Cleaning up..."
 
-brew services stop open-wispr </dev/null >/dev/null 2>&1 || true
-brew uninstall --force open-wispr </dev/null >/dev/null 2>&1 || true
-brew untap human37/open-wispr </dev/null >/dev/null 2>&1 || true
-tccutil reset Accessibility com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
-rm -rf ~/Applications/OpenWispr.app
+    brew services stop open-wispr </dev/null >/dev/null 2>&1 || true
+    brew uninstall --force open-wispr </dev/null >/dev/null 2>&1 || true
+    brew untap human37/open-wispr </dev/null >/dev/null 2>&1 || true
+    tccutil reset Accessibility com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
+    rm -rf ~/Applications/OpenWispr.app
 
-stop_spin
-ok "Clean"
+    stop_spin
+    ok "Clean"
+fi
 
 # ── Step 2: Install ──────────────────────────────────────────────────
 step "Installing"
