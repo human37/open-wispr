@@ -127,7 +127,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             do {
-                let text = try self.transcriber.transcribe(audioURL: audioURL)
+                let raw = try self.transcriber.transcribe(audioURL: audioURL)
+                let text = TextPostProcessor.process(raw)
                 DispatchQueue.main.async {
                     if !text.isEmpty {
                         self.inserter.insert(text: text)
