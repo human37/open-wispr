@@ -5,12 +5,14 @@ struct Config: Codable {
     var modelPath: String?
     var modelSize: String
     var language: String
+    var spokenPunctuation: Bool?
 
     static let defaultConfig = Config(
         hotkey: HotkeyConfig(keyCode: 63, modifiers: []),
         modelPath: nil,
         modelSize: "base.en",
-        language: "en"
+        language: "en",
+        spokenPunctuation: false
     )
 
     static var configDir: URL {
