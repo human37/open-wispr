@@ -1,0 +1,111 @@
+# Installation Guide
+
+## Quick Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh | bash
+```
+
+The installer handles everything automatically — Homebrew tap, formula install, permissions, model download, and service startup.
+
+## What the installer does
+
+1. **Installs via Homebrew** — taps `human37/open-wispr` and installs the formula
+2. **Copies the app bundle** to `~/Applications/OpenWispr.app`
+3. **Requests permissions** — Microphone and Accessibility
+4. **Downloads the Whisper model** (~142 MB, one-time)
+5. **Starts the background service** via `brew services`
+
+## Granting Permissions
+
+open-wispr needs two macOS permissions to work:
+
+### Microphone
+
+A system dialog will appear automatically during install. Click **Allow**.
+
+### Accessibility
+
+Accessibility permission lets open-wispr detect your hotkey globally. During install, a pop-up like this will appear:
+
+<p align="center">
+  <img width="465" alt="Accessibility permission prompt" src="https://github.com/user-attachments/assets/9a0533ae-c174-4395-9533-46b55c3cb592" />
+</p>
+
+Click it to jump directly to the Accessibility settings. Find **OpenWispr** in the list and toggle it **ON**:
+
+<p align="center">
+  <img width="711" alt="Accessibility settings with OpenWispr toggled on" src="https://github.com/user-attachments/assets/f8243e28-4fae-4aba-a030-5c4c66c3cf07" />
+</p>
+
+If you missed the pop-up, navigate there manually:
+
+> **System Settings → Privacy & Security → Accessibility**
+
+If `OpenWispr` doesn't appear in the list, click the **+** button and add it from `~/Applications/OpenWispr.app`.
+
+### Non-English macOS
+
+The permission steps are the same regardless of your system language. macOS translates the Settings UI automatically — only the app name **OpenWispr** stays the same.
+
+For reference, here's the path in a few languages:
+
+| Language | Path |
+|---|---|
+| English | System Settings → Privacy & Security → Accessibility |
+| Italian | Impostazioni di Sistema → Privacy e sicurezza → Accessibilità |
+| French | Réglages du système → Confidentialité et sécurité → Accessibilité |
+| German | Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen |
+| Spanish | Ajustes del Sistema → Privacidad y seguridad → Accesibilidad |
+| Portuguese | Ajustes do Sistema → Privacidade e Segurança → Acessibilidade |
+
+## Troubleshooting
+
+### "Timed out waiting for Accessibility permission"
+
+The installer waits up to 5 minutes for you to grant Accessibility. If it times out:
+
+1. Uninstall first:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/uninstall.sh | bash
+   ```
+2. Re-run the installer. Watch for the Accessibility pop-up and grant it promptly.
+
+### App not appearing in Accessibility list
+
+1. Open **System Settings → Privacy & Security → Accessibility**
+2. Click the **+** button
+3. Navigate to `~/Applications/` and select `OpenWispr.app`
+4. Toggle it **ON**
+
+### Microphone denied
+
+If you accidentally denied microphone access:
+
+1. Go to **System Settings → Privacy & Security → Microphone**
+2. Find **OpenWispr** and toggle it **ON**
+3. Re-run the installer
+
+### Globe key opens emoji picker
+
+If the Globe key (🌐) triggers the emoji picker instead of open-wispr:
+
+> **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
+
+## Uninstall
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/uninstall.sh | bash
+```
+
+This removes the service, formula, tap, config, models, app bundle, logs, and resets Accessibility permissions.
+
+## Build from Source
+
+```bash
+git clone https://github.com/human37/open-wispr.git
+cd open-wispr
+brew install whisper-cpp
+swift build -c release
+.build/release/open-wispr start
+```

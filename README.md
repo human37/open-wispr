@@ -18,13 +18,15 @@ A waveform icon appears in your menu bar when it's running.
 
 The default hotkey is the **Globe key** (🌐, bottom-left). Hold it, speak, release.
 
+> **[Full installation guide](docs/install-guide.md)** — permissions walkthrough with screenshots, non-English macOS instructions, and troubleshooting.
+
 ## Uninstall
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/uninstall.sh | bash
 ```
 
-This stops the service, removes the formula, tap, config, models, app bundle, and logs.
+This stops the service, removes the formula, tap, config, models, app bundle, logs, and permissions.
 
 ## Configuration
 
