@@ -95,7 +95,14 @@
   </script>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%237C3AED'/%3E%3Cg transform='translate(60,60)'%3E%3Crect x='-38' y='-10' width='12' height='20' rx='4' fill='%23fff'/%3E%3Crect x='-19' y='-24' width='12' height='48' rx='4' fill='%23fff'/%3E%3Crect x='-6' y='-34' width='12' height='68' rx='4' fill='%23fff'/%3E%3Crect x='7' y='-24' width='12' height='48' rx='4' fill='%23fff'/%3E%3Crect x='26' y='-10' width='12' height='20' rx='4' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%237C3AED'/%3E%3Cg transform='translate(60,60)'%3E%3Crect x='-38' y='-10' width='12' height='20' rx='4' fill='%23fff'/%3E%3Crect x='-19' y='-24' width='12' height='48' rx='4' fill='%23fff'/%3E%3Crect x='-6' y='-34' width='12' height='68' rx='4' fill='%23fff'/%3E%3Crect x='7' y='-24' width='12' height='48' rx='4' fill='%23fff'/%3E%3Crect x='26' y='-10' width='12' height='20' rx='4' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (function(){
+      var t=localStorage.getItem('theme');
+      if(!t)t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+      document.documentElement.setAttribute('data-theme',t);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -118,7 +125,28 @@
       --sans:'DM Sans',sans-serif;
       --nav-bg:rgba(253,252,248,.94);
       --code-bg:#F5F3EE;
+      --subtle-border:#e5e5e5;
+      --header-bg:#1a1a1a;
+      --header-text:#FDFCF8;
       --sp:80px;
+    }
+
+    [data-theme="dark"]{
+      --bg:#0f0f0f;
+      --surface:#1a1a1a;
+      --border:#333;
+      --text:#e5e5e5;
+      --muted:#999;
+      --accent:#A78BFA;
+      --accent-light:#1e1633;
+      --highlight:#2e1f4d;
+      --shadow:3px 3px 0 #000;
+      --shadow-hover:1px 1px 0 #000;
+      --nav-bg:rgba(15,15,15,.94);
+      --code-bg:#161616;
+      --subtle-border:#2a2a2a;
+      --header-bg:#222;
+      --header-text:#e5e5e5;
     }
 
     html{scroll-behavior:smooth;scroll-padding-top:72px;overflow-x:hidden}
@@ -148,7 +176,7 @@
     }
     .card:hover{box-shadow:var(--shadow-hover);transform:translate(1px,1px)}
     .card-header{
-      background:var(--text);color:var(--bg);
+      background:var(--header-bg);color:var(--header-text);
       padding:10px 20px;font-size:11px;font-weight:500;
       text-transform:uppercase;letter-spacing:.1em;
       border-bottom:var(--bw) solid var(--border);
@@ -222,6 +250,20 @@
       transition:background .12s;
     }
     .copy-btn:hover{background:#6D28D9}
+    [data-theme="dark"] .copy-btn:hover{background:#8B5CF6}
+
+    .theme-toggle{
+      background:none;border:var(--bw) solid var(--border);
+      width:32px;height:32px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--text);transition:border-color .15s;
+      flex-shrink:0;
+    }
+    .theme-toggle:hover{border-color:var(--accent)}
+    .theme-toggle svg{width:16px;height:16px}
+    .theme-toggle .icon-moon{display:none}
+    [data-theme="dark"] .theme-toggle .icon-sun{display:none}
+    [data-theme="dark"] .theme-toggle .icon-moon{display:block}
     .tip-row{
       display:flex;align-items:center;gap:12px;
       font-size:12px;color:var(--muted);
@@ -300,13 +342,13 @@
       background:var(--surface);font-size:13px;
     }
     .compare-table thead th{
-      background:var(--text);color:var(--bg);
+      background:var(--header-bg);color:var(--header-text);
       padding:12px 16px;font-size:11px;font-weight:500;
       text-transform:uppercase;letter-spacing:.1em;text-align:left;
     }
     .compare-table thead th:first-child{width:1%}
     .compare-table tbody td{
-      padding:12px 16px;border-bottom:1px solid #e5e5e5;
+      padding:12px 16px;border-bottom:1px solid var(--subtle-border);
       vertical-align:middle;
     }
     .compare-table tbody tr:last-child td{border-bottom:none}
@@ -330,7 +372,7 @@
     .flow-step{
       display:flex;align-items:baseline;gap:20px;
       padding:18px 28px;
-      border-bottom:1px solid #e5e5e5;
+      border-bottom:1px solid var(--subtle-border);
     }
     .flow-step:last-child{border-bottom:none}
     .flow-num{
@@ -340,7 +382,7 @@
     .flow-text{font-size:14px;line-height:1.8}
     .flow-text strong{font-weight:500}
     .flow-text code{
-      background:var(--code-bg);border:1px solid #e5e5e5;
+      background:var(--code-bg);border:1px solid var(--subtle-border);
       padding:2px 6px;font-size:12px;
     }
 
@@ -386,13 +428,13 @@
       background:var(--surface);
     }
     .config-table th{
-      background:var(--text);color:var(--bg);
+      background:var(--header-bg);color:var(--header-text);
       padding:10px 20px;font-size:11px;font-weight:500;
       text-transform:uppercase;letter-spacing:.1em;text-align:left;
     }
     .config-table td{
       padding:14px 20px;font-size:13px;
-      border-bottom:1px solid #e5e5e5;vertical-align:top;
+      border-bottom:1px solid var(--subtle-border);vertical-align:top;
     }
     .config-table tr:last-child td{border-bottom:none}
     .config-table td:first-child{
@@ -403,14 +445,14 @@
     }
     .config-table td:nth-child(3){color:var(--muted);font-size:12px}
     .config-table code{
-      background:var(--code-bg);border:1px solid #e5e5e5;
+      background:var(--code-bg);border:1px solid var(--subtle-border);
       padding:2px 6px;font-size:11px;
     }
     .config-note{
       margin-top:20px;font-size:13px;color:var(--muted);line-height:1.7;
     }
     .config-note code{
-      background:var(--code-bg);border:1px solid #e5e5e5;
+      background:var(--code-bg);border:1px solid var(--subtle-border);
       padding:2px 6px;font-size:12px;
     }
 
@@ -436,7 +478,7 @@
       border:var(--bw) solid var(--border);box-shadow:var(--shadow);
       background:var(--surface);
     }
-    .faq-item{border-bottom:1px solid #e5e5e5}
+    .faq-item{border-bottom:1px solid var(--subtle-border)}
     .faq-item:last-child{border-bottom:none}
     .faq-item summary{
       padding:18px 28px;font-size:14px;font-weight:500;
@@ -482,7 +524,7 @@
       .config-table{display:block;overflow-x:auto}
       .config-table tr,.config-table th,.config-table td{display:block}
       .config-table thead{display:none}
-      .config-table tr{padding:14px 20px;border-bottom:1px solid #e5e5e5}
+      .config-table tr{padding:14px 20px;border-bottom:1px solid var(--subtle-border)}
       .config-table tr:last-child{border-bottom:none}
       .config-table td{padding:2px 0;border:none}
       .config-table td:first-child{font-size:14px;margin-bottom:4px}
@@ -523,6 +565,10 @@
       <a href="#faq">FAQ</a>
       <a href="#install">Install</a>
       <a href="https://github.com/human37/open-wispr">GitHub</a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
   </div>
 </nav>
@@ -870,6 +916,23 @@
   }
 
   run();
+})();
+</script>
+
+<script>
+(function(){
+  var btn=document.getElementById('themeToggle');
+  btn.addEventListener('click',function(){
+    var current=document.documentElement.getAttribute('data-theme');
+    var next=current==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    localStorage.setItem('theme',next);
+  });
+  window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(e){
+    if(!localStorage.getItem('theme')){
+      document.documentElement.setAttribute('data-theme',e.matches?'dark':'light');
+    }
+  });
 })();
 </script>
 
