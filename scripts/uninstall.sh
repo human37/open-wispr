@@ -16,11 +16,14 @@ echo "  Removing config and model..."
 rm -rf ~/.config/open-wispr
 
 echo "  Removing app bundle..."
-rm -f ~/Applications/OpenWispr.app
-rm -f /Applications/OpenWispr.app 2>/dev/null || true
+rm -rf ~/Applications/OpenWispr.app
+rm -rf /Applications/OpenWispr.app 2>/dev/null || true
 
 echo "  Removing logs..."
 rm -f /opt/homebrew/var/log/open-wispr.log
+
+echo "  Resetting permissions..."
+tccutil reset Accessibility com.human37.open-wispr 2>/dev/null || true
 
 echo ""
 echo "OpenWispr has been completely uninstalled."
