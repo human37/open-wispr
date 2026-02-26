@@ -203,6 +203,7 @@
     }
     .logo-icon{flex-shrink:0}
     .nav-links{display:flex;gap:24px;align-items:center}
+    .nav-right{display:flex;align-items:center;gap:16px}
     .nav-links a{
       color:var(--text);font-size:12px;font-weight:500;
       text-transform:uppercase;letter-spacing:.08em;
@@ -265,6 +266,17 @@
     .theme-toggle .icon-moon{display:none}
     [data-theme="dark"] .theme-toggle .icon-sun{display:none}
     [data-theme="dark"] .theme-toggle .icon-moon{display:block}
+
+    .menu-toggle{
+      display:none;background:none;border:var(--bw) solid var(--border);
+      width:32px;height:32px;cursor:pointer;
+      align-items:center;justify-content:center;
+      color:var(--text);flex-shrink:0;
+    }
+    .menu-toggle svg{width:16px;height:16px}
+    .menu-toggle .icon-close{display:none}
+    .menu-toggle.open .icon-menu{display:none}
+    .menu-toggle.open .icon-close{display:block}
     .tip-row{
       display:flex;align-items:center;gap:12px;
       font-size:12px;color:var(--muted);
@@ -534,8 +546,17 @@
       .compare-table thead{font-size:10px}
       .compare-table thead th{padding:10px 12px}
       .compare-table tbody td{padding:10px 12px;font-size:12px}
-      .nav-links{gap:16px}
-      .nav-links a{font-size:11px}
+      .menu-toggle{display:flex}
+      .nav-links{
+        display:none;position:absolute;top:100%;left:0;right:0;
+        flex-direction:column;gap:0;
+        background:var(--bg);border-bottom:var(--bw) solid var(--border);
+      }
+      .nav-links.open{display:flex}
+      .nav-links a{
+        font-size:12px;padding:14px 20px;
+        border-bottom:1px solid var(--subtle-border);
+      }
       .install-block{width:100%}
       .install-body{flex-direction:column;align-items:stretch;gap:12px}
       .install-body code{font-size:11px;word-break:break-all;white-space:normal}
@@ -561,14 +582,20 @@
       </svg>
       open-wispr
     </div>
-    <div class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#faq">FAQ</a>
-      <a href="#install">Install</a>
-      <a href="https://github.com/human37/open-wispr">GitHub</a>
+    <div class="nav-right">
+      <div class="nav-links" id="navLinks">
+        <a href="#features">Features</a>
+        <a href="#faq">FAQ</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/human37/open-wispr">GitHub</a>
+      </div>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+        <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
   </div>
@@ -932,6 +959,18 @@
   window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(e){
     if(!localStorage.getItem('theme')){
       document.documentElement.setAttribute('data-theme',e.matches?'dark':'light');
+    }
+  });
+  var menu=document.getElementById('menuToggle');
+  var links=document.getElementById('navLinks');
+  menu.addEventListener('click',function(){
+    menu.classList.toggle('open');
+    links.classList.toggle('open');
+  });
+  links.addEventListener('click',function(e){
+    if(e.target.tagName==='A'){
+      menu.classList.remove('open');
+      links.classList.remove('open');
     }
   });
 })();
