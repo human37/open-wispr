@@ -4,3 +4,4 @@
 *.app
 .DS_Store
 .beads
+.playwright-mcp/
