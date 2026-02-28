@@ -46,8 +46,8 @@ Then restart: `brew services restart open-wispr`
 |---|---|---|
 | **hotkey** | `63` | Globe (`63`), Right Option (`61`), F5 (`96`), or any key code |
 | **modifiers** | `[]` | `"cmd"`, `"ctrl"`, `"shift"`, `"opt"` — combine for chords |
-| **modelSize** | `"base.en"` | `tiny.en` (75 MB) · `base.en` (142 MB) · `small.en` (466 MB) · `medium.en` (1.5 GB) |
-| **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes). Use a non-`.en` model for other languages. |
+| **modelSize** | `"base.en"` | `tiny.en` · `base.en` · `small.en` · `medium.en` (English-only) or `tiny` · `base` · `small` · `medium` (multilingual) |
+| **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es`. Requires a multilingual model (without `.en` suffix). |
 
 If the Globe key opens the emoji picker: **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 

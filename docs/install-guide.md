@@ -92,6 +92,51 @@ If the Globe key (🌐) triggers the emoji picker instead of open-wispr:
 
 > **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 
+## Language Support
+
+open-wispr defaults to English, but Whisper supports many languages. To dictate in a different language, edit `~/.config/open-wispr/config.json`:
+
+1. Switch to a **multilingual model** (remove the `.en` suffix)
+2. Set the **language** to your [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
+
+For example, to use Italian:
+
+```json
+{
+  "language": "it",
+  "modelSize": "base"
+}
+```
+
+Then restart: `brew services restart open-wispr`
+
+The multilingual model will be downloaded automatically on next use.
+
+### Available models
+
+| Model | English-only | Multilingual | Size |
+|---|---|---|---|
+| tiny | `tiny.en` | `tiny` | ~75 MB |
+| base | `base.en` | `base` | ~142 MB |
+| small | `small.en` | `small` | ~466 MB |
+| medium | `medium.en` | `medium` | ~1.5 GB |
+
+Larger models are more accurate but slower. `base` is a good starting point for most languages.
+
+### Common language codes
+
+| Language | Code |
+|---|---|
+| English | `en` |
+| Italian | `it` |
+| French | `fr` |
+| German | `de` |
+| Spanish | `es` |
+| Portuguese | `pt` |
+| Japanese | `ja` |
+| Chinese | `zh` |
+| Korean | `ko` |
+
 ## Uninstall
 
 ```bash
