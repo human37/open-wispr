@@ -77,6 +77,10 @@ swift build -c release
 .build/release/open-wispr start
 ```
 
+## Support
+
+open-wispr is free and always will be. If you find it useful, you can [leave a tip](https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00).
+
 ## License
 
 MIT
