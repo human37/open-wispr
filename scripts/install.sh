@@ -134,7 +134,7 @@ ok "Installed"
 
 mkdir -p ~/Applications
 rm -rf ~/Applications/OpenWispr.app
-cp -R "${BREW_PREFIX}/OpenWispr.app" ~/Applications/OpenWispr.app
+ln -sf "${BREW_PREFIX}/OpenWispr.app" ~/Applications/OpenWispr.app
 APP_BIN=~/Applications/OpenWispr.app/Contents/MacOS/open-wispr
 
 # ── Step 3: Permissions ──────────────────────────────────────────────

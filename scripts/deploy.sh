@@ -42,8 +42,22 @@ git -C "${TAP_DIR}" diff --cached --quiet && echo "Tap already up to date." || \
   git -C "${TAP_DIR}" commit -m "Bump to ${TAG}"
 git -C "${TAP_DIR}" push origin main
 
+echo "==> Generating release notes..."
+PREV_TAG=$(git -C "${REPO_DIR}" describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+if [ -n "$PREV_TAG" ]; then
+  COMMITS=$(git -C "${REPO_DIR}" log "${PREV_TAG}..HEAD" --pretty=format:"- %s" --no-merges)
+else
+  COMMITS=$(git -C "${REPO_DIR}" log --pretty=format:"- %s" --no-merges -20)
+fi
+
+NOTES=$(claude -p "You are writing release notes for open-wispr ${TAG}, a local voice dictation app for macOS. Here are the commits since the last release:
+
+${COMMITS}
+
+Write concise GitHub release notes in markdown. Use these sections only if relevant: ### What's New, ### Bug Fixes, ### Other Changes. Use bullet points. Don't include commit hashes. Keep it short and user-facing — skip internal/dev-only changes. End with a one-liner upgrade instruction: brew update && brew upgrade open-wispr")
+
 echo "==> Creating GitHub Release..."
-gh release create "${TAG}" --generate-notes --repo human37/open-wispr
+gh release create "${TAG}" --repo human37/open-wispr --notes "${NOTES}"
 
 echo "==> Waiting for bottle builds..."
 sleep 15
