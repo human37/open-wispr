@@ -802,13 +802,14 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>One file. Four options.</h2>
+  <h2>One file. Five options.</h2>
   <div class="config-example">
     <div class="card-header">~/.config/open-wispr/config.json</div>
     <pre>{
   "<b>hotkey</b>": { "<b>keyCode</b>": 63, "<b>modifiers</b>": [] },
   "<b>modelSize</b>": "base.en",
-  "<b>language</b>": "en"
+  "<b>language</b>": "en",
+  "<b>spokenPunctuation</b>": false
 }</pre>
   </div>
   <table class="config-table">
@@ -832,6 +833,11 @@
       <td>language</td>
       <td>"en"</td>
       <td>Any ISO 639-1 code. Use a non-.en model for other languages.</td>
+    </tr>
+    <tr>
+      <td>spokenPunctuation</td>
+      <td>false</td>
+      <td>Say "comma", "period", etc. to insert punctuation manually instead of auto-punctuation.</td>
     </tr>
   </table>
   <p class="config-note">Edit <code>~/.config/open-wispr/config.json</code>, then restart: <code>brew services restart open-wispr</code></p>

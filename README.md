@@ -48,8 +48,32 @@ Then restart: `brew services restart open-wispr`
 | **modifiers** | `[]` | `"cmd"`, `"ctrl"`, `"shift"`, `"opt"` — combine for chords |
 | **modelSize** | `"base.en"` | `tiny.en` · `base.en` · `small.en` · `medium.en` (English-only) or `tiny` · `base` · `small` · `medium` (multilingual) |
 | **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
+| **spokenPunctuation** | `false` | `true` to enable spoken punctuation mode |
 
 > **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent model without the `.en` suffix (e.g. `base.en` → `base`) and set the `language` field to your language code.
+
+### Spoken punctuation
+
+By default, Whisper adds punctuation automatically based on speech patterns. If you'd rather control punctuation by saying the words (e.g. "comma", "period"), enable spoken punctuation:
+
+```json
+{
+  "spokenPunctuation": true
+}
+```
+
+When enabled, Whisper is blocked from inserting punctuation characters and a post-processor converts your spoken words into symbols:
+
+| Say | Get |
+|---|---|
+| "comma" | `,` |
+| "period" / "full stop" | `.` |
+| "question mark" | `?` |
+| "exclamation mark" / "exclamation point" | `!` |
+| "colon" / "semicolon" | `:` / `;` |
+| "dash" / "hyphen" | ` —` / `-` |
+| "ellipsis" | `...` |
+| "new line" / "new paragraph" | newline / double newline |
 
 If the Globe key opens the emoji picker: **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 
