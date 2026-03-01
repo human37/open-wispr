@@ -1,8 +1,14 @@
-# open-wispr
+<p align="center">
+  <img src="logo.svg" width="80" alt="open-wispr logo">
+</p>
 
-**[open-wispr.com](https://open-wispr.com)**
+<h1 align="center">open-wispr</h1>
 
-Local, private voice dictation for macOS. Hold a key, speak, release — your words appear at the cursor. Everything runs on-device. No audio or text ever leaves your machine.
+<p align="center">
+  <strong><a href="https://open-wispr.com">open-wispr.com</a></strong><br>
+  Local, private voice dictation for macOS. Hold a key, speak, release — your words appear at the cursor.<br>
+  Everything runs on-device. No audio or text ever leaves your machine.
+</p>
 
 Powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with Metal acceleration on Apple Silicon.
 
