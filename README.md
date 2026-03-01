@@ -46,8 +46,10 @@ Then restart: `brew services restart open-wispr`
 |---|---|---|
 | **hotkey** | `63` | Globe (`63`), Right Option (`61`), F5 (`96`), or any key code |
 | **modifiers** | `[]` | `"cmd"`, `"ctrl"`, `"shift"`, `"opt"` — combine for chords |
-| **modelSize** | `"base.en"` | `tiny.en` (75 MB) · `base.en` (142 MB) · `small.en` (466 MB) · `medium.en` (1.5 GB) |
-| **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes). Use a non-`.en` model for other languages. |
+| **modelSize** | `"base.en"` | `tiny.en` · `base.en` · `small.en` · `medium.en` (English-only) or `tiny` · `base` · `small` · `medium` (multilingual) |
+| **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
+
+> **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent model without the `.en` suffix (e.g. `base.en` → `base`) and set the `language` field to your language code.
 
 If the Globe key opens the emoji picker: **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 
@@ -74,6 +76,10 @@ brew install whisper-cpp
 swift build -c release
 .build/release/open-wispr start
 ```
+
+## Support
+
+open-wispr is free and always will be. If you find it useful, you can [leave a tip](https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00).
 
 ## License
 
