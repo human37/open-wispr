@@ -10,7 +10,7 @@
   Everything runs on-device. No audio or text ever leaves your machine.
 </p>
 
-Powered by [whisper.cpp](https://github.com/ggml-org/whisper.cpp) with Metal acceleration on Apple Silicon.
+<p align="center">Powered by <a href="https://github.com/ggml-org/whisper.cpp">whisper.cpp</a> with Metal acceleration on Apple Silicon.</p>
 
 ## Install
 
