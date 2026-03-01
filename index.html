@@ -60,10 +60,10 @@
       },
       {
         "@type": "Question",
-        "name": "How does this compare to Whisper Flow, Superwhisper, or MacWhisper?",
+        "name": "How does this compare to VoiceInk, Whisper Flow, or Superwhisper?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "open-wispr is the free, open-source alternative. It provides the same core experience — push-to-talk local dictation powered by Whisper — without a price tag. It installs via Homebrew, runs as a lightweight background service, and has no GUI overhead."
+          "text": "open-wispr is the free, MIT-licensed alternative. VoiceInk ($39.99, GPLv3) is the closest — also open source and local — but adds AI features and custom dictionaries. Wispr Flow ($10/mo) uses cloud AI. Superwhisper ($249) is local but closed-source. open-wispr gives you the same core push-to-talk Whisper experience with zero cost and the most permissive license."
         }
       },
       {
@@ -659,6 +659,7 @@
       <tr>
         <th></th>
         <th>open-wispr</th>
+        <th>VoiceInk</th>
         <th>Wispr Flow</th>
         <th>Superwhisper</th>
         <th>MacWhisper</th>
@@ -669,6 +670,7 @@
       <tr>
         <td>Price</td>
         <td class="price-free">Free forever</td>
+        <td>$39.99</td>
         <td>$10/mo</td>
         <td>$249 lifetime</td>
         <td>$80 lifetime</td>
@@ -676,7 +678,8 @@
       </tr>
       <tr>
         <td>Open source</td>
-        <td class="check">Yes</td>
+        <td class="check">MIT</td>
+        <td>GPLv3</td>
         <td class="muted">No</td>
         <td class="muted">No</td>
         <td class="muted">No</td>
@@ -684,6 +687,7 @@
       </tr>
       <tr>
         <td>100% on-device</td>
+        <td class="check">Yes</td>
         <td class="check">Yes</td>
         <td class="muted">No</td>
         <td class="check">Yes</td>
@@ -695,11 +699,13 @@
         <td class="check">Yes</td>
         <td class="check">Yes</td>
         <td class="check">Yes</td>
+        <td class="check">Yes</td>
         <td class="muted">Own app only</td>
         <td class="check">Yes</td>
       </tr>
       <tr>
         <td>Push-to-talk</td>
+        <td class="check">Yes</td>
         <td class="check">Yes</td>
         <td class="check">Yes</td>
         <td class="check">Yes</td>
@@ -709,6 +715,7 @@
       <tr>
         <td>Whisper engine</td>
         <td class="check">Yes</td>
+        <td class="check">Yes</td>
         <td class="muted">Cloud AI</td>
         <td class="check">Yes</td>
         <td class="check">Yes</td>
@@ -717,14 +724,25 @@
       <tr>
         <td>Account required</td>
         <td class="check">No</td>
+        <td class="check">No</td>
         <td class="muted">Yes</td>
         <td class="muted">Yes</td>
         <td class="check">No</td>
         <td class="muted">Apple ID</td>
       </tr>
       <tr>
+        <td>AI features</td>
+        <td class="muted">No</td>
+        <td>AI assistant</td>
+        <td>AI rewriting</td>
+        <td>AI formatting</td>
+        <td class="muted">No</td>
+        <td class="muted">No</td>
+      </tr>
+      <tr>
         <td>Languages</td>
         <td>99</td>
+        <td>100+</td>
         <td>100+</td>
         <td>99</td>
         <td>100+</td>
@@ -733,6 +751,7 @@
       <tr>
         <td>Install method</td>
         <td>Homebrew</td>
+        <td>App Store</td>
         <td>App Store</td>
         <td>App Store</td>
         <td>App Store</td>
@@ -865,8 +884,8 @@
       <p>No. Everything runs 100% on-device. Audio is recorded to a temporary file, transcribed locally by Whisper, and the file is immediately deleted. There are zero network requests — no cloud, no accounts, no telemetry.</p>
     </details>
     <details class="faq-item">
-      <summary>How does this compare to Whisper Flow, Superwhisper, or MacWhisper?</summary>
-      <p>open-wispr is the free, open-source alternative. It provides the same core experience — push-to-talk local dictation powered by Whisper — without a price tag. It installs via Homebrew, runs as a lightweight background service, and has no GUI overhead.</p>
+      <summary>How does this compare to VoiceInk, Whisper Flow, or Superwhisper?</summary>
+      <p>open-wispr is the free, MIT-licensed alternative. VoiceInk ($39.99, GPLv3) is the closest — also open source and local — but adds AI features, custom dictionaries, and app-specific modes. Wispr Flow ($10/mo) uses cloud AI. Superwhisper ($249) is local but closed-source. open-wispr gives you the same core experience — push-to-talk local dictation powered by Whisper — with zero cost, zero bloat, and the most permissive license.</p>
     </details>
     <details class="faq-item">
       <summary>What Macs are supported?</summary>

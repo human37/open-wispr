@@ -71,6 +71,17 @@ If the Globe key opens the emoji picker: **System Settings → Keyboard → "Pre
 | Downloading model | Animated download arrow |
 | Waiting for permission | Lock |
 
+## Compare
+
+| | open-wispr | VoiceInk | Wispr Flow | Superwhisper | Apple Dictation |
+|---|---|---|---|---|---|
+| **Price** | **Free** | $39.99 | $10/mo | $249 | Free |
+| **Open source** | MIT | GPLv3 | No | No | No |
+| **100% on-device** | Yes | Yes | No | Yes | Partial |
+| **Push-to-talk** | Yes | Yes | Yes | Yes | No |
+| **AI features** | No | AI assistant | AI rewriting | AI formatting | No |
+| **Account required** | No | No | Yes | Yes | Apple ID |
+
 ## Privacy
 
 open-wispr is completely local. Audio is recorded to a temp file, transcribed by whisper.cpp on your CPU/GPU, and the temp file is deleted. No network requests are made except to download the Whisper model on first run.
