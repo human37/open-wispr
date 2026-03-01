@@ -6,6 +6,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var recorder: AudioRecorder!
     var transcriber: Transcriber!
     var inserter: TextInserter!
+    var config: Config!
     var isPressed = false
     var isReady = false
 
@@ -28,8 +29,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupInner() throws {
-        let config = Config.load()
+        config = Config.load()
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
+        transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
 
         DispatchQueue.main.async { self.statusBar.buildMenu() }
 
@@ -60,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !Transcriber.modelExists(modelSize: config.modelSize) {
             DispatchQueue.main.async {
                 self.statusBar.state = .downloading
-                self.statusBar.updateDownloadProgress("Downloading \(config.modelSize) model...")
+                self.statusBar.updateDownloadProgress("Downloading \(self.config.modelSize) model...")
             }
             print("Downloading \(config.modelSize) model...")
             try ModelDownloader.download(modelSize: config.modelSize)
@@ -70,11 +72,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         DispatchQueue.main.async { [weak self] in
-            self?.startListening(config: config)
+            self?.startListening()
         }
     }
 
-    private func startListening(config: Config) {
+    private func startListening() {
         hotkeyManager = HotkeyManager(
             keyCode: config.hotkey.keyCode,
             modifiers: config.hotkey.modifierFlags
@@ -127,7 +129,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             do {
-                let text = try self.transcriber.transcribe(audioURL: audioURL)
+                let raw = try self.transcriber.transcribe(audioURL: audioURL)
+                let text = (self.config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
                 DispatchQueue.main.async {
                     if !text.isEmpty {
                         self.inserter.insert(text: text)
