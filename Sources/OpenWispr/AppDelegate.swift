@@ -31,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupInner() throws {
         config = Config.load()
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
+        transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
 
         DispatchQueue.main.async { self.statusBar.buildMenu() }
 
@@ -129,7 +130,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
             do {
                 let raw = try self.transcriber.transcribe(audioURL: audioURL)
-                let text = (self.config.spokenPunctuation ?? false) ? TextPostProcessor.process(raw) : raw
+                let text = (self.config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
                 DispatchQueue.main.async {
                     if !text.isEmpty {
                         self.inserter.insert(text: text)

@@ -5,14 +5,14 @@ struct Config: Codable {
     var modelPath: String?
     var modelSize: String
     var language: String
-    var spokenPunctuation: Bool?
+    var spokenPunctuation: FlexBool?
 
     static let defaultConfig = Config(
         hotkey: HotkeyConfig(keyCode: 63, modifiers: []),
         modelPath: nil,
         modelSize: "base.en",
         language: "en",
-        spokenPunctuation: false
+        spokenPunctuation: FlexBool(false)
     )
 
     static var configDir: URL {
@@ -40,6 +40,30 @@ struct Config: Codable {
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(self)
         try data.write(to: Config.configFile)
+    }
+}
+
+struct FlexBool: Codable {
+    let value: Bool
+
+    init(_ value: Bool) { self.value = value }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let b = try? container.decode(Bool.self) {
+            value = b
+        } else if let s = try? container.decode(String.self) {
+            value = ["true", "yes", "1"].contains(s.lowercased())
+        } else if let i = try? container.decode(Int.self) {
+            value = i != 0
+        } else {
+            value = false
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(value)
     }
 }
 

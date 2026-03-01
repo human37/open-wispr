@@ -4,6 +4,7 @@ struct TextPostProcessor {
     private static let replacements: [(pattern: String, replacement: String)] = [
         ("\\bperiod\\b", "."),
         ("\\bfull stop\\b", "."),
+        ("\\b[ck]a?r?ma\\b", ","),
         ("\\bcomma\\b", ","),
         ("\\bquestion mark\\b", "?"),
         ("\\bexclamation mark\\b", "!"),
@@ -34,6 +35,7 @@ struct TextPostProcessor {
             )
         }
         result = fixSpacingAroundPunctuation(result)
+        result = ensureSpaceAfterPunctuation(result)
         return result
     }
 
@@ -44,6 +46,17 @@ struct TextPostProcessor {
             in: result,
             range: NSRange(result.startIndex..., in: result),
             withTemplate: "$1"
+        )
+        return result
+    }
+
+    private static func ensureSpaceAfterPunctuation(_ text: String) -> String {
+        var result = text
+        guard let regex = try? NSRegularExpression(pattern: "([.,?!:;])(\\w)", options: []) else { return result }
+        result = regex.stringByReplacingMatches(
+            in: result,
+            range: NSRange(result.startIndex..., in: result),
+            withTemplate: "$1 $2"
         )
         return result
     }

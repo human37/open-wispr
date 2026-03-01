@@ -3,6 +3,7 @@ import Foundation
 class Transcriber {
     private let modelSize: String
     private let language: String
+    var spokenPunctuation: Bool = false
 
     init(modelSize: String = "base.en", language: String = "en") {
         self.modelSize = modelSize
@@ -20,13 +21,17 @@ class Transcriber {
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: whisperPath)
-        process.arguments = [
+        var args = [
             "-m", modelPath,
             "-f", audioURL.path,
             "-l", language,
             "--no-timestamps",
             "-nt",
         ]
+        if spokenPunctuation {
+            args += ["--suppress-regex", "[,\\.\\?!;:\\-—]"]
+        }
+        process.arguments = args
 
         let pipe = Pipe()
         process.standardOutput = pipe
