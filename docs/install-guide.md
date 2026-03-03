@@ -92,6 +92,18 @@ If the Globe key (🌐) triggers the emoji picker instead of open-wispr:
 
 > **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 
+### Right Option hotkey also triggers from left Option
+
+If you set right Option (`keyCode: 61`) as the hotkey, open-wispr should only trigger from the physical right Option key. If left Option also triggers, update to the latest build.
+
+### Config resets to default after editing `config.json`
+
+If `config.json` has invalid JSON or unsupported values, open-wispr now prints a warning and falls back to defaults for that run, without overwriting your file. Fix the JSON and restart the service:
+
+```bash
+brew services restart open-wispr
+```
+
 ## Language Support
 
 open-wispr defaults to English, but Whisper supports many languages. To dictate in a different language, edit `~/.config/open-wispr/config.json`:

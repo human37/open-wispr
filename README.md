@@ -59,6 +59,10 @@ Then restart: `brew services restart open-wispr`
 
 > **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent model without the `.en` suffix (e.g. `base.en` → `base`) and set the `language` field to your language code.
 
+> **Modifier-only hotkeys:** Left and right modifier keys are matched by physical key. If you set `61` (`rightoption`), left Option (`58`) will not trigger it.
+
+> **Invalid config handling:** If `config.json` contains invalid JSON or unsupported values, open-wispr uses defaults for that run and prints a warning, but does not overwrite your file.
+
 If the Globe key opens the emoji picker: **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 
 ## Menu bar
