@@ -88,7 +88,7 @@ class StatusBarController: NSObject {
         menu.addItem(NSMenuItem.separator())
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
-        let copyItem = NSMenuItem(title: "Copy Last Transcription", action: lastText != nil ? #selector(copyLastTranscription) : nil, keyEquivalent: "")
+        let copyItem = NSMenuItem(title: "Copy Last Dictation", action: lastText != nil ? #selector(copyLastTranscription) : nil, keyEquivalent: "")
         copyItem.target = self
         if lastText == nil { copyItem.isEnabled = false }
         menu.addItem(copyItem)
