@@ -5,13 +5,9 @@ class AudioRecorder {
     private var audioEngine: AVAudioEngine?
     private var audioFile: AVAudioFile?
     private var isRecording = false
-    private let outputURL: URL
+    private var currentOutputURL: URL?
 
-    init() {
-        outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("open-wispr-recording.wav")
-    }
-
-    func startRecording() throws {
+    func startRecording(to outputURL: URL) throws {
         guard !isRecording else { return }
 
         let engine = AVAudioEngine()
@@ -25,10 +21,6 @@ class AudioRecorder {
             interleaved: false
         )!
 
-        if FileManager.default.fileExists(atPath: outputURL.path) {
-            try FileManager.default.removeItem(at: outputURL)
-        }
-
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVSampleRateKey: 16000,
@@ -39,6 +31,7 @@ class AudioRecorder {
         ]
 
         audioFile = try AVAudioFile(forWriting: outputURL, settings: settings)
+        currentOutputURL = outputURL
 
         let converter = AVAudioConverter(from: format, to: recordingFormat)
 
@@ -79,6 +72,6 @@ class AudioRecorder {
         audioFile = nil
         isRecording = false
 
-        return outputURL
+        return currentOutputURL
     }
 }

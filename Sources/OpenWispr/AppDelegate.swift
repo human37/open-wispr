@@ -34,7 +34,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
 
-        DispatchQueue.main.async { self.statusBar.buildMenu() }
+        DispatchQueue.main.async {
+            self.statusBar.reprocessHandler = { [weak self] url in
+                self?.reprocess(audioURL: url)
+            }
+            self.statusBar.buildMenu()
+        }
 
         if Transcriber.findWhisperBinary() == nil {
             print("Error: whisper-cpp not found. Install it with: brew install whisper-cpp")
@@ -128,7 +133,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         isPressed = true
         statusBar.state = .recording
         do {
-            try recorder.startRecording()
+            let outputURL: URL
+            if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
+                outputURL = RecordingStore.tempRecordingURL()
+            } else {
+                outputURL = RecordingStore.newRecordingURL()
+            }
+            try recorder.startRecording(to: outputURL)
         } catch {
             print("Error: \(error.localizedDescription)")
             isPressed = false
@@ -149,20 +160,67 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
+            let maxRecordings = Config.effectiveMaxRecordings(self.config.maxRecordings)
+            defer {
+                if maxRecordings == 0 {
+                    try? FileManager.default.removeItem(at: audioURL)
+                }
+            }
+            do {
+                let raw = try self.transcriber.transcribe(audioURL: audioURL)
+                let text = (self.config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
+                if maxRecordings > 0 {
+                    RecordingStore.prune(maxCount: maxRecordings)
+                }
+                DispatchQueue.main.async {
+                    if !text.isEmpty {
+                        self.lastTranscription = text
+                        self.inserter.insert(text: text)
+                    }
+                    self.statusBar.state = .idle
+                    self.statusBar.buildMenu()
+                }
+            } catch {
+                if maxRecordings > 0 {
+                    RecordingStore.prune(maxCount: maxRecordings)
+                }
+                DispatchQueue.main.async {
+                    print("Error: \(error.localizedDescription)")
+                    self.statusBar.state = .idle
+                    self.statusBar.buildMenu()
+                }
+            }
+        }
+    }
+
+    func reprocess(audioURL: URL) {
+        guard statusBar.state == .idle else { return }
+
+        statusBar.state = .transcribing
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
             do {
                 let raw = try self.transcriber.transcribe(audioURL: audioURL)
                 let text = (self.config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
                 DispatchQueue.main.async {
-                    self.statusBar.state = .idle
                     if !text.isEmpty {
                         self.lastTranscription = text
-                        self.inserter.insert(text: text)
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(text, forType: .string)
+                        self.statusBar.state = .copiedToClipboard
                         self.statusBar.buildMenu()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            self.statusBar.state = .idle
+                            self.statusBar.buildMenu()
+                        }
+                    } else {
+                        self.statusBar.state = .idle
                     }
                 }
             } catch {
                 DispatchQueue.main.async {
-                    print("Error: \(error.localizedDescription)")
+                    print("Reprocess error: \(error.localizedDescription)")
                     self.statusBar.state = .idle
                 }
             }

@@ -26,6 +26,7 @@ Sources/OpenWispr/
 ├── Config.swift         # Config loading/saving (~/.config/open-wispr/config.json)
 ├── Transcriber.swift    # Whisper CLI wrapper
 ├── AudioRecorder.swift  # Microphone recording
+├── RecordingStore.swift # Recording history and pruning
 └── ...
 scripts/
 ├── dev.sh               # Build & run from source
