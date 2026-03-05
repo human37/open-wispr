@@ -103,6 +103,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("Ready.")
     }
 
+    func reloadConfig() {
+        config = Config.load()
+        transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
+        transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
+
+        hotkeyManager?.stop()
+        hotkeyManager = HotkeyManager(
+            keyCode: config.hotkey.keyCode,
+            modifiers: config.hotkey.modifierFlags
+        )
+        hotkeyManager?.start(
+            onKeyDown: { [weak self] in self?.handleKeyDown() },
+            onKeyUp: { [weak self] in self?.handleKeyUp() }
+        )
+
+        statusBar.buildMenu()
+        let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+        print("Config reloaded: hotkey=\(hotkeyDesc) model=\(config.modelSize)")
+    }
+
     private func handleKeyDown() {
         guard isReady, !isPressed else { return }
         isPressed = true

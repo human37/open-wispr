@@ -33,18 +33,28 @@ class Transcriber {
         }
         process.arguments = args
 
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
 
         try process.run()
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        var stderrData = Data()
+        let stderrThread = Thread {
+            stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+        }
+        stderrThread.start()
+
+        let data = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+        while !stderrThread.isFinished { Thread.sleep(forTimeInterval: 0.01) }
         process.waitUntilExit()
 
         let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         if process.terminationStatus != 0 {
+            let stderr = String(data: stderrData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !stderr.isEmpty { fputs("whisper-cpp: \(stderr)\n", Foundation.stderr) }
             throw TranscriberError.transcriptionFailed
         }
 

@@ -102,9 +102,33 @@ class StatusBarController: NSObject {
         menu.addItem(copyItem)
 
         menu.addItem(NSMenuItem.separator())
+
+        let reloadItem = NSMenuItem(title: "Reload Configuration", action: #selector(reloadConfiguration), keyEquivalent: "r")
+        reloadItem.target = self
+        menu.addItem(reloadItem)
+
+        let openItem = NSMenuItem(title: "Open Configuration", action: #selector(openConfiguration), keyEquivalent: "o")
+        openItem.target = self
+        menu.addItem(openItem)
+
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
+    }
+
+    @objc private func reloadConfiguration() {
+        guard let delegate = NSApplication.shared.delegate as? AppDelegate else { return }
+        delegate.reloadConfig()
+    }
+
+    @objc private func openConfiguration() {
+        let configFile = Config.configFile
+        if !FileManager.default.fileExists(atPath: configFile.path) {
+            let config = Config.defaultConfig
+            try? config.save()
+        }
+        NSWorkspace.shared.open(configFile)
     }
 
     private func updateIcon() {
