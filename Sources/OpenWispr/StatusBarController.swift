@@ -1,11 +1,20 @@
 import AppKit
 
+class MenuItemTarget: NSObject {
+    let handler: () -> Void
+    init(handler: @escaping () -> Void) { self.handler = handler }
+    @objc func invoke() { handler() }
+}
+
 class StatusBarController {
     private var statusItem: NSStatusItem
     private var animationTimer: Timer?
     private var animationFrame = 0
     private var animationFrames: [NSImage] = []
     private var downloadProgress: String?
+    private var menuItemTargets: [MenuItemTarget] = []
+
+    var reprocessHandler: ((URL) -> Void)?
 
     enum State {
         case idle
@@ -13,6 +22,7 @@ class StatusBarController {
         case transcribing
         case downloading
         case waitingForPermission
+        case copiedToClipboard
     }
 
     var state: State = .idle {
@@ -35,7 +45,16 @@ class StatusBarController {
         buildMenu()
     }
 
+    private static let displayDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        return f
+    }()
+
     func buildMenu() {
+        menuItemTargets = []
+
         let config = Config.load()
         let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
 
@@ -61,6 +80,7 @@ class StatusBarController {
         case .transcribing: stateText = "Transcribing..."
         case .downloading: stateText = "Downloading model..."
         case .waitingForPermission: stateText = "Waiting for Accessibility permission..."
+        case .copiedToClipboard: stateText = "Copied to clipboard"
         }
         let stateItem = NSMenuItem(title: stateText, action: nil, keyEquivalent: "")
         stateItem.isEnabled = false
@@ -75,6 +95,33 @@ class StatusBarController {
         let modelItem = NSMenuItem(title: "Model: \(config.modelSize)", action: nil, keyEquivalent: "")
         modelItem.isEnabled = false
         menu.addItem(modelItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let recordings = RecordingStore.listRecordings()
+        let reprocessItem = NSMenuItem(title: "Recent Recordings", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+
+        if recordings.isEmpty {
+            let emptyItem = NSMenuItem(title: "No recordings", action: nil, keyEquivalent: "")
+            emptyItem.isEnabled = false
+            submenu.addItem(emptyItem)
+        } else {
+            for (index, recording) in recordings.enumerated() {
+                let dateStr = StatusBarController.displayDateFormatter.string(from: recording.date)
+                let label = "\(dateStr) (\(index + 1))"
+                let target = MenuItemTarget { [weak self] in
+                    self?.reprocessHandler?(recording.url)
+                }
+                menuItemTargets.append(target)
+                let item = NSMenuItem(title: label, action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+                item.target = target
+                submenu.addItem(item)
+            }
+        }
+
+        reprocessItem.submenu = submenu
+        menu.addItem(reprocessItem)
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -96,6 +143,8 @@ class StatusBarController {
             startDownloadingAnimation()
         case .waitingForPermission:
             setIcon(StatusBarController.drawLockIcon())
+        case .copiedToClipboard:
+            setIcon(StatusBarController.drawCheckmarkIcon())
         }
     }
 
@@ -314,6 +363,29 @@ class StatusBarController {
             shacklePath.lineWidth = 1.8
             shacklePath.lineCapStyle = .round
             shacklePath.stroke()
+
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
+    static func drawCheckmarkIcon() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSColor.black.setStroke()
+
+            let centerX = rect.midX
+            let centerY = rect.midY
+
+            let path = NSBezierPath()
+            path.move(to: NSPoint(x: centerX - 5, y: centerY - 1))
+            path.line(to: NSPoint(x: centerX - 2, y: centerY + 3))
+            path.line(to: NSPoint(x: centerX + 5, y: centerY - 4))
+            path.lineWidth = 2.0
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            path.stroke()
 
             return true
         }
