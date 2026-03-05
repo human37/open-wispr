@@ -9,6 +9,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var config: Config!
     var isPressed = false
     var isReady = false
+    var lastTranscription: String?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusBar = StatusBarController()
@@ -133,7 +134,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 let text = (self.config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
                 DispatchQueue.main.async {
                     if !text.isEmpty {
+                        self.lastTranscription = text
                         self.inserter.insert(text: text)
+                        self.statusBar.buildMenu()
                     }
                     self.statusBar.state = .idle
                 }

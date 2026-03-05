@@ -1,11 +1,12 @@
 import AppKit
 
-class StatusBarController {
+class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
     private var animationTimer: Timer?
     private var animationFrame = 0
     private var animationFrames: [NSImage] = []
     private var downloadProgress: String?
+    private var copiedFeedback = false
 
     enum State {
         case idle
@@ -19,8 +20,9 @@ class StatusBarController {
         didSet { updateIcon() }
     }
 
-    init() {
+    override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        super.init()
 
         if let button = statusItem.button {
             button.image = StatusBarController.drawLogo(active: false)
@@ -28,6 +30,20 @@ class StatusBarController {
         }
 
         buildMenu()
+    }
+
+    @objc private func copyLastTranscription() {
+        guard let delegate = NSApplication.shared.delegate as? AppDelegate,
+              let text = delegate.lastTranscription else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        copiedFeedback = true
+        buildMenu()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.copiedFeedback = false
+            self?.buildMenu()
+        }
     }
 
     func updateDownloadProgress(_ text: String?) {
@@ -75,6 +91,15 @@ class StatusBarController {
         let modelItem = NSMenuItem(title: "Model: \(config.modelSize)", action: nil, keyEquivalent: "")
         modelItem.isEnabled = false
         menu.addItem(modelItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
+        let copyTitle = copiedFeedback ? "Copied!" : "Copy Last Dictation"
+        let copyItem = NSMenuItem(title: copyTitle, action: lastText != nil && !copiedFeedback ? #selector(copyLastTranscription) : nil, keyEquivalent: "")
+        copyItem.target = self
+        if lastText == nil || copiedFeedback { copyItem.isEnabled = copiedFeedback }
+        menu.addItem(copyItem)
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
