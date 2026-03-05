@@ -116,6 +116,7 @@ echo "────────────────────"
 cur_model=$(read_config modelSize base.en)
 cur_lang=$(read_config language en)
 cur_punct=$(read_config spokenPunctuation false)
+cur_max_recordings=$(read_config maxRecordings 10)
 
 # Model
 echo ""
@@ -158,6 +159,14 @@ case "$punct_choice" in
     *) punct="$cur_punct" ;;
 esac
 
+# Max recordings (0=privacy/temp+delete, 1-100=keep for reprocessing)
+printf "  Max recordings (0=privacy, 1-100) [%s]: " "$cur_max_recordings"
+read -r max_rec_choice
+case "$max_rec_choice" in
+    "") max_recordings="$cur_max_recordings" ;;
+    *) max_recordings="$max_rec_choice" ;;
+esac
+
 # Hotkey
 hotkey_raw=$(read_hotkey)
 cur_keycode="${hotkey_raw%%|*}"
@@ -196,6 +205,7 @@ cat > "$CONFIG_FILE" << EOF
   "language": "$lang",
   "modelSize": "$model",
   "spokenPunctuation": $punct,
+  "maxRecordings": $max_recordings,
   "hotkey": { "keyCode": $hotkey_code, "modifiers": $hotkey_mods_json }
 }
 EOF
@@ -207,7 +217,7 @@ if [ "$hotkey_mods_json" != "[]" ]; then
 else
     hotkey_display="$hotkey_name"
 fi
-echo "  Config: model=$model  lang=$lang  punctuation=$punct  hotkey=$hotkey_display"
+echo "  Config: model=$model  lang=$lang  punctuation=$punct  maxRecordings=$max_recordings  hotkey=$hotkey_display"
 echo "────────────────────"
 
 # Kill any running instances
