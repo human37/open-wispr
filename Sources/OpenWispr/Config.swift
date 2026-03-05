@@ -6,13 +6,23 @@ struct Config: Codable {
     var modelSize: String
     var language: String
     var spokenPunctuation: FlexBool?
+    var maxRecordings: Int?
+
+    static let defaultMaxRecordings = 10
+
+    static func effectiveMaxRecordings(_ value: Int?) -> Int {
+        let raw = value ?? Config.defaultMaxRecordings
+        if raw == 0 { return 0 }
+        return min(max(1, raw), 100)
+    }
 
     static let defaultConfig = Config(
         hotkey: HotkeyConfig(keyCode: 63, modifiers: []),
         modelPath: nil,
         modelSize: "base.en",
         language: "en",
-        spokenPunctuation: FlexBool(false)
+        spokenPunctuation: FlexBool(false),
+        maxRecordings: nil
     )
 
     static var configDir: URL {

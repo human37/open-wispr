@@ -821,14 +821,15 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>One file. Five options.</h2>
+  <h2>One file. Six options.</h2>
   <div class="config-example">
     <div class="card-header">~/.config/open-wispr/config.json</div>
     <pre>{
   "<b>hotkey</b>": { "<b>keyCode</b>": 63, "<b>modifiers</b>": [] },
   "<b>modelSize</b>": "base.en",
   "<b>language</b>": "en",
-  "<b>spokenPunctuation</b>": false
+  "<b>spokenPunctuation</b>": false,
+  "<b>maxRecordings</b>": 10
 }</pre>
   </div>
   <table class="config-table">
@@ -858,6 +859,11 @@
       <td>false</td>
       <td>Say "comma", "period", etc. to insert punctuation manually instead of auto-punctuation.</td>
     </tr>
+    <tr>
+      <td>maxRecordings</td>
+      <td>10</td>
+      <td>Set to 0 for original privacy: temp file, deleted immediately. Use 1–100 to keep recordings for reprocessing from the tray menu.</td>
+    </tr>
   </table>
   <p class="config-note">Edit <code>~/.config/open-wispr/config.json</code>, then restart: <code>brew services restart open-wispr</code></p>
 </section>
@@ -881,7 +887,7 @@
     </details>
     <details class="faq-item">
       <summary>Does any audio or text leave my computer?</summary>
-      <p>No. Everything runs 100% on-device. Audio is recorded to a temporary file, transcribed locally by Whisper, and the file is immediately deleted. There are zero network requests — no cloud, no accounts, no telemetry.</p>
+      <p>No. Everything runs 100% on-device. Set <code>maxRecordings</code> to 0 for the original behavior: audio goes to a temp file, transcribed locally by Whisper, then deleted immediately. With <code>maxRecordings</code> &gt; 0 (default 10), recordings are stored in <code>~/.config/open-wispr/recordings/</code> for reprocessing; old ones are pruned automatically. There are zero network requests — no cloud, no accounts, no telemetry.</p>
     </details>
     <details class="faq-item">
       <summary>How does this compare to VoiceInk, Whisper Flow, or Superwhisper?</summary>
