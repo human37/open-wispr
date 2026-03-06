@@ -116,7 +116,7 @@ echo "────────────────────"
 cur_model=$(read_config modelSize base.en)
 cur_lang=$(read_config language en)
 cur_punct=$(read_config spokenPunctuation false)
-cur_max_recordings=$(read_config maxRecordings 10)
+cur_max_recordings=$(read_config maxRecordings 0)
 
 # Model
 echo ""

@@ -8,7 +8,7 @@ open-wispr is a lightweight macOS app that provides push-to-talk voice dictation
 
 - **Price**: Free and open source (MIT license)
 - **Platform**: macOS (Apple Silicon and Intel)
-- **Privacy**: 100% on-device. Zero network requests. Set maxRecordings to 0 for temp file + immediate delete. With maxRecordings > 0, recordings stored in ~/.config/open-wispr/recordings/ for reprocessing; old ones pruned automatically.
+- **Privacy**: 100% on-device. Zero network requests. Default maxRecordings=0: temp file + immediate delete. Set maxRecordings 1–100 to enable Recent Recordings.
 - **Install**: `brew install human37/open-wispr/open-wispr` or guided installer via `curl -fsSL https://open-wispr.pages.dev/install.sh | bash`
 - **Source**: https://github.com/human37/open-wispr
 - **Website**: https://open-wispr.pages.dev/

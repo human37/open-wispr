@@ -8,7 +8,7 @@ struct Config: Codable {
     var spokenPunctuation: FlexBool?
     var maxRecordings: Int?
 
-    static let defaultMaxRecordings = 10
+    static let defaultMaxRecordings = 0
 
     static func effectiveMaxRecordings(_ value: Int?) -> Int {
         let raw = value ?? Config.defaultMaxRecordings

@@ -44,7 +44,7 @@ Edit `~/.config/open-wispr/config.json`:
   "modelSize": "base.en",
   "language": "en",
   "spokenPunctuation": false,
-  "maxRecordings": 10
+  "maxRecordings": 0
 }
 ```
 
@@ -57,7 +57,7 @@ Then restart: `brew services restart open-wispr`
 | **modelSize** | `"base.en"` | See model table below |
 | **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
-| **maxRecordings** | `10` | Number of recent recordings to keep for reprocessing from the tray menu. Set to `0` for original privacy behavior: temp file, deleted immediately after transcription. Use 1–100 to enable the Recent Recordings feature. |
+| **maxRecordings** | `0` | Number of recent recordings to keep for reprocessing from the tray menu. Default `0` = privacy: temp file, deleted immediately. Use 1–100 to enable the Recent Recordings feature. |
 
 ### Models
 
@@ -102,7 +102,7 @@ Click the menu bar icon to access **Copy Last Dictation** — recovers your most
 
 ## Privacy
 
-open-wispr is completely local. Set `maxRecordings` to `0` for the original behavior: audio is recorded to a temp file, transcribed by whisper.cpp on your CPU/GPU, and the file is deleted immediately. With `maxRecordings` > 0 (default 10), recordings are stored in `~/.config/open-wispr/recordings/` for reprocessing from the tray menu; old recordings are pruned automatically. No network requests are made except to download the Whisper model on first run. Uninstall removes all recordings.
+open-wispr is completely local. By default (`maxRecordings` = 0): audio is recorded to a temp file, transcribed by whisper.cpp on your CPU/GPU, and the file is deleted immediately. Set `maxRecordings` to 1–100 to enable the Recent Recordings feature. No network requests are made except to download the Whisper model on first run. Uninstall removes all recordings.
 
 ## Build from source
 
