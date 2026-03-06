@@ -48,7 +48,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.statusBar.state = .waitingForPermission
                 self.statusBar.buildMenu()
             }
-            print("Accessibility: not granted")
+            print("Accessibility: not granted, resetting stale entry...")
+            Permissions.resetAccessibility()
             Permissions.promptAccessibility()
             Permissions.openAccessibilitySettings()
             print("Waiting for Accessibility permission...")
