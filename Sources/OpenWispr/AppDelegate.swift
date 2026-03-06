@@ -31,6 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupInner() throws {
         config = Config.load()
+        if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
+            RecordingStore.deleteAllRecordings()
+        }
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
 

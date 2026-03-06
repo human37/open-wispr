@@ -862,7 +862,7 @@
     <tr>
       <td>maxRecordings</td>
       <td>0</td>
-      <td>Default 0 = privacy: temp file, deleted immediately. Use 1–100 to keep recordings for reprocessing from the tray menu.</td>
+      <td>Default 0 = privacy: temp file, deleted immediately, and any older retained recordings are removed when the app starts. Use 1–100 to keep recordings for reprocessing from the tray menu.</td>
     </tr>
   </table>
   <p class="config-note">Edit <code>~/.config/open-wispr/config.json</code>, then restart: <code>brew services restart open-wispr</code></p>
@@ -887,7 +887,7 @@
     </details>
     <details class="faq-item">
       <summary>Does any audio or text leave my computer?</summary>
-      <p>No. Everything runs 100% on-device. By default (<code>maxRecordings</code> = 0): audio goes to a temp file, transcribed locally by Whisper, then deleted immediately. Set <code>maxRecordings</code> to 1–100 to enable the Recent Recordings feature. There are zero network requests — no cloud, no accounts, no telemetry.</p>
+      <p>No. Everything runs 100% on-device. By default (<code>maxRecordings</code> = 0): audio goes to a temp file, transcribed locally by Whisper, then deleted immediately. On startup, open-wispr also removes any previously retained recordings so privacy mode takes effect right away. Set <code>maxRecordings</code> to 1–100 to enable the Recent Recordings feature. There are zero network requests — no cloud, no accounts, no telemetry.</p>
     </details>
     <details class="faq-item">
       <summary>How does this compare to VoiceInk, Whisper Flow, or Superwhisper?</summary>
