@@ -402,9 +402,9 @@ class StatusBarController: NSObject {
             let centerY = rect.midY
 
             let path = NSBezierPath()
-            path.move(to: NSPoint(x: centerX - 5, y: centerY - 1))
-            path.line(to: NSPoint(x: centerX - 2, y: centerY + 3))
-            path.line(to: NSPoint(x: centerX + 5, y: centerY - 4))
+            path.move(to: NSPoint(x: centerX - 5, y: centerY + 1))
+            path.line(to: NSPoint(x: centerX - 2, y: centerY - 3))
+            path.line(to: NSPoint(x: centerX + 5, y: centerY + 4))
             path.lineWidth = 2.0
             path.lineCapStyle = .round
             path.lineJoinStyle = .round
