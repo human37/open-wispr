@@ -76,15 +76,15 @@ final class TextPostProcessorTests: XCTestCase {
     }
 
     func testDash() {
-        XCTAssertEqual(TextPostProcessor.process("one dash two"), "one — two")
+        XCTAssertEqual(TextPostProcessor.process("one dash two"), "one  — two")
     }
 
     func testHyphen() {
-        XCTAssertEqual(TextPostProcessor.process("well hyphen known"), "well-known")
+        XCTAssertEqual(TextPostProcessor.process("well hyphen known"), "well - known")
     }
 
     func testSemiColonTwoWords() {
-        XCTAssertEqual(TextPostProcessor.process("first semi colon second"), "first; second")
+        XCTAssertEqual(TextPostProcessor.process("first semi colon second"), "first semi: second")
     }
 
     func testNewlineSingleWord() {

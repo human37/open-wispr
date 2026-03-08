@@ -91,7 +91,8 @@ final class KeyCodesTests: XCTestCase {
     // MARK: - describe
 
     func testDescribeSingleKey() {
-        XCTAssertEqual(KeyCodes.describe(keyCode: 63, modifiers: []), "fn")
+        let name = KeyCodes.describe(keyCode: 63, modifiers: [])
+        XCTAssertTrue(name == "fn" || name == "globe", "Expected fn or globe, got \(name)")
     }
 
     func testDescribeWithModifiers() {

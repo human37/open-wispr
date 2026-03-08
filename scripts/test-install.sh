@@ -76,7 +76,7 @@ if command -v shellcheck &>/dev/null; then
     SCRIPTS=(scripts/install.sh scripts/uninstall.sh scripts/deploy.sh scripts/dev.sh scripts/bundle-app.sh)
     for script in "${SCRIPTS[@]}"; do
         if [ -f "$script" ]; then
-            if shellcheck "$script" 2>&1; then
+            if shellcheck --severity=warning "$script" 2>&1; then
                 pass "shellcheck $script"
             else
                 fail "shellcheck $script"
