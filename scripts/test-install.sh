@@ -20,6 +20,23 @@ check_output() {
     fi
 }
 
+CONFIG_FILE="$HOME/.config/open-wispr/config.json"
+CONFIG_BACKUP=""
+
+backup_config() {
+    if [ -f "$CONFIG_FILE" ]; then
+        CONFIG_BACKUP=$(mktemp /tmp/open-wispr-config-backup.XXXXXX)
+        cp "$CONFIG_FILE" "$CONFIG_BACKUP"
+    fi
+}
+
+restore_config() {
+    if [ -n "$CONFIG_BACKUP" ] && [ -f "$CONFIG_BACKUP" ]; then
+        cp "$CONFIG_BACKUP" "$CONFIG_FILE"
+        rm -f "$CONFIG_BACKUP"
+    fi
+}
+
 echo "open-wispr install smoke tests"
 echo "-------------------------------"
 
@@ -40,11 +57,18 @@ check_output "--help shows usage" "Push-to-talk" "$BIN" --help
 check_output "status shows version" "open-wispr v" "$BIN" status
 check_output "status shows config path" "Config:" "$BIN" status
 check_output "get-hotkey works" "Current hotkey:" "$BIN" get-hotkey
+
+backup_config
+trap restore_config EXIT
+
 check_output "set-hotkey f5 works" "Hotkey set to: f5" "$BIN" set-hotkey f5
 check_output "set-hotkey ctrl+space works" "Hotkey set to: ctrl+space" "$BIN" set-hotkey ctrl+space
 check_output "set-hotkey rejects invalid key" "Unknown key" "$BIN" set-hotkey invalidkey
 check_output "set-model rejects invalid model" "Unknown model" "$BIN" set-model fakemodel
 check_output "unknown command shows error" "Unknown command" "$BIN" badcommand
+
+restore_config
+trap - EXIT
 
 echo ""
 echo "Testing app bundle..."
