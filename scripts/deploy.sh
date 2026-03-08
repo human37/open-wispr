@@ -62,7 +62,7 @@ gh release create "${TAG}" --repo human37/open-wispr --notes "${NOTES}"
 echo "==> Waiting for bottle builds..."
 sleep 15
 RUN_ID=""
-for i in $(seq 1 30); do
+for _ in $(seq 1 30); do
   RUN_ID=$(gh run list --workflow=build-bottle.yml --event=release --limit=1 --json databaseId --jq '.[0].databaseId' --repo human37/open-wispr 2>/dev/null)
   if [ -n "$RUN_ID" ]; then
     break
