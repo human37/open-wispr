@@ -17,14 +17,12 @@ class OpenWispr < Formula
   def post_install
     target = Pathname.new("#{Dir.home}/Applications/OpenWispr.app")
     target.dirname.mkpath
-    target.rmtree if target.exist?
-    cp_r prefix/"OpenWispr.app", target
-    system "codesign", "--remove-signature", "#{target}/Contents/MacOS/open-wispr"
-    system "tccutil", "reset", "Accessibility", "com.human37.open-wispr"
+    rm_rf target if target.exist? && !target.symlink?
+    ln_sf prefix/"OpenWispr.app", target
   end
 
   service do
-    run ["#{Dir.home}/Applications/OpenWispr.app/Contents/MacOS/open-wispr", "start"]
+    run [opt_prefix/"OpenWispr.app/Contents/MacOS/open-wispr", "start"]
     keep_alive successful_exit: false
     log_path var/"log/open-wispr.log"
     error_log_path var/"log/open-wispr.log"

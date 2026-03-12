@@ -49,25 +49,21 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let wasStale = Permissions.isAccessibilityStale()
-        if wasStale {
+        if Permissions.isAccessibilityStale() {
             print("Accessibility: stale permission detected, resetting...")
             Permissions.resetAccessibility()
-            Thread.sleep(forTimeInterval: 1)
+            Thread.sleep(forTimeInterval: 0.5)
         }
+
+        Permissions.ensureMicrophone()
 
         if !AXIsProcessTrusted() {
             DispatchQueue.main.async {
                 self.statusBar.state = .waitingForPermission
                 self.statusBar.buildMenu()
             }
-        }
-
-        Permissions.ensureMicrophone()
-
-        if !AXIsProcessTrusted() {
             print("Accessibility: not granted")
-            Permissions.openAccessibilitySettings()
+            Permissions.promptAccessibility()
             print("Waiting for Accessibility permission...")
             while !AXIsProcessTrusted() {
                 Thread.sleep(forTimeInterval: 0.5)

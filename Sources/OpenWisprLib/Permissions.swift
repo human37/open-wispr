@@ -38,10 +38,4 @@ struct Permissions {
         guard AXIsProcessTrusted() else { return false }
         return CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true) == nil
     }
-
-    static func openAccessibilitySettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
-    }
 }
