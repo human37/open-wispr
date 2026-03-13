@@ -12,7 +12,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 DL_DIR=$(mktemp -d)
-trap "rm -rf ${DL_DIR}" EXIT
+trap 'rm -rf "${DL_DIR}"' EXIT
 
 echo "==> Downloading bottles from release ${TAG}..."
 gh release download "${TAG}" --pattern "*.bottle.tar.gz" --dir "${DL_DIR}" --repo human37/open-wispr
