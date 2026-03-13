@@ -32,7 +32,7 @@ ok "Removed"
 
 step "Removing config, model, and logs"
 rm -rf ~/.config/open-wispr
-rm -f /opt/homebrew/var/log/open-wispr.log
+rm -f /opt/homebrew/var/log/open-wispr.log 2>/dev/null || true
 ok "Removed"
 
 step "Unregistering from LaunchServices"
