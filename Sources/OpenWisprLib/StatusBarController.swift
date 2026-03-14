@@ -116,7 +116,7 @@ class StatusBarController: NSObject {
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
         let copyTitle = copiedFeedback ? "Copied!" : "Copy Last Dictation"
-        let copyItem = NSMenuItem(title: copyTitle, action: lastText != nil && !copiedFeedback ? #selector(copyLastTranscription) : nil, keyEquivalent: "")
+        let copyItem = NSMenuItem(title: copyTitle, action: lastText != nil && !copiedFeedback ? #selector(copyLastTranscription) : nil, keyEquivalent: "c")
         copyItem.target = self
         if lastText == nil || copiedFeedback { copyItem.isEnabled = copiedFeedback }
         menu.addItem(copyItem)
