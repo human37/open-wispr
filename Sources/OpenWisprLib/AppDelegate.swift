@@ -134,6 +134,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applyConfigChange(_ newConfig: Config) {
         guard isReady else { return }
+        let wasDownloading = statusBar.state == .downloading
         config = newConfig
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
@@ -148,7 +149,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             onKeyUp: { [weak self] in self?.handleKeyUp() }
         )
 
-        if !Transcriber.modelExists(modelSize: config.modelSize) {
+        if !wasDownloading && !Transcriber.modelExists(modelSize: config.modelSize) {
             statusBar.state = .downloading
             statusBar.updateDownloadProgress("Downloading \(config.modelSize) model...")
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in

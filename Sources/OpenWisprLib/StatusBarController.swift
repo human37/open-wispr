@@ -217,19 +217,6 @@ class StatusBarController: NSObject {
         toggleItem.state = (config.toggleMode?.value ?? false) ? .on : .off
         menu.addItem(toggleItem)
 
-        let spTarget = MenuItemTarget { [weak self] in
-            var cfg = Config.load()
-            let current = cfg.spokenPunctuation?.value ?? false
-            cfg.spokenPunctuation = FlexBool(!current)
-            try? cfg.save()
-            self?.onConfigChange?(cfg)
-        }
-        menuItemTargets.append(spTarget)
-        let spItem = NSMenuItem(title: "Spoken Punctuation", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
-        spItem.target = spTarget
-        spItem.state = (config.spokenPunctuation?.value ?? false) ? .on : .off
-        menu.addItem(spItem)
-
         menu.addItem(NSMenuItem.separator())
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
