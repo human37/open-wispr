@@ -16,6 +16,7 @@ func printUsage() {
         open-wispr set-hotkey <key>   Set the push-to-talk hotkey
         open-wispr get-hotkey         Show current hotkey
         open-wispr set-model <size>   Set the Whisper model
+        open-wispr set-language <code>  Set the language (e.g. en, fr, auto)
         open-wispr download-model [size]  Download a Whisper model
         open-wispr status             Show configuration and status
         open-wispr --help             Show this help message
@@ -27,7 +28,7 @@ func printUsage() {
         open-wispr set-hotkey ctrl+space         Ctrl + Space
 
     AVAILABLE MODELS:
-        tiny.en, tiny, base.en, base, small.en, small, medium.en, medium, large
+        \(Config.supportedModels.joined(separator: ", "))
     """)
 }
 
@@ -67,10 +68,9 @@ func cmdSetHotkey(_ keyString: String) {
 }
 
 func cmdSetModel(_ size: String) {
-    let validSizes = ["tiny.en", "tiny", "base.en", "base", "small.en", "small", "medium.en", "medium", "large"]
-    guard validSizes.contains(size) else {
+    guard Config.supportedModels.contains(size) else {
         print("Error: Unknown model '\(size)'")
-        print("Available: \(validSizes.joined(separator: ", "))")
+        print("Available: \(Config.supportedModels.joined(separator: ", "))")
         exit(1)
     }
 
@@ -83,6 +83,28 @@ func cmdSetModel(_ size: String) {
         if !Transcriber.modelExists(modelSize: size) {
             print("Model will be downloaded on next start.")
         }
+    } catch {
+        print("Error saving config: \(error.localizedDescription)")
+        exit(1)
+    }
+}
+
+func cmdSetLanguage(_ lang: String) {
+    let validCodes = Config.supportedLanguages.map { $0.code }
+    guard validCodes.contains(lang) else {
+        print("Error: Unknown language '\(lang)'")
+        print("Available: auto, en, fr, de, es, zh, ja, ko, pt, it, nl, ru, ...")
+        print("See full list: https://github.com/human37/open-wispr")
+        exit(1)
+    }
+
+    var config = Config.load()
+    config.language = lang
+
+    do {
+        try config.save()
+        let name = Config.supportedLanguages.first(where: { $0.code == lang })?.name ?? lang
+        print("Language set to: \(name) (\(lang))")
     } catch {
         print("Error saving config: \(error.localizedDescription)")
         exit(1)
@@ -114,6 +136,8 @@ func cmdStatus() {
     print("Model:       \(config.modelSize)")
     print("Model ready: \(Transcriber.modelExists(modelSize: config.modelSize) ? "yes" : "no")")
     print("whisper-cpp: \(Transcriber.findWhisperBinary() != nil ? "yes" : "no")")
+    let langName = Config.supportedLanguages.first(where: { $0.code == config.language })?.name ?? config.language
+    print("Language:    \(langName) (\(config.language))")
     let toggleMode = config.toggleMode?.value ?? false
     print("Toggle:      \(toggleMode ? "on (press to start/stop)" : "off (hold to talk)")")
 }
@@ -136,6 +160,13 @@ case "set-model":
         exit(1)
     }
     cmdSetModel(args[2])
+case "set-language":
+    guard args.count > 2 else {
+        print("Usage: open-wispr set-language <code>")
+        print("Examples: en, fr, auto")
+        exit(1)
+    }
+    cmdSetLanguage(args[2])
 case "get-hotkey":
     cmdGetHotkey()
 case "download-model":
