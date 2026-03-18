@@ -96,7 +96,7 @@ class StatusBarController: NSObject {
             case .copiedToClipboard: stateLabel = "Copied to clipboard"
             }
         }
-        let stateItem = NSMenuItem(title: "\(stateLabel) — ⌨ \(hotkeyDesc)", action: nil, keyEquivalent: "")
+        let stateItem = NSMenuItem(title: "\(stateLabel) (hotkey: \(hotkeyDesc))", action: nil, keyEquivalent: "")
         stateItem.isEnabled = false
         menu.addItem(stateItem)
 
