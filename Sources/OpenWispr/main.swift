@@ -114,6 +114,8 @@ func cmdStatus() {
     print("Model:       \(config.modelSize)")
     print("Model ready: \(Transcriber.modelExists(modelSize: config.modelSize) ? "yes" : "no")")
     print("whisper-cpp: \(Transcriber.findWhisperBinary() != nil ? "yes" : "no")")
+    let toggleMode = config.toggleMode?.value ?? false
+    print("Toggle:      \(toggleMode ? "on (press to start/stop)" : "off (hold to talk)")")
 }
 
 let args = CommandLine.arguments
