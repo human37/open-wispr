@@ -128,6 +128,14 @@ class StatusBarController: NSObject {
             }
             langSubmenu.addItem(item)
         }
+
+        if config.modelSize.hasSuffix(".en") {
+            let noteItem = NSMenuItem(title: "Current model is English-only", action: nil, keyEquivalent: "")
+            noteItem.isEnabled = false
+            langSubmenu.insertItem(noteItem, at: 0)
+            langSubmenu.insertItem(NSMenuItem.separator(), at: 1)
+        }
+
         langItem.submenu = langSubmenu
         menu.addItem(langItem)
 
