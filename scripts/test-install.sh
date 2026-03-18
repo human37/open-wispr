@@ -56,6 +56,7 @@ fi
 check_output "--help shows usage" "Push-to-talk" "$BIN" --help
 check_output "status shows version" "open-wispr v" "$BIN" status
 check_output "status shows config path" "Config:" "$BIN" status
+check_output "status shows toggle mode" "Toggle:" "$BIN" status
 check_output "get-hotkey works" "Current hotkey:" "$BIN" get-hotkey
 
 backup_config
