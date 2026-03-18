@@ -83,20 +83,20 @@ class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
-        let stateText: String
+        let stateLabel: String
         if let progress = downloadProgress {
-            stateText = progress
+            stateLabel = progress
         } else {
             switch state {
-            case .idle: stateText = "Ready"
-            case .recording: stateText = "Recording..."
-            case .transcribing: stateText = "Transcribing..."
-            case .downloading: stateText = "Downloading model..."
-            case .waitingForPermission: stateText = "Waiting for Accessibility permission..."
-            case .copiedToClipboard: stateText = "Copied to clipboard"
+            case .idle: stateLabel = "Ready"
+            case .recording: stateLabel = "Recording..."
+            case .transcribing: stateLabel = "Transcribing..."
+            case .downloading: stateLabel = "Downloading model..."
+            case .waitingForPermission: stateLabel = "Waiting for Accessibility permission..."
+            case .copiedToClipboard: stateLabel = "Copied to clipboard"
             }
         }
-        let stateItem = NSMenuItem(title: stateText, action: nil, keyEquivalent: "")
+        let stateItem = NSMenuItem(title: "\(stateLabel) | \(hotkeyDesc)", action: nil, keyEquivalent: "")
         stateItem.isEnabled = false
         menu.addItem(stateItem)
 
@@ -188,10 +188,6 @@ class StatusBarController: NSObject {
 
         modelItem.submenu = modelSubmenu
         menu.addItem(modelItem)
-
-        let hotkeyItem = NSMenuItem(title: "Hotkey: \(hotkeyDesc)", action: nil, keyEquivalent: "")
-        hotkeyItem.isEnabled = false
-        menu.addItem(hotkeyItem)
 
         menu.addItem(NSMenuItem.separator())
 
