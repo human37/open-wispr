@@ -133,6 +133,32 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.toggleMode?.value, false)
     }
 
+    // MARK: - Language and model constants
+
+    func testSupportedLanguagesContainsEnglish() {
+        XCTAssertTrue(Config.supportedLanguages.contains(where: { $0.code == "en" }))
+    }
+
+    func testSupportedLanguagesContainsAuto() {
+        XCTAssertTrue(Config.supportedLanguages.contains(where: { $0.code == "auto" }))
+    }
+
+    func testSupportedModelsContainsDefault() {
+        XCTAssertTrue(Config.supportedModels.contains("base.en"))
+    }
+
+    func testConfigDecodesLanguageAuto() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "auto"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.language, "auto")
+    }
+
     // MARK: - HotkeyConfig modifier flags
 
     func testModifierFlagsSingle() {
