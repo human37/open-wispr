@@ -88,6 +88,51 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(Config.effectiveMaxRecordings(config.maxRecordings), 0)
     }
 
+    // MARK: - toggleMode decoding
+
+    func testConfigDecodesToggleModeTrue() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "toggleMode": true
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.toggleMode?.value, true)
+    }
+
+    func testConfigDecodesToggleModeFalse() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "toggleMode": false
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.toggleMode?.value, false)
+    }
+
+    func testConfigDecodesWithoutToggleMode() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertNil(config.toggleMode)
+    }
+
+    func testConfigDefaultToggleModeIsFalse() {
+        let config = Config.defaultConfig
+        XCTAssertEqual(config.toggleMode?.value, false)
+    }
+
     // MARK: - HotkeyConfig modifier flags
 
     func testModifierFlagsSingle() {

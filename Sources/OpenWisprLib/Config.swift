@@ -7,6 +7,7 @@ public struct Config: Codable {
     public var language: String
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
+    public var toggleMode: FlexBool?
 
     public static let defaultMaxRecordings = 0
 
@@ -22,7 +23,8 @@ public struct Config: Codable {
         modelSize: "base.en",
         language: "en",
         spokenPunctuation: FlexBool(false),
-        maxRecordings: nil
+        maxRecordings: nil,
+        toggleMode: FlexBool(false)
     )
 
     public static var configDir: URL {
