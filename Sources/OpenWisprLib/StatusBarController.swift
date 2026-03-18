@@ -15,6 +15,7 @@ class StatusBarController: NSObject {
     private var downloadPercent: Double = 0
     private var copiedFeedback = false
     private var menuItemTargets: [MenuItemTarget] = []
+    private var stateMenuItem: NSMenuItem?
 
     var reprocessHandler: ((URL) -> Void)?
     var onConfigChange: ((Config) -> Void)?
@@ -64,7 +65,13 @@ class StatusBarController: NSObject {
         if state == .downloading {
             setIcon(StatusBarController.drawDownloadProgress(downloadPercent))
         }
-        buildMenu()
+        if let text = text, let item = stateMenuItem {
+            let config = Config.load()
+            let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+            item.title = "\(text) (hotkey: \(hotkeyDesc))"
+        } else {
+            buildMenu()
+        }
     }
 
     private static let displayDateFormatter: DateFormatter = {
@@ -104,6 +111,7 @@ class StatusBarController: NSObject {
         let stateItem = NSMenuItem(title: "\(stateLabel) (hotkey: \(hotkeyDesc))", action: nil, keyEquivalent: "")
         stateItem.isEnabled = false
         menu.addItem(stateItem)
+        stateMenuItem = stateItem
 
         menu.addItem(NSMenuItem.separator())
 
