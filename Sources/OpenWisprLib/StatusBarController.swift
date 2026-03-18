@@ -83,21 +83,18 @@ class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
-        if let progress = downloadProgress {
-            let dlItem = NSMenuItem(title: progress, action: nil, keyEquivalent: "")
-            dlItem.isEnabled = false
-            menu.addItem(dlItem)
-            menu.addItem(NSMenuItem.separator())
-        }
-
         let stateText: String
-        switch state {
-        case .idle: stateText = "Ready"
-        case .recording: stateText = "Recording..."
-        case .transcribing: stateText = "Transcribing..."
-        case .downloading: stateText = "Downloading model..."
-        case .waitingForPermission: stateText = "Waiting for Accessibility permission..."
-        case .copiedToClipboard: stateText = "Copied to clipboard"
+        if let progress = downloadProgress {
+            stateText = progress
+        } else {
+            switch state {
+            case .idle: stateText = "Ready"
+            case .recording: stateText = "Recording..."
+            case .transcribing: stateText = "Transcribing..."
+            case .downloading: stateText = "Downloading model..."
+            case .waitingForPermission: stateText = "Waiting for Accessibility permission..."
+            case .copiedToClipboard: stateText = "Copied to clipboard"
+            }
         }
         let stateItem = NSMenuItem(title: stateText, action: nil, keyEquivalent: "")
         stateItem.isEnabled = false
