@@ -117,6 +117,7 @@ cur_model=$(read_config modelSize base.en)
 cur_lang=$(read_config language en)
 cur_punct=$(read_config spokenPunctuation false)
 cur_max_recordings=$(read_config maxRecordings 0)
+cur_toggle=$(read_config toggleMode false)
 
 # Model
 echo ""
@@ -167,6 +168,16 @@ case "$max_rec_choice" in
     *) max_recordings="$max_rec_choice" ;;
 esac
 
+# Toggle mode
+printf "  Toggle mode (y/n) [%s]: " "$([ "$cur_toggle" = "true" ] && echo "y" || echo "n")"
+read -r toggle_choice
+case "$toggle_choice" in
+    y|Y|yes) toggle="true" ;;
+    n|N|no) toggle="false" ;;
+    "") toggle="$cur_toggle" ;;
+    *) toggle="$cur_toggle" ;;
+esac
+
 # Hotkey
 hotkey_raw=$(read_hotkey)
 cur_keycode="${hotkey_raw%%|*}"
@@ -206,6 +217,7 @@ cat > "$CONFIG_FILE" << EOF
   "modelSize": "$model",
   "spokenPunctuation": $punct,
   "maxRecordings": $max_recordings,
+  "toggleMode": $toggle,
   "hotkey": { "keyCode": $hotkey_code, "modifiers": $hotkey_mods_json }
 }
 EOF
@@ -217,7 +229,7 @@ if [ "$hotkey_mods_json" != "[]" ]; then
 else
     hotkey_display="$hotkey_name"
 fi
-echo "  Config: model=$model  lang=$lang  punctuation=$punct  maxRecordings=$max_recordings  hotkey=$hotkey_display"
+echo "  Config: model=$model  lang=$lang  punctuation=$punct  maxRecordings=$max_recordings  toggle=$toggle  hotkey=$hotkey_display"
 echo "────────────────────"
 
 # Kill any running instances
