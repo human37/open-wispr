@@ -44,7 +44,8 @@ Edit `~/.config/open-wispr/config.json`:
   "modelSize": "base.en",
   "language": "en",
   "spokenPunctuation": false,
-  "maxRecordings": 0
+  "maxRecordings": 0,
+  "toggleMode": false
 }
 ```
 
@@ -58,6 +59,7 @@ Then restart: `brew services restart open-wispr`
 | **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
+| **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
 
 ### Models
 
