@@ -16,6 +16,7 @@ class StatusBarController: NSObject {
     private var menuItemTargets: [MenuItemTarget] = []
 
     var reprocessHandler: ((URL) -> Void)?
+    var onConfigChange: ((Config) -> Void)?
 
     enum State {
         case idle
@@ -104,13 +105,84 @@ class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
+        let currentLang = config.language
+        let langName = Config.supportedLanguages.first(where: { $0.code == currentLang })?.name ?? currentLang
+        let langItem = NSMenuItem(title: "Language: \(langName)", action: nil, keyEquivalent: "")
+        let langSubmenu = NSMenu()
+
+        for (index, lang) in Config.supportedLanguages.enumerated() {
+            if index == 1 {
+                langSubmenu.addItem(NSMenuItem.separator())
+            }
+            let target = MenuItemTarget { [weak self] in
+                var cfg = Config.load()
+                cfg.language = lang.code
+                try? cfg.save()
+                self?.onConfigChange?(cfg)
+            }
+            self.menuItemTargets.append(target)
+            let item = NSMenuItem(title: lang.name, action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+            item.target = target
+            if lang.code == currentLang {
+                item.state = .on
+            }
+            langSubmenu.addItem(item)
+        }
+        langItem.submenu = langSubmenu
+        menu.addItem(langItem)
+
+        let modelItem = NSMenuItem(title: "Model: \(config.modelSize)", action: nil, keyEquivalent: "")
+        let modelSubmenu = NSMenu()
+
+        for model in Config.supportedModels {
+            let target = MenuItemTarget { [weak self] in
+                var cfg = Config.load()
+                cfg.modelSize = model
+                try? cfg.save()
+                self?.onConfigChange?(cfg)
+            }
+            self.menuItemTargets.append(target)
+            let item = NSMenuItem(title: model, action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+            item.target = target
+            if model == config.modelSize {
+                item.state = .on
+            }
+            modelSubmenu.addItem(item)
+        }
+        modelItem.submenu = modelSubmenu
+        menu.addItem(modelItem)
+
         let hotkeyItem = NSMenuItem(title: "Hotkey: \(hotkeyDesc)", action: nil, keyEquivalent: "")
         hotkeyItem.isEnabled = false
         menu.addItem(hotkeyItem)
 
-        let modelItem = NSMenuItem(title: "Model: \(config.modelSize)", action: nil, keyEquivalent: "")
-        modelItem.isEnabled = false
-        menu.addItem(modelItem)
+        menu.addItem(NSMenuItem.separator())
+
+        let toggleTarget = MenuItemTarget { [weak self] in
+            var cfg = Config.load()
+            let current = cfg.toggleMode?.value ?? false
+            cfg.toggleMode = FlexBool(!current)
+            try? cfg.save()
+            self?.onConfigChange?(cfg)
+        }
+        menuItemTargets.append(toggleTarget)
+        let toggleItem = NSMenuItem(title: "Toggle Mode", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        toggleItem.target = toggleTarget
+        toggleItem.state = (config.toggleMode?.value ?? false) ? .on : .off
+        menu.addItem(toggleItem)
+
+        let spTarget = MenuItemTarget { [weak self] in
+            var cfg = Config.load()
+            let current = cfg.spokenPunctuation?.value ?? false
+            cfg.spokenPunctuation = FlexBool(!current)
+            try? cfg.save()
+            self?.onConfigChange?(cfg)
+        }
+        menuItemTargets.append(spTarget)
+        let spItem = NSMenuItem(title: "Spoken Punctuation", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        spItem.target = spTarget
+        spItem.state = (config.spokenPunctuation?.value ?? false) ? .on : .off
+        menu.addItem(spItem)
 
         menu.addItem(NSMenuItem.separator())
 

@@ -41,6 +41,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             self.statusBar.reprocessHandler = { [weak self] url in
                 self?.reprocess(audioURL: url)
             }
+            self.statusBar.onConfigChange = { [weak self] newConfig in
+                self?.applyConfigChange(newConfig)
+            }
             self.statusBar.buildMenu()
         }
 
@@ -120,7 +123,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func reloadConfig() {
-        config = Config.load()
+        let newConfig = Config.load()
+        applyConfigChange(newConfig)
+    }
+
+    func applyConfigChange(_ newConfig: Config) {
+        guard isReady else { return }
+        config = newConfig
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
 
@@ -134,9 +143,30 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             onKeyUp: { [weak self] in self?.handleKeyUp() }
         )
 
+        if !Transcriber.modelExists(modelSize: config.modelSize) {
+            statusBar.state = .downloading
+            statusBar.updateDownloadProgress("Downloading \(config.modelSize) model...")
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                do {
+                    try ModelDownloader.download(modelSize: newConfig.modelSize)
+                    DispatchQueue.main.async {
+                        self?.statusBar.updateDownloadProgress(nil)
+                        self?.statusBar.state = .idle
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        print("Error downloading model: \(error.localizedDescription)")
+                        self?.statusBar.updateDownloadProgress(nil)
+                        self?.statusBar.state = .idle
+                    }
+                }
+            }
+        }
+
         statusBar.buildMenu()
+
         let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
-        print("Config reloaded: hotkey=\(hotkeyDesc) model=\(config.modelSize)")
+        print("Config updated: lang=\(config.language) model=\(config.modelSize) hotkey=\(hotkeyDesc)")
     }
 
     private func handleKeyDown() {
