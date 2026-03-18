@@ -140,7 +140,31 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleKeyDown() {
-        guard isReady, !isPressed else { return }
+        guard isReady else { return }
+
+        let isToggle = config.toggleMode?.value ?? false
+
+        if isToggle {
+            if isPressed {
+                handleRecordingStop()
+            } else {
+                handleRecordingStart()
+            }
+        } else {
+            guard !isPressed else { return }
+            handleRecordingStart()
+        }
+    }
+
+    private func handleKeyUp() {
+        let isToggle = config.toggleMode?.value ?? false
+        if isToggle { return }
+
+        handleRecordingStop()
+    }
+
+    private func handleRecordingStart() {
+        guard !isPressed else { return }
         isPressed = true
         statusBar.state = .recording
         do {
@@ -158,7 +182,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func handleKeyUp() {
+    private func handleRecordingStop() {
         guard isPressed else { return }
         isPressed = false
 
