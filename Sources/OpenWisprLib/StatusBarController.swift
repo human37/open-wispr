@@ -12,6 +12,7 @@ class StatusBarController: NSObject {
     private var animationFrame = 0
     private var animationFrames: [NSImage] = []
     private var downloadProgress: String?
+    private var downloadPercent: Double = 0
     private var copiedFeedback = false
     private var menuItemTargets: [MenuItemTarget] = []
 
@@ -57,8 +58,12 @@ class StatusBarController: NSObject {
         }
     }
 
-    func updateDownloadProgress(_ text: String?) {
+    func updateDownloadProgress(_ text: String?, percent: Double = 0) {
         downloadProgress = text
+        downloadPercent = percent
+        if state == .downloading {
+            setIcon(StatusBarController.drawDownloadProgress(downloadPercent))
+        }
         buildMenu()
     }
 
@@ -403,16 +408,32 @@ class StatusBarController: NSObject {
         }
     }
 
-    // MARK: - Downloading animation: arrow moves down
+    // MARK: - Downloading: progress ring
+
+    private static let downloadPulseFrameCount = 30
+
+    private static func prerenderDownloadPulseFrames() -> [NSImage] {
+        let count = downloadPulseFrameCount
+        return (0..<count).map { frame in
+            let t = Double(frame) / Double(count)
+            let alpha = CGFloat(0.4 + 0.6 * (sin(t * 2.0 * .pi) + 1.0) / 2.0)
+            return drawDownloadProgress(0, pulseAlpha: alpha)
+        }
+    }
 
     private func startDownloadingAnimation() {
         animationFrame = 0
-        setIcon(StatusBarController.drawDownloadingFrame(0))
+        animationFrames = StatusBarController.prerenderDownloadPulseFrames()
+        setIcon(animationFrames[0])
 
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.animationFrame = (self.animationFrame + 1) % 3
-            self.setIcon(StatusBarController.drawDownloadingFrame(self.animationFrame))
+            if self.downloadPercent > 0 {
+                self.setIcon(StatusBarController.drawDownloadProgress(self.downloadPercent))
+            } else {
+                self.animationFrame = (self.animationFrame + 1) % StatusBarController.downloadPulseFrameCount
+                self.setIcon(self.animationFrames[self.animationFrame])
+            }
         }
     }
 
@@ -460,33 +481,43 @@ class StatusBarController: NSObject {
         return image
     }
 
-    static func drawDownloadingFrame(_ frame: Int) -> NSImage {
+    static func drawDownloadProgress(_ percent: Double, pulseAlpha: CGFloat = 1.0) -> NSImage {
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size, flipped: false) { rect in
-            NSColor.black.setStroke()
-            NSColor.black.setFill()
+            let center = NSPoint(x: rect.midX, y: rect.midY)
+            let radius: CGFloat = 6.5
+            let lineWidth: CGFloat = 1.8
 
-            let centerX = rect.midX
+            NSColor.black.withAlphaComponent(0.25 * pulseAlpha).setStroke()
+            let bgCircle = NSBezierPath()
+            bgCircle.appendArc(withCenter: center, radius: radius, startAngle: 0, endAngle: 360)
+            bgCircle.lineWidth = lineWidth
+            bgCircle.stroke()
 
-            let basePath = NSBezierPath()
-            basePath.move(to: NSPoint(x: centerX - 5, y: 3))
-            basePath.line(to: NSPoint(x: centerX + 5, y: 3))
-            basePath.lineWidth = 1.5
-            basePath.lineCapStyle = .round
-            basePath.stroke()
+            if percent > 0 {
+                NSColor.black.setStroke()
+                let progressArc = NSBezierPath()
+                let startAngle: CGFloat = 90
+                let endAngle = startAngle - CGFloat(percent / 100.0) * 360.0
+                progressArc.appendArc(withCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
+                progressArc.lineWidth = lineWidth
+                progressArc.lineCapStyle = .round
+                progressArc.stroke()
+            }
 
-            let arrowY: CGFloat = 14 - CGFloat(frame) * 2
+            NSColor.black.withAlphaComponent(pulseAlpha).setStroke()
+            NSColor.black.withAlphaComponent(pulseAlpha).setFill()
             let arrowPath = NSBezierPath()
-            arrowPath.move(to: NSPoint(x: centerX, y: arrowY))
-            arrowPath.line(to: NSPoint(x: centerX, y: 6))
+            arrowPath.move(to: NSPoint(x: center.x, y: center.y + 3))
+            arrowPath.line(to: NSPoint(x: center.x, y: center.y - 3))
             arrowPath.lineWidth = 1.5
             arrowPath.lineCapStyle = .round
             arrowPath.stroke()
 
             let headPath = NSBezierPath()
-            headPath.move(to: NSPoint(x: centerX - 3, y: 9))
-            headPath.line(to: NSPoint(x: centerX, y: 5))
-            headPath.line(to: NSPoint(x: centerX + 3, y: 9))
+            headPath.move(to: NSPoint(x: center.x - 2.5, y: center.y - 0.5))
+            headPath.line(to: NSPoint(x: center.x, y: center.y - 3.5))
+            headPath.line(to: NSPoint(x: center.x + 2.5, y: center.y - 0.5))
             headPath.lineWidth = 1.5
             headPath.lineCapStyle = .round
             headPath.lineJoinStyle = .round

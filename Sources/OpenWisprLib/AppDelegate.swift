@@ -85,7 +85,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 self.statusBar.updateDownloadProgress("Downloading \(self.config.modelSize) model...")
             }
             print("Downloading \(config.modelSize) model...")
-            try ModelDownloader.download(modelSize: config.modelSize)
+            try ModelDownloader.download(modelSize: config.modelSize) { [weak self] percent in
+                DispatchQueue.main.async {
+                    let pct = Int(percent)
+                    self?.statusBar.updateDownloadProgress("Downloading \(self?.config.modelSize ?? "") model... \(pct)%", percent: percent)
+                }
+            }
             DispatchQueue.main.async {
                 self.statusBar.updateDownloadProgress(nil)
             }
@@ -148,7 +153,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             statusBar.updateDownloadProgress("Downloading \(config.modelSize) model...")
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 do {
-                    try ModelDownloader.download(modelSize: newConfig.modelSize)
+                    try ModelDownloader.download(modelSize: newConfig.modelSize) { percent in
+                        DispatchQueue.main.async {
+                            let pct = Int(percent)
+                            self?.statusBar.updateDownloadProgress("Downloading \(newConfig.modelSize) model... \(pct)%", percent: percent)
+                        }
+                    }
                     DispatchQueue.main.async {
                         self?.statusBar.updateDownloadProgress(nil)
                         self?.statusBar.state = .idle
