@@ -114,6 +114,12 @@ class StatusBarController: NSObject {
             let target = MenuItemTarget { [weak self] in
                 var cfg = Config.load()
                 cfg.language = lang.code
+                if lang.code != "en" && cfg.modelSize.hasSuffix(".en") {
+                    let base = String(cfg.modelSize.dropLast(3))
+                    if Config.supportedModels.contains(base) {
+                        cfg.modelSize = base
+                    }
+                }
                 try? cfg.save()
                 self?.onConfigChange?(cfg)
             }
@@ -126,20 +132,45 @@ class StatusBarController: NSObject {
             langSubmenu.addItem(item)
         }
 
-        if config.modelSize.hasSuffix(".en") {
-            let noteItem = NSMenuItem(title: "Current model is English-only", action: nil, keyEquivalent: "")
-            noteItem.isEnabled = false
-            langSubmenu.insertItem(noteItem, at: 0)
-            langSubmenu.insertItem(NSMenuItem.separator(), at: 1)
-        }
-
         langItem.submenu = langSubmenu
         menu.addItem(langItem)
 
         let modelItem = NSMenuItem(title: "Model: \(config.modelSize)", action: nil, keyEquivalent: "")
         let modelSubmenu = NSMenu()
 
-        for model in Config.supportedModels {
+        let englishModels = Config.supportedModels.filter { $0.hasSuffix(".en") }
+        let multilingualModels = Config.supportedModels.filter { !$0.hasSuffix(".en") }
+
+        let engHeader = NSMenuItem(title: "English", action: nil, keyEquivalent: "")
+        engHeader.isEnabled = false
+        modelSubmenu.addItem(engHeader)
+
+        for model in englishModels {
+            let target = MenuItemTarget { [weak self] in
+                var cfg = Config.load()
+                cfg.modelSize = model
+                if cfg.language != "en" {
+                    cfg.language = "en"
+                }
+                try? cfg.save()
+                self?.onConfigChange?(cfg)
+            }
+            self.menuItemTargets.append(target)
+            let item = NSMenuItem(title: "  \(model)", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+            item.target = target
+            if model == config.modelSize {
+                item.state = .on
+            }
+            modelSubmenu.addItem(item)
+        }
+
+        modelSubmenu.addItem(NSMenuItem.separator())
+
+        let multiHeader = NSMenuItem(title: "Multilingual", action: nil, keyEquivalent: "")
+        multiHeader.isEnabled = false
+        modelSubmenu.addItem(multiHeader)
+
+        for model in multilingualModels {
             let target = MenuItemTarget { [weak self] in
                 var cfg = Config.load()
                 cfg.modelSize = model
@@ -147,13 +178,14 @@ class StatusBarController: NSObject {
                 self?.onConfigChange?(cfg)
             }
             self.menuItemTargets.append(target)
-            let item = NSMenuItem(title: model, action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+            let item = NSMenuItem(title: "  \(model)", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
             item.target = target
             if model == config.modelSize {
                 item.state = .on
             }
             modelSubmenu.addItem(item)
         }
+
         modelItem.submenu = modelSubmenu
         menu.addItem(modelItem)
 
