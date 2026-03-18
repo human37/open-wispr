@@ -821,7 +821,7 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>One file. Six options.</h2>
+  <h2>One file. Seven options.</h2>
   <div class="config-example">
     <div class="card-header">~/.config/open-wispr/config.json</div>
     <pre>{
@@ -829,7 +829,8 @@
   "<b>modelSize</b>": "base.en",
   "<b>language</b>": "en",
   "<b>spokenPunctuation</b>": false,
-  "<b>maxRecordings</b>": 0
+  "<b>maxRecordings</b>": 0,
+  "<b>toggleMode</b>": false
 }</pre>
   </div>
   <table class="config-table">
@@ -863,6 +864,11 @@
       <td>maxRecordings</td>
       <td>0</td>
       <td>Optionally store past recordings locally as <code>.wav</code> files for re-transcribing from the tray menu. 0 = nothing stored (default). Set 1-100 to keep that many recent recordings.</td>
+    </tr>
+    <tr>
+      <td>toggleMode</td>
+      <td>false</td>
+      <td>Press hotkey once to start recording, press again to stop. Default is hold-to-talk.</td>
     </tr>
   </table>
   <p class="config-note">Edit <code>~/.config/open-wispr/config.json</code>, then restart: <code>brew services restart open-wispr</code></p>
