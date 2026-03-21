@@ -56,7 +56,7 @@ Then restart: `brew services restart open-wispr`
 | **hotkey** | `63` | Globe (`63`), Right Option (`61`), F5 (`96`), or any key code |
 | **modifiers** | `[]` | `"cmd"`, `"ctrl"`, `"shift"`, `"opt"` — combine for chords |
 | **modelSize** | `"base.en"` | See model table below |
-| **language** | `"en"` | Any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
+| **language** | `"en"` | `"auto"` for auto-detect, or any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
 | **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
@@ -71,6 +71,7 @@ Larger models are more accurate but slower and use more memory. The default `bas
 | **`base.en`** | 142 MB | **Fast** | **Good** | **Most users (default)** |
 | `small.en` | 466 MB | Moderate | Better | Longer dictation, technical terms |
 | `medium.en` | 1.5 GB | Slower | Great | Maximum accuracy, complex speech |
+| `large-v3-turbo` | 1.6 GB | Moderate | Great | Fast multilingual, near-large accuracy |
 | `large` | 3 GB | Slowest | Best | Multilingual, highest accuracy (M1 Pro+ recommended) |
 
 > **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent model without the `.en` suffix (e.g. `base.en` → `base`) and set the `language` field to your language code. Multilingual models are slightly less accurate for English but support 99 languages.
@@ -86,7 +87,7 @@ Click the waveform icon for status and options. **Recent Recordings** lists your
 | Idle | Waveform outline |
 | Recording | Bouncing waveform |
 | Transcribing | Wave dots |
-| Downloading model | Animated download arrow |
+| Downloading model | Progress ring |
 | Waiting for permission | Lock |
 
 Click the menu bar icon to access **Copy Last Dictation** — recovers your most recent transcription if you dictated without a text field focused.

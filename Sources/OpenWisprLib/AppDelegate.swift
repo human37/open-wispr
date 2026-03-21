@@ -161,14 +161,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                         }
                     }
                     DispatchQueue.main.async {
-                        self?.statusBar.updateDownloadProgress(nil)
                         self?.statusBar.state = .idle
+                        self?.statusBar.updateDownloadProgress(nil)
                     }
                 } catch {
                     DispatchQueue.main.async {
                         print("Error downloading model: \(error.localizedDescription)")
-                        self?.statusBar.updateDownloadProgress(nil)
                         self?.statusBar.state = .idle
+                        self?.statusBar.updateDownloadProgress(nil)
                     }
                 }
             }

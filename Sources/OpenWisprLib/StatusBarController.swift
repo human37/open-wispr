@@ -108,10 +108,21 @@ class StatusBarController: NSObject {
             case .copiedToClipboard: stateLabel = "Copied to clipboard"
             }
         }
-        let stateItem = NSMenuItem(title: "\(stateLabel) (hotkey: \(hotkeyDesc))", action: nil, keyEquivalent: "")
-        stateItem.isEnabled = false
-        menu.addItem(stateItem)
-        stateMenuItem = stateItem
+        if state == .waitingForPermission {
+            let target = MenuItemTarget {
+                Permissions.openAccessibilitySettings()
+            }
+            menuItemTargets.append(target)
+            let stateItem = NSMenuItem(title: "Grant Accessibility Permission...", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+            stateItem.target = target
+            menu.addItem(stateItem)
+            stateMenuItem = stateItem
+        } else {
+            let stateItem = NSMenuItem(title: "\(stateLabel) (hotkey: \(hotkeyDesc))", action: nil, keyEquivalent: "")
+            stateItem.isEnabled = false
+            menu.addItem(stateItem)
+            stateMenuItem = stateItem
+        }
 
         menu.addItem(NSMenuItem.separator())
 
@@ -131,6 +142,11 @@ class StatusBarController: NSObject {
                     let base = String(cfg.modelSize.dropLast(3))
                     if Config.supportedModels.contains(base) {
                         cfg.modelSize = base
+                    }
+                } else if lang.code == "en" && !cfg.modelSize.hasSuffix(".en") {
+                    let enVariant = cfg.modelSize + ".en"
+                    if Config.supportedModels.contains(enVariant) {
+                        cfg.modelSize = enVariant
                     }
                 }
                 try? cfg.save()
