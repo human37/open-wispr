@@ -1,7 +1,6 @@
 import AppKit
 import Foundation
 import Cocoa
-import Carbon.HIToolbox
 
 class TextInserter {
     func insert(text: String) {
@@ -41,14 +40,12 @@ class TextInserter {
         pasteboard.writeObjects(pasteboardItems)
     }
 
-    private func simulatePaste() {
-        guard let vKey = currentKeyCodeForCharacter("v") else {
-            return
-        }
+    static let pasteKeyCode: CGKeyCode = 9
 
+    private func simulatePaste() {
         guard let source = CGEventSource(stateID: .hidSystemState),
-            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: true),
-            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKey, keyDown: false) else {
+            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: Self.pasteKeyCode, keyDown: true),
+            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: Self.pasteKeyCode, keyDown: false) else {
             return
         }
 
@@ -57,51 +54,5 @@ class TextInserter {
 
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
-    }
-
-    private func currentKeyCodeForCharacter(_ target: Character) -> CGKeyCode? {
-        guard let inputSource = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
-            let rawLayoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) else {
-            return nil
-        }
-
-        let layoutData = unsafeBitCast(rawLayoutData, to: CFData.self)
-        guard let layoutBytes = CFDataGetBytePtr(layoutData) else {
-            return nil
-        }
-
-        let keyboardLayout = UnsafePointer<UCKeyboardLayout>(OpaquePointer(layoutBytes))
-        let keyboardType = UInt32(LMGetKbdType())
-        let wanted = String(target).lowercased()
-
-        for keyCode in 0..<128 {
-            for modifierState: UInt32 in [0, UInt32(shiftKey >> 8)] {
-                var deadKeyState: UInt32 = 0
-                var chars = [UniChar](repeating: 0, count: 4)
-                var actualLength: Int = 0
-
-                let status = UCKeyTranslate(
-                    keyboardLayout,
-                    UInt16(keyCode),
-                    UInt16(kUCKeyActionDisplay),
-                    modifierState,
-                    keyboardType,
-                    OptionBits(kUCKeyTranslateNoDeadKeysBit),
-                    &deadKeyState,
-                    chars.count,
-                    &actualLength,
-                    &chars
-                )
-
-                guard status == noErr else { continue }
-
-                let produced = String(utf16CodeUnits: chars, count: actualLength).lowercased()
-                if produced == wanted {
-                    return CGKeyCode(keyCode)
-                }
-            }
-        }
-
-        return nil
     }
 }
