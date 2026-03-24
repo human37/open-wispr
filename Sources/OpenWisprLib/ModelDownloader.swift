@@ -58,14 +58,36 @@ public class ModelDownloader: NSObject, URLSessionDownloadDelegate {
             return
         }
         do {
+            if let httpResponse = downloadTask.response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                completion?(ModelDownloadError.httpError(httpResponse.statusCode))
+                return
+            }
+
             if FileManager.default.fileExists(atPath: destPath.path) {
                 try FileManager.default.removeItem(at: destPath)
             }
             try FileManager.default.moveItem(at: location, to: destPath)
+
+            if !ModelDownloader.isValidGGMLFile(at: destPath) {
+                try? FileManager.default.removeItem(at: destPath)
+                completion?(ModelDownloadError.invalidModelData)
+                return
+            }
+
             completion?(nil)
         } catch {
             completion?(error)
         }
+    }
+
+    public static func isValidGGMLFile(at url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { handle.closeFile() }
+        guard let magic = try? handle.read(upToCount: 4), magic.count == 4 else { return false }
+        // GGML magic: 0x67676d6c ("ggml"), GGJT magic: 0x67676a74 ("ggjt"), GGUF magic: 0x46554747 ("GGUF")
+        let magicU32 = magic.withUnsafeBytes { $0.load(as: UInt32.self) }
+        let knownMagics: Set<UInt32> = [0x67676d6c, 0x67676a74, 0x46554747]
+        return knownMagics.contains(magicU32)
     }
 
     public func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
@@ -81,13 +103,19 @@ public class ModelDownloader: NSObject, URLSessionDownloadDelegate {
     }
 }
 
-enum ModelDownloadError: LocalizedError {
+public enum ModelDownloadError: LocalizedError {
     case downloadFailed
+    case httpError(Int)
+    case invalidModelData
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .downloadFailed:
             return "Failed to download model"
+        case .httpError(let statusCode):
+            return "Download failed with HTTP status \(statusCode). Check your network connection or proxy settings."
+        case .invalidModelData:
+            return "Downloaded file is not a valid GGML model (possibly a proxy error page). Check your network connection or try downloading from a different network."
         }
     }
 }
