@@ -27,6 +27,7 @@ class StatusBarController: NSObject {
         case downloading
         case waitingForPermission
         case copiedToClipboard
+        case error(String)
     }
 
     var state: State = .idle {
@@ -62,7 +63,7 @@ class StatusBarController: NSObject {
     func updateDownloadProgress(_ text: String?, percent: Double = 0) {
         downloadProgress = text
         downloadPercent = percent
-        if state == .downloading {
+        if case .downloading = state {
             setIcon(StatusBarController.drawDownloadProgress(downloadPercent))
         }
         if let text = text, let item = stateMenuItem {
@@ -106,9 +107,10 @@ class StatusBarController: NSObject {
             case .downloading: stateLabel = "Downloading model..."
             case .waitingForPermission: stateLabel = "Waiting for Accessibility permission..."
             case .copiedToClipboard: stateLabel = "Copied to clipboard"
+            case .error(let message): stateLabel = "Error: \(message)"
             }
         }
-        if state == .waitingForPermission {
+        if case .waitingForPermission = state {
             let target = MenuItemTarget {
                 Permissions.openAccessibilitySettings()
             }
@@ -315,6 +317,8 @@ class StatusBarController: NSObject {
             setIcon(StatusBarController.drawLockIcon())
         case .copiedToClipboard:
             setIcon(StatusBarController.drawCheckmarkIcon())
+        case .error:
+            setIcon(StatusBarController.drawWarningIcon())
         }
     }
 
@@ -582,6 +586,36 @@ class StatusBarController: NSObject {
             path.lineCapStyle = .round
             path.lineJoinStyle = .round
             path.stroke()
+
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
+    static func drawWarningIcon() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSColor.black.setStroke()
+            NSColor.black.setFill()
+
+            let centerX = rect.midX
+
+            // Triangle outline
+            let triangle = NSBezierPath()
+            triangle.move(to: NSPoint(x: centerX, y: 16))
+            triangle.line(to: NSPoint(x: centerX - 7, y: 3))
+            triangle.line(to: NSPoint(x: centerX + 7, y: 3))
+            triangle.close()
+            triangle.lineWidth = 1.5
+            triangle.lineJoinStyle = .round
+            triangle.stroke()
+
+            // Exclamation mark
+            let stemRect = NSRect(x: centerX - 0.75, y: 7, width: 1.5, height: 5)
+            NSBezierPath(roundedRect: stemRect, xRadius: 0.75, yRadius: 0.75).fill()
+            let dotRect = NSRect(x: centerX - 1, y: 4.5, width: 2, height: 2)
+            NSBezierPath(ovalIn: dotRect).fill()
 
             return true
         }

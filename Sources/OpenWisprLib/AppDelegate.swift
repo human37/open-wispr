@@ -96,6 +96,19 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        if let modelPath = Transcriber.findModel(modelSize: config.modelSize) {
+            let modelURL = URL(fileURLWithPath: modelPath)
+            if !ModelDownloader.isValidGGMLFile(at: modelURL) {
+                let msg = "Model file is corrupted. Re-download with: open-wispr download-model \(config.modelSize)"
+                print("Error: \(msg)")
+                DispatchQueue.main.async {
+                    self.statusBar.state = .error(msg)
+                    self.statusBar.buildMenu()
+                }
+                return
+            }
+        }
+
         DispatchQueue.main.async { [weak self] in
             self?.startListening()
         }
@@ -134,7 +147,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applyConfigChange(_ newConfig: Config) {
         guard isReady else { return }
-        let wasDownloading = statusBar.state == .downloading
+        let wasDownloading: Bool
+        if case .downloading = statusBar.state { wasDownloading = true } else { wasDownloading = false }
         config = newConfig
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
@@ -262,15 +276,21 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 DispatchQueue.main.async {
                     print("Error: \(error.localizedDescription)")
-                    self.statusBar.state = .idle
+                    self.statusBar.state = .error(error.localizedDescription)
                     self.statusBar.buildMenu()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                        if case .error = self.statusBar.state {
+                            self.statusBar.state = .idle
+                            self.statusBar.buildMenu()
+                        }
+                    }
                 }
             }
         }
     }
 
     public func reprocess(audioURL: URL) {
-        guard statusBar.state == .idle else { return }
+        guard case .idle = statusBar.state else { return }
 
         statusBar.state = .transcribing
 
