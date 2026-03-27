@@ -3,6 +3,13 @@ import Foundation
 import Cocoa
 
 class TextInserter {
+    let resolvedPasteMethod: String
+
+    init(pasteMethod: String? = nil) {
+        let method = (pasteMethod ?? "cgevent").lowercased()
+        self.resolvedPasteMethod = ["cgevent", "applescript"].contains(method) ? method : "cgevent"
+    }
+
     func insert(text: String) {
         let pasteboard = NSPasteboard.general
         let savedItems = savePasteboard(pasteboard)
@@ -10,9 +17,17 @@ class TextInserter {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
-        simulatePaste()
+        let usedAppleScript: Bool
+        if resolvedPasteMethod == "applescript" {
+            usedAppleScript = true
+            simulatePasteWithAppleScript()
+        } else {
+            usedAppleScript = false
+            simulatePasteWithCGEvent()
+        }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        let restoreDelay: Double = usedAppleScript ? 0.5 : 0.1
+        DispatchQueue.main.asyncAfter(deadline: .now() + restoreDelay) {
             self.restorePasteboard(pasteboard, items: savedItems)
         }
     }
@@ -42,7 +57,7 @@ class TextInserter {
 
     static let pasteKeyCode: CGKeyCode = 9
 
-    private func simulatePaste() {
+    private func simulatePasteWithCGEvent() {
         guard let source = CGEventSource(stateID: .hidSystemState),
             let keyDown = CGEvent(keyboardEventSource: source, virtualKey: Self.pasteKeyCode, keyDown: true),
             let keyUp = CGEvent(keyboardEventSource: source, virtualKey: Self.pasteKeyCode, keyDown: false) else {
@@ -54,5 +69,18 @@ class TextInserter {
 
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
+    }
+
+    private func simulatePasteWithAppleScript() {
+        let script = NSAppleScript(source: """
+            tell application "System Events"
+                keystroke "v" using command down
+            end tell
+            """)
+        var error: NSDictionary?
+        script?.executeAndReturnError(&error)
+        if let error = error {
+            print("AppleScript paste error: \(error)")
+        }
     }
 }
