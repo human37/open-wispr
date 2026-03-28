@@ -829,7 +829,7 @@
 
 <section class="config">
   <p class="section-tag">Configuration</p>
-  <h2>One file. Seven options.</h2>
+  <h2>One file. Eight options.</h2>
   <div class="config-example">
     <div class="card-header">~/.config/open-wispr/config.json</div>
     <pre>{
@@ -877,6 +877,11 @@
       <td>toggleMode</td>
       <td>false</td>
       <td>Press hotkey once to start recording, press again to stop. Default is hold-to-talk.</td>
+    </tr>
+    <tr>
+      <td>inputMethod</td>
+      <td>"cgevent"</td>
+      <td>How transcribed text is pasted into the active app. Try <code>applescript</code> if text is not being inserted after dictation.</td>
     </tr>
   </table>
   <p class="config-note">Edit <code>~/.config/open-wispr/config.json</code>, then restart: <code>brew services restart open-wispr</code></p>
