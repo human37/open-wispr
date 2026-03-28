@@ -4,12 +4,9 @@ import Cocoa
 import Carbon.HIToolbox
 
 class TextInserter {
-    let resolvedInputMethod: String
     let pasteKeyCode: CGKeyCode
 
-    init(inputMethod: String? = nil) {
-        let method = (inputMethod ?? "cgevent").lowercased()
-        self.resolvedInputMethod = ["cgevent", "applescript"].contains(method) ? method : "cgevent"
+    init() {
         self.pasteKeyCode = TextInserter.resolveKeyCode(for: "v") ?? 9
     }
 
@@ -20,17 +17,9 @@ class TextInserter {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
-        let usedAppleScript: Bool
-        if resolvedInputMethod == "applescript" {
-            usedAppleScript = true
-            simulatePasteWithAppleScript()
-        } else {
-            usedAppleScript = false
-            simulatePasteWithCGEvent()
-        }
+        simulatePaste()
 
-        let restoreDelay: Double = usedAppleScript ? 0.5 : 0.1
-        DispatchQueue.main.asyncAfter(deadline: .now() + restoreDelay) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.restorePasteboard(pasteboard, items: savedItems)
         }
     }
@@ -102,7 +91,7 @@ class TextInserter {
         return nil
     }
 
-    private func simulatePasteWithCGEvent() {
+    private func simulatePaste() {
         let keyCode = pasteKeyCode
 
         guard let source = CGEventSource(stateID: .hidSystemState),
@@ -116,19 +105,5 @@ class TextInserter {
 
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
-    }
-
-    private func simulatePasteWithAppleScript() {
-        let keyCode = pasteKeyCode
-        let script = NSAppleScript(source: """
-            tell application "System Events"
-                key code \(keyCode) using command down
-            end tell
-            """)
-        var error: NSDictionary?
-        script?.executeAndReturnError(&error)
-        if let error = error {
-            print("AppleScript paste error: \(error)")
-        }
     }
 }

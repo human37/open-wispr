@@ -45,8 +45,7 @@ Edit `~/.config/open-wispr/config.json`:
   "language": "en",
   "spokenPunctuation": false,
   "maxRecordings": 0,
-  "toggleMode": false,
-  "inputMethod": "cgevent"
+  "toggleMode": false
 }
 ```
 
@@ -61,7 +60,6 @@ Then restart: `brew services restart open-wispr`
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
 | **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
-| **inputMethod** | `"cgevent"` | How transcribed text is pasted. Try `"applescript"` if text is not being inserted after dictation. More common with unconventional keyboard layouts like Dvorak. |
 
 ### Models
 

@@ -13,7 +13,6 @@ public struct Config: Codable {
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
-    public var inputMethod: String?
 
     public static let supportedLanguages: [LanguageOption] = [
         LanguageOption(code: "auto", name: "Auto-Detect"),
@@ -141,8 +140,7 @@ public struct Config: Codable {
         language: "en",
         spokenPunctuation: FlexBool(false),
         maxRecordings: nil,
-        toggleMode: FlexBool(false),
-        inputMethod: nil
+        toggleMode: FlexBool(false)
     )
 
     public static var configDir: URL {
