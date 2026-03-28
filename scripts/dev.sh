@@ -118,6 +118,7 @@ cur_lang=$(read_config language en)
 cur_punct=$(read_config spokenPunctuation false)
 cur_max_recordings=$(read_config maxRecordings 0)
 cur_toggle=$(read_config toggleMode false)
+cur_input_method=$(read_config inputMethod cgevent)
 
 # Model
 echo ""
@@ -178,6 +179,20 @@ case "$toggle_choice" in
     *) toggle="$cur_toggle" ;;
 esac
 
+# Input method
+echo ""
+echo "  Input methods:"
+echo "    1) cgevent      (default, fast)"
+echo "    2) applescript   (fallback if text not inserting)"
+printf "  Input method [%s]: " "$cur_input_method"
+read -r input_method_choice
+case "$input_method_choice" in
+    1) input_method="cgevent" ;;
+    2) input_method="applescript" ;;
+    "") input_method="$cur_input_method" ;;
+    *) input_method="$input_method_choice" ;;
+esac
+
 # Hotkey
 hotkey_raw=$(read_hotkey)
 cur_keycode="${hotkey_raw%%|*}"
@@ -218,6 +233,7 @@ cat > "$CONFIG_FILE" << EOF
   "spokenPunctuation": $punct,
   "maxRecordings": $max_recordings,
   "toggleMode": $toggle,
+  "inputMethod": "$input_method",
   "hotkey": { "keyCode": $hotkey_code, "modifiers": $hotkey_mods_json }
 }
 EOF
@@ -229,7 +245,7 @@ if [ "$hotkey_mods_json" != "[]" ]; then
 else
     hotkey_display="$hotkey_name"
 fi
-echo "  Config: model=$model  lang=$lang  punctuation=$punct  maxRecordings=$max_recordings  toggle=$toggle  hotkey=$hotkey_display"
+echo "  Config: model=$model  lang=$lang  punctuation=$punct  maxRecordings=$max_recordings  toggle=$toggle  inputMethod=$input_method  hotkey=$hotkey_display"
 echo "────────────────────"
 
 # Kill any running instances
