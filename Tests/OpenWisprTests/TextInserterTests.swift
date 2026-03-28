@@ -3,8 +3,9 @@ import XCTest
 
 final class TextInserterTests: XCTestCase {
 
-    func testPasteKeyCodeIsHardcodedToVirtualV() {
-        XCTAssertEqual(TextInserter.pasteKeyCode, 9, "Paste key code must be 9 (virtual 'V' position) to work across all keyboard layouts")
+    func testPasteKeyCodeResolvesForCurrentLayout() {
+        let inserter = TextInserter()
+        XCTAssertTrue(inserter.pasteKeyCode < 128, "Paste key code should be a valid virtual key code")
     }
 
     func testDefaultPasteMethodIsCGEvent() {

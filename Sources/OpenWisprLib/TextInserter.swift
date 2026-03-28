@@ -1,13 +1,16 @@
 import AppKit
 import Foundation
 import Cocoa
+import Carbon.HIToolbox
 
 class TextInserter {
     let resolvedInputMethod: String
+    let pasteKeyCode: CGKeyCode
 
     init(inputMethod: String? = nil) {
         let method = (inputMethod ?? "cgevent").lowercased()
         self.resolvedInputMethod = ["cgevent", "applescript"].contains(method) ? method : "cgevent"
+        self.pasteKeyCode = TextInserter.resolveKeyCode(for: "v") ?? 9
     }
 
     func insert(text: String) {
@@ -55,12 +58,56 @@ class TextInserter {
         pasteboard.writeObjects(pasteboardItems)
     }
 
-    static let pasteKeyCode: CGKeyCode = 9
+    private static func resolveKeyCode(for target: Character) -> CGKeyCode? {
+        guard let inputSource = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
+            let rawLayoutData = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) else {
+            return nil
+        }
+
+        let layoutData = unsafeBitCast(rawLayoutData, to: CFData.self)
+        guard let layoutBytes = CFDataGetBytePtr(layoutData) else {
+            return nil
+        }
+
+        let keyboardLayout = UnsafePointer<UCKeyboardLayout>(OpaquePointer(layoutBytes))
+        let keyboardType = UInt32(LMGetKbdType())
+        let wanted = String(target).lowercased()
+
+        for keyCode in 0..<128 {
+            var deadKeyState: UInt32 = 0
+            var chars = [UniChar](repeating: 0, count: 4)
+            var actualLength: Int = 0
+
+            let status = UCKeyTranslate(
+                keyboardLayout,
+                UInt16(keyCode),
+                UInt16(kUCKeyActionDisplay),
+                0,
+                keyboardType,
+                OptionBits(kUCKeyTranslateNoDeadKeysBit),
+                &deadKeyState,
+                chars.count,
+                &actualLength,
+                &chars
+            )
+
+            guard status == noErr else { continue }
+
+            let produced = String(utf16CodeUnits: chars, count: actualLength).lowercased()
+            if produced == wanted {
+                return CGKeyCode(keyCode)
+            }
+        }
+
+        return nil
+    }
 
     private func simulatePasteWithCGEvent() {
+        let keyCode = pasteKeyCode
+
         guard let source = CGEventSource(stateID: .hidSystemState),
-            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: Self.pasteKeyCode, keyDown: true),
-            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: Self.pasteKeyCode, keyDown: false) else {
+            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
+            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false) else {
             return
         }
 
@@ -72,9 +119,10 @@ class TextInserter {
     }
 
     private func simulatePasteWithAppleScript() {
+        let keyCode = pasteKeyCode
         let script = NSAppleScript(source: """
             tell application "System Events"
-                keystroke "v" using command down
+                key code \(keyCode) using command down
             end tell
             """)
         var error: NSDictionary?
