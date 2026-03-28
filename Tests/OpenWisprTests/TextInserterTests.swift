@@ -8,17 +8,17 @@ final class TextInserterTests: XCTestCase {
     }
 
     func testDefaultPasteMethodIsCGEvent() {
-        let inserter = TextInserter(pasteMethod: nil)
-        XCTAssertEqual(inserter.resolvedPasteMethod, "cgevent")
+        let inserter = TextInserter(inputMethod: nil)
+        XCTAssertEqual(inserter.resolvedInputMethod, "cgevent")
     }
 
     func testAppleScriptPasteMethodIsRecognized() {
-        let inserter = TextInserter(pasteMethod: "applescript")
-        XCTAssertEqual(inserter.resolvedPasteMethod, "applescript")
+        let inserter = TextInserter(inputMethod: "applescript")
+        XCTAssertEqual(inserter.resolvedInputMethod, "applescript")
     }
 
     func testUnknownPasteMethodDefaultsToCGEvent() {
-        let inserter = TextInserter(pasteMethod: "garbage")
-        XCTAssertEqual(inserter.resolvedPasteMethod, "cgevent")
+        let inserter = TextInserter(inputMethod: "garbage")
+        XCTAssertEqual(inserter.resolvedInputMethod, "cgevent")
     }
 }

@@ -3,11 +3,11 @@ import Foundation
 import Cocoa
 
 class TextInserter {
-    let resolvedPasteMethod: String
+    let resolvedInputMethod: String
 
-    init(pasteMethod: String? = nil) {
-        let method = (pasteMethod ?? "cgevent").lowercased()
-        self.resolvedPasteMethod = ["cgevent", "applescript"].contains(method) ? method : "cgevent"
+    init(inputMethod: String? = nil) {
+        let method = (inputMethod ?? "cgevent").lowercased()
+        self.resolvedInputMethod = ["cgevent", "applescript"].contains(method) ? method : "cgevent"
     }
 
     func insert(text: String) {
@@ -18,7 +18,7 @@ class TextInserter {
         pasteboard.setString(text, forType: .string)
 
         let usedAppleScript: Bool
-        if resolvedPasteMethod == "applescript" {
+        if resolvedInputMethod == "applescript" {
             usedAppleScript = true
             simulatePasteWithAppleScript()
         } else {
