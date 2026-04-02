@@ -42,4 +42,12 @@ final class TranscriberTests: XCTestCase {
     func testEmptyString() {
         XCTAssertEqual(Transcriber.stripWhisperMarkers(""), "")
     }
+
+    func testUnknownBracketsPreserved() {
+        XCTAssertEqual(Transcriber.stripWhisperMarkers("see [1] and (later)"), "see [1] and (later)")
+    }
+
+    func testKnownMarkerStrippedUnknownPreserved() {
+        XCTAssertEqual(Transcriber.stripWhisperMarkers("[BLANK_AUDIO] see [1]"), "see [1]")
+    }
 }

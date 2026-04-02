@@ -63,16 +63,34 @@ public class Transcriber {
         return output
     }
 
+    private static let knownMarkers: Set<String> = [
+        "BLANK_AUDIO", "blank_audio",
+        "Music", "MUSIC", "music",
+        "Applause", "APPLAUSE", "applause",
+        "Laughter", "LAUGHTER", "laughter",
+        "silence", "Silence", "SILENCE",
+        "SOUND", "Sound", "sound",
+        "NOISE", "Noise", "noise",
+        "INAUDIBLE", "inaudible",
+    ]
+
+    private static let markerRegex = try! NSRegularExpression(
+        pattern: "[\\[\\(]\\s*([^\\]\\)]+?)\\s*[\\]\\)]"
+    )
+
     public static func stripWhisperMarkers(_ text: String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: "[\\[\\(][^\\]\\)]+[\\]\\)]", options: []) else {
-            return text
+        let nsText = text as NSString
+        let matches = markerRegex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
+        var result = text
+        for match in matches.reversed() {
+            let innerRange = match.range(at: 1)
+            let inner = nsText.substring(with: innerRange)
+            if knownMarkers.contains(inner) {
+                let fullRange = Range(match.range, in: result)!
+                result.replaceSubrange(fullRange, with: "")
+            }
         }
-        let stripped = regex.stringByReplacingMatches(
-            in: text,
-            range: NSRange(text.startIndex..., in: text),
-            withTemplate: ""
-        )
-        return stripped
+        return result
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
