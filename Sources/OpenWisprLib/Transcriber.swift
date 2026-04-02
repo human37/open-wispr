@@ -63,8 +63,6 @@ public class Transcriber {
         return output
     }
 
-    /// Strips whisper-cpp bracketed/parenthesized markers (e.g. `[BLANK_AUDIO]`, `[Music]`)
-    /// and returns the remaining text, or an empty string if only markers were present.
     public static func stripWhisperMarkers(_ text: String) -> String {
         guard let regex = try? NSRegularExpression(pattern: "[\\[\\(][^\\]\\)]+[\\]\\)]", options: []) else {
             return text
@@ -74,7 +72,6 @@ public class Transcriber {
             range: NSRange(text.startIndex..., in: text),
             withTemplate: ""
         )
-        // Collapse multiple spaces left after stripping and trim
         return stripped
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
