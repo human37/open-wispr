@@ -50,7 +50,9 @@ public class Transcriber {
         while !stderrThread.isFinished { Thread.sleep(forTimeInterval: 0.01) }
         process.waitUntilExit()
 
-        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let output = Transcriber.stripWhisperMarkers(
+            String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        )
 
         if process.terminationStatus != 0 {
             let stderr = String(data: stderrData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -59,6 +61,23 @@ public class Transcriber {
         }
 
         return output
+    }
+
+    /// Strips whisper-cpp bracketed/parenthesized markers (e.g. `[BLANK_AUDIO]`, `[Music]`)
+    /// and returns the remaining text, or an empty string if only markers were present.
+    public static func stripWhisperMarkers(_ text: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: "[\\[\\(][^\\]\\)]+[\\]\\)]", options: []) else {
+            return text
+        }
+        let stripped = regex.stringByReplacingMatches(
+            in: text,
+            range: NSRange(text.startIndex..., in: text),
+            withTemplate: ""
+        )
+        // Collapse multiple spaces left after stripping and trim
+        return stripped
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public static func findWhisperBinary() -> String? {
