@@ -50,7 +50,9 @@ public class Transcriber {
         while !stderrThread.isFinished { Thread.sleep(forTimeInterval: 0.01) }
         process.waitUntilExit()
 
-        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let output = Transcriber.stripWhisperMarkers(
+            String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        )
 
         if process.terminationStatus != 0 {
             let stderr = String(data: stderrData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -59,6 +61,38 @@ public class Transcriber {
         }
 
         return output
+    }
+
+    private static let knownMarkers: Set<String> = [
+        "BLANK_AUDIO", "blank_audio",
+        "Music", "MUSIC", "music",
+        "Applause", "APPLAUSE", "applause",
+        "Laughter", "LAUGHTER", "laughter",
+        "silence", "Silence", "SILENCE",
+        "SOUND", "Sound", "sound",
+        "NOISE", "Noise", "noise",
+        "INAUDIBLE", "inaudible",
+    ]
+
+    private static let markerRegex = try! NSRegularExpression(
+        pattern: "[\\[\\(]\\s*([^\\]\\)]+?)\\s*[\\]\\)]"
+    )
+
+    public static func stripWhisperMarkers(_ text: String) -> String {
+        let nsText = text as NSString
+        let matches = markerRegex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
+        var result = text
+        for match in matches.reversed() {
+            let innerRange = match.range(at: 1)
+            let inner = nsText.substring(with: innerRange)
+            if knownMarkers.contains(inner) {
+                let fullRange = Range(match.range, in: result)!
+                result.replaceSubrange(fullRange, with: "")
+            }
+        }
+        return result
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public static func findWhisperBinary() -> String? {
