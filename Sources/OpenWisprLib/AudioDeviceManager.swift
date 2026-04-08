@@ -40,6 +40,7 @@ class AudioDeviceManager {
         var result: [AudioInputDevice] = []
         for deviceID in deviceIDs {
             guard hasInputStreams(deviceID: deviceID),
+                  !isVirtualDevice(deviceID: deviceID),
                   let name = getDeviceName(deviceID: deviceID) else { continue }
             result.append(AudioInputDevice(
                 id: deviceID,
@@ -66,6 +67,20 @@ class AudioDeviceManager {
             &deviceID
         )
         return deviceID
+    }
+
+    private static func isVirtualDevice(deviceID: AudioDeviceID) -> Bool {
+        var transportType: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &transportType)
+        guard status == noErr else { return false }
+        return transportType == kAudioDeviceTransportTypeAggregate
+            || transportType == kAudioDeviceTransportTypeVirtual
     }
 
     private static func hasInputStreams(deviceID: AudioDeviceID) -> Bool {
