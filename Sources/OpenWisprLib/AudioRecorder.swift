@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreAudio
 import Foundation
 
 class AudioRecorder {
@@ -6,11 +7,17 @@ class AudioRecorder {
     private var audioFile: AVAudioFile?
     private var isRecording = false
     private var currentOutputURL: URL?
+    var preferredDeviceID: AudioDeviceID?
 
     func startRecording(to outputURL: URL) throws {
         guard !isRecording else { return }
 
         let engine = AVAudioEngine()
+
+        if let deviceID = preferredDeviceID {
+            setInputDevice(deviceID, on: engine)
+        }
+
         let inputNode = engine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
 
@@ -73,5 +80,25 @@ class AudioRecorder {
         isRecording = false
 
         return currentOutputURL
+    }
+
+    private func setInputDevice(_ deviceID: AudioDeviceID, on engine: AVAudioEngine) {
+        guard let audioUnit = engine.inputNode.audioUnit else {
+            print("Warning: could not access audio unit to set input device")
+            return
+        }
+
+        var devID = deviceID
+        let status = AudioUnitSetProperty(
+            audioUnit,
+            kAudioOutputUnitProperty_CurrentDevice,
+            kAudioUnitScope_Global,
+            0,
+            &devID,
+            UInt32(MemoryLayout<AudioDeviceID>.size)
+        )
+        if status != noErr {
+            print("Warning: failed to set audio input device (status: \(status))")
+        }
     }
 }

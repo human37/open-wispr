@@ -13,6 +13,7 @@ public struct Config: Codable {
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
+    public var audioInputDeviceID: UInt32?
 
     public static let supportedLanguages: [LanguageOption] = [
         LanguageOption(code: "auto", name: "Auto-Detect"),

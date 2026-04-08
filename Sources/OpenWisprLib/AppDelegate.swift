@@ -31,6 +31,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupInner() throws {
         config = Config.load()
         inserter = TextInserter()
+        recorder.preferredDeviceID = config.audioInputDeviceID
         if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
             RecordingStore.deleteAllRecordings()
         }
@@ -150,6 +151,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let wasDownloading: Bool
         if case .downloading = statusBar.state { wasDownloading = true } else { wasDownloading = false }
         config = newConfig
+        recorder.preferredDeviceID = config.audioInputDeviceID
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
         inserter = TextInserter()
