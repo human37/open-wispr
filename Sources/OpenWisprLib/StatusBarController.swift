@@ -231,6 +231,7 @@ class StatusBarController: NSObject {
         }
         let audioItem = NSMenuItem(title: "Audio Input: \(currentDeviceName)", action: nil, keyEquivalent: "")
         let audioSubmenu = NSMenu()
+        audioSubmenu.autoenablesItems = false
 
         let defaultTarget = MenuItemTarget { [weak self] in
             var cfg = Config.load()
