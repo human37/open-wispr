@@ -139,7 +139,7 @@ Running `bash scripts/dev.sh` is the easiest way to **configure, build, and laun
 6. **Installs** `whisper-cpp` via Homebrew if it is not already present.
 7. **Builds** the Swift app from source in release mode (`swift build -c release`).
 8. **Bundles** the binary into `OpenWispr.app` via `scripts/bundle-app.sh`.
-9. **Copies** `OpenWispr.app` to `~/Applications/` so macOS recognises it for microphone / accessibility permission grants.
+9. **Copies** `OpenWispr.app` to `~/Applications/` so macOS recognizes it for microphone / accessibility permission grants.
 10. **Launches** `~/Applications/OpenWispr.app/Contents/MacOS/open-wispr start`.
 
 ## Support
