@@ -123,7 +123,7 @@ public struct Config: Codable {
         "base.en", "base",
         "small.en", "small",
         "medium.en", "medium",
-        "large-v3-turbo", "large",
+        "large-v3-turbo", "large-v3",
     ]
 
     public static let defaultMaxRecordings = 0
