@@ -220,6 +220,52 @@ class StatusBarController: NSObject {
         modelItem.submenu = modelSubmenu
         menu.addItem(modelItem)
 
+        let devices = AudioDeviceManager.listInputDevices()
+        let selectedDeviceID = config.audioInputDeviceID
+        let currentDeviceName: String
+        if let selectedID = selectedDeviceID,
+           let device = devices.first(where: { $0.id == selectedID }) {
+            currentDeviceName = device.name
+        } else {
+            currentDeviceName = "System Default"
+        }
+        let audioItem = NSMenuItem(title: "Audio Input: \(currentDeviceName)", action: nil, keyEquivalent: "")
+        let audioSubmenu = NSMenu()
+        audioSubmenu.autoenablesItems = false
+
+        let defaultTarget = MenuItemTarget { [weak self] in
+            var cfg = Config.load()
+            cfg.audioInputDeviceID = nil
+            try? cfg.save()
+            self?.onConfigChange?(cfg)
+        }
+        menuItemTargets.append(defaultTarget)
+        let defaultItem = NSMenuItem(title: "System Default", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        defaultItem.target = defaultTarget
+        if selectedDeviceID == nil { defaultItem.state = .on }
+        audioSubmenu.addItem(defaultItem)
+
+        if !devices.isEmpty {
+            audioSubmenu.addItem(NSMenuItem.separator())
+        }
+
+        for device in devices {
+            let target = MenuItemTarget { [weak self] in
+                var cfg = Config.load()
+                cfg.audioInputDeviceID = device.id
+                try? cfg.save()
+                self?.onConfigChange?(cfg)
+            }
+            menuItemTargets.append(target)
+            let item = NSMenuItem(title: device.name, action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+            item.target = target
+            if selectedDeviceID == device.id { item.state = .on }
+            audioSubmenu.addItem(item)
+        }
+
+        audioItem.submenu = audioSubmenu
+        menu.addItem(audioItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let toggleTarget = MenuItemTarget { [weak self] in

@@ -24,6 +24,7 @@ public struct Config: Codable {
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
     public var customDictionary: [DictionaryEntry]?
+    public var audioInputDeviceID: UInt32?
 
     public static let supportedLanguages: [LanguageOption] = [
         LanguageOption(code: "auto", name: "Auto-Detect"),
@@ -133,7 +134,7 @@ public struct Config: Codable {
         "base.en", "base",
         "small.en", "small",
         "medium.en", "medium",
-        "large-v3-turbo", "large",
+        "large-v3-turbo", "large-v3",
     ]
 
     public static let defaultMaxRecordings = 0

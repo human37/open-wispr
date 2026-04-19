@@ -72,7 +72,7 @@ Larger models are more accurate but slower and use more memory. The default `bas
 | `small.en` | 466 MB | Moderate | Better | Longer dictation, technical terms |
 | `medium.en` | 1.5 GB | Slower | Great | Maximum accuracy, complex speech |
 | `large-v3-turbo` | 1.6 GB | Moderate | Great | Fast multilingual, near-large accuracy |
-| `large` | 3 GB | Slowest | Best | Multilingual, highest accuracy (M1 Pro+ recommended) |
+| `large-v3` | 3 GB | Slowest | Best | Multilingual, highest accuracy (M1 Pro+ recommended) |
 
 > **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent model without the `.en` suffix (e.g. `base.en` → `base`) and set the `language` field to your language code. Multilingual models are slightly less accurate for English but support 99 languages.
 
