@@ -41,7 +41,14 @@ class DictionaryWindowController: NSWindowController, NSTableViewDataSource, NST
 
     private func saveEntries() {
         var config = Config.load()
-        let cleaned = entries.filter { !$0.from.isEmpty && !$0.to.isEmpty }
+        var seen = Set<String>()
+        var cleaned: [DictionaryEntry] = []
+        for entry in entries.reversed() where !entry.from.isEmpty && !entry.to.isEmpty {
+            if seen.insert(entry.from).inserted {
+                cleaned.append(entry)
+            }
+        }
+        cleaned.reverse()
         config.customDictionary = cleaned.isEmpty ? nil : cleaned
         try? config.save()
 

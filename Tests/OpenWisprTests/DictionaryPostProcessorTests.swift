@@ -100,6 +100,15 @@ final class DictionaryPostProcessorTests: XCTestCase {
         XCTAssertEqual(result, "")
     }
 
+    func testDuplicateFromUsesFirstEntry() {
+        let entries = [
+            DictionaryEntry(from: "nural", to: "neural"),
+            DictionaryEntry(from: "nural", to: "NEURAL"),
+        ]
+        let result = DictionaryPostProcessor.process("the nural network", dictionary: entries)
+        XCTAssertEqual(result, "the neural network")
+    }
+
     func testMultipleReplacementsInOneSentence() {
         let entries = [
             DictionaryEntry(from: "nural", to: "neural"),
