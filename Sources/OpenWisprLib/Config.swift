@@ -126,6 +126,14 @@ public struct Config: Codable {
         "large-v3-turbo", "large-v3",
     ]
 
+    public static let modelAliases: [String: String] = [
+        "large": "large-v3",
+    ]
+
+    public static func resolveModelAlias(_ size: String) -> String {
+        return modelAliases[size] ?? size
+    }
+
     public static let defaultMaxRecordings = 0
 
     public static func effectiveMaxRecordings(_ value: Int?) -> Int {
@@ -161,7 +169,13 @@ public struct Config: Codable {
         }
 
         do {
-            return try JSONDecoder().decode(Config.self, from: data)
+            var config = try JSONDecoder().decode(Config.self, from: data)
+            let resolved = Config.resolveModelAlias(config.modelSize)
+            if resolved != config.modelSize {
+                config.modelSize = resolved
+                try? config.save()
+            }
+            return config
         } catch {
             fputs("Warning: unable to parse \(configFile.path): \(error.localizedDescription)\n", stderr)
             return Config.defaultConfig
@@ -169,7 +183,9 @@ public struct Config: Codable {
     }
 
     public static func decode(from data: Data) throws -> Config {
-        return try JSONDecoder().decode(Config.self, from: data)
+        var config = try JSONDecoder().decode(Config.self, from: data)
+        config.modelSize = Config.resolveModelAlias(config.modelSize)
+        return config
     }
 
     public func save() throws {

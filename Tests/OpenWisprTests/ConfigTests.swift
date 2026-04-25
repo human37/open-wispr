@@ -147,6 +147,39 @@ final class ConfigTests: XCTestCase {
         XCTAssertTrue(Config.supportedModels.contains("base.en"))
     }
 
+    // MARK: - Model alias resolution
+
+    func testResolveModelAliasMapsLargeToLargeV3() {
+        XCTAssertEqual(Config.resolveModelAlias("large"), "large-v3")
+    }
+
+    func testResolveModelAliasReturnsInputForNonAliased() {
+        XCTAssertEqual(Config.resolveModelAlias("base.en"), "base.en")
+        XCTAssertEqual(Config.resolveModelAlias("large-v3"), "large-v3")
+        XCTAssertEqual(Config.resolveModelAlias("nonexistent"), "nonexistent")
+    }
+
+    func testModelAliasDestinationsAreSupported() {
+        for canonical in Config.modelAliases.values {
+            XCTAssertTrue(
+                Config.supportedModels.contains(canonical),
+                "Alias destination '\(canonical)' must be in Config.supportedModels"
+            )
+        }
+    }
+
+    func testConfigDecodeResolvesLargeAlias() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "large",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.modelSize, "large-v3")
+    }
+
     func testConfigDecodesLanguageAuto() throws {
         let json = """
         {
