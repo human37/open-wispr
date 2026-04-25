@@ -169,8 +169,8 @@ class StatusBarController: NSObject {
         let modelItem = NSMenuItem(title: "Model: \(config.modelSize)", action: nil, keyEquivalent: "")
         let modelSubmenu = NSMenu()
 
-        let englishModels = Config.supportedModels.filter { $0.hasSuffix(".en") }
-        let multilingualModels = Config.supportedModels.filter { !$0.hasSuffix(".en") }
+        let englishModels = Config.supportedModels.filter { Config.isEnglishOnlyModel($0) }
+        let multilingualModels = Config.supportedModels.filter { !Config.isEnglishOnlyModel($0) }
 
         let engHeader = NSMenuItem(title: "English", action: nil, keyEquivalent: "")
         engHeader.isEnabled = false

@@ -119,11 +119,16 @@ public struct Config: Codable {
     ]
 
     public static let supportedModels: [String] = [
-        "tiny.en", "tiny",
-        "base.en", "base",
-        "small.en", "small",
-        "medium.en", "medium",
-        "large-v3-turbo", "large-v3",
+        "tiny.en", "tiny.en-q5_1",
+        "tiny",
+        "base.en", "base.en-q5_1",
+        "base",
+        "small.en", "small.en-q5_1",
+        "small",
+        "medium.en", "medium.en-q5_0",
+        "medium",
+        "large-v3-turbo", "large-v3-turbo-q8_0", "large-v3-turbo-q5_0",
+        "large-v3",
     ]
 
     public static let modelAliases: [String: String] = [
@@ -132,6 +137,10 @@ public struct Config: Codable {
 
     public static func resolveModelAlias(_ size: String) -> String {
         return modelAliases[size] ?? size
+    }
+
+    public static func isEnglishOnlyModel(_ name: String) -> Bool {
+        return name.hasSuffix(".en") || name.contains(".en-")
     }
 
     public static let defaultMaxRecordings = 0

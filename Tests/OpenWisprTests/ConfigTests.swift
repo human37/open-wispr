@@ -168,6 +168,33 @@ final class ConfigTests: XCTestCase {
         }
     }
 
+    func testIsEnglishOnlyModelMatchesEnSuffix() {
+        XCTAssertTrue(Config.isEnglishOnlyModel("base.en"))
+        XCTAssertTrue(Config.isEnglishOnlyModel("medium.en"))
+    }
+
+    func testIsEnglishOnlyModelMatchesQuantizedEn() {
+        XCTAssertTrue(Config.isEnglishOnlyModel("tiny.en-q5_1"))
+        XCTAssertTrue(Config.isEnglishOnlyModel("medium.en-q5_0"))
+    }
+
+    func testIsEnglishOnlyModelRejectsMultilingual() {
+        XCTAssertFalse(Config.isEnglishOnlyModel("base"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3-turbo"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3-turbo-q5_0"))
+    }
+
+    func testEveryEnglishModelHasMultilingualPeer() {
+        // Sanity: each English model should be a recognised English variant
+        // and each multilingual model should not.
+        let english = Config.supportedModels.filter { Config.isEnglishOnlyModel($0) }
+        let multilingual = Config.supportedModels.filter { !Config.isEnglishOnlyModel($0) }
+        XCTAssertFalse(english.isEmpty)
+        XCTAssertFalse(multilingual.isEmpty)
+        XCTAssertEqual(english.count + multilingual.count, Config.supportedModels.count)
+    }
+
     func testConfigDecodeResolvesLargeAlias() throws {
         let json = """
         {
