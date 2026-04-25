@@ -137,17 +137,7 @@ The multilingual model will be downloaded automatically on next use.
 
 Larger models are more accurate but slower. `base` is a good starting point for most languages. There is no English-only large model upstream — pick `large-v3-turbo` for the fastest large-tier option (multilingual, near-large quality).
 
-#### Quantized variants
-
-Each model above has one or more quantized variants on disk: same weights compressed to ~⅓–½ the size with minimal quality loss. Speed is unchanged because the compute path is identical.
-
-| Variant | Bit width | Size impact | Quality |
-|---|---|---|---|
-| `…-q8_0` (e.g. `large-v3-turbo-q8_0`) | 8-bit | ~½ the full model | Near-identical |
-| `…-q5_1` (e.g. `base.en-q5_1`) | 5-bit | ~⅓ the full model | Slight loss on edge cases |
-| `…-q5_0` (e.g. `medium.en-q5_0`, `large-v3-turbo-q5_0`) | 5-bit | ~⅓ the full model | Slight loss on edge cases |
-
-Whisper.cpp ships `q5_1` for the smaller English models (`tiny.en`, `base.en`, `small.en`) and `q5_0` for `medium.en` and the large-tier models. See the [README model table](https://github.com/human37/open-wispr#models) for the full list with sizes.
+Each model also has quantized variants at ~⅓–½ the size with minimal quality loss. See [MODELS.md](https://github.com/human37/open-wispr/blob/main/MODELS.md) for the complete list and tradeoffs.
 
 ### Common language codes
 
