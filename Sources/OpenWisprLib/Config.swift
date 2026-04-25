@@ -119,12 +119,29 @@ public struct Config: Codable {
     ]
 
     public static let supportedModels: [String] = [
-        "tiny.en", "tiny",
-        "base.en", "base",
-        "small.en", "small",
-        "medium.en", "medium",
-        "large-v3-turbo", "large-v3",
+        "tiny.en", "tiny.en-q5_1",
+        "tiny",
+        "base.en", "base.en-q5_1",
+        "base",
+        "small.en", "small.en-q5_1",
+        "small",
+        "medium.en", "medium.en-q5_0",
+        "medium",
+        "large-v3-turbo", "large-v3-turbo-q8_0", "large-v3-turbo-q5_0",
+        "large-v3",
     ]
+
+    public static let modelAliases: [String: String] = [
+        "large": "large-v3",
+    ]
+
+    public static func resolveModelAlias(_ size: String) -> String {
+        return modelAliases[size] ?? size
+    }
+
+    public static func isEnglishOnlyModel(_ name: String) -> Bool {
+        return name.hasSuffix(".en") || name.contains(".en-")
+    }
 
     public static let defaultMaxRecordings = 0
 
@@ -161,7 +178,13 @@ public struct Config: Codable {
         }
 
         do {
-            return try JSONDecoder().decode(Config.self, from: data)
+            var config = try JSONDecoder().decode(Config.self, from: data)
+            let resolved = Config.resolveModelAlias(config.modelSize)
+            if resolved != config.modelSize {
+                config.modelSize = resolved
+                try? config.save()
+            }
+            return config
         } catch {
             fputs("Warning: unable to parse \(configFile.path): \(error.localizedDescription)\n", stderr)
             return Config.defaultConfig
@@ -169,7 +192,9 @@ public struct Config: Codable {
     }
 
     public static func decode(from data: Data) throws -> Config {
-        return try JSONDecoder().decode(Config.self, from: data)
+        var config = try JSONDecoder().decode(Config.self, from: data)
+        config.modelSize = Config.resolveModelAlias(config.modelSize)
+        return config
     }
 
     public func save() throws {

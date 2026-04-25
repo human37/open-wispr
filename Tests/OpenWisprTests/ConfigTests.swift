@@ -147,6 +147,66 @@ final class ConfigTests: XCTestCase {
         XCTAssertTrue(Config.supportedModels.contains("base.en"))
     }
 
+    // MARK: - Model alias resolution
+
+    func testResolveModelAliasMapsLargeToLargeV3() {
+        XCTAssertEqual(Config.resolveModelAlias("large"), "large-v3")
+    }
+
+    func testResolveModelAliasReturnsInputForNonAliased() {
+        XCTAssertEqual(Config.resolveModelAlias("base.en"), "base.en")
+        XCTAssertEqual(Config.resolveModelAlias("large-v3"), "large-v3")
+        XCTAssertEqual(Config.resolveModelAlias("nonexistent"), "nonexistent")
+    }
+
+    func testModelAliasDestinationsAreSupported() {
+        for canonical in Config.modelAliases.values {
+            XCTAssertTrue(
+                Config.supportedModels.contains(canonical),
+                "Alias destination '\(canonical)' must be in Config.supportedModels"
+            )
+        }
+    }
+
+    func testIsEnglishOnlyModelMatchesEnSuffix() {
+        XCTAssertTrue(Config.isEnglishOnlyModel("base.en"))
+        XCTAssertTrue(Config.isEnglishOnlyModel("medium.en"))
+    }
+
+    func testIsEnglishOnlyModelMatchesQuantizedEn() {
+        XCTAssertTrue(Config.isEnglishOnlyModel("tiny.en-q5_1"))
+        XCTAssertTrue(Config.isEnglishOnlyModel("medium.en-q5_0"))
+    }
+
+    func testIsEnglishOnlyModelRejectsMultilingual() {
+        XCTAssertFalse(Config.isEnglishOnlyModel("base"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3-turbo"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3-turbo-q5_0"))
+    }
+
+    func testEveryEnglishModelHasMultilingualPeer() {
+        // Sanity: each English model should be a recognised English variant
+        // and each multilingual model should not.
+        let english = Config.supportedModels.filter { Config.isEnglishOnlyModel($0) }
+        let multilingual = Config.supportedModels.filter { !Config.isEnglishOnlyModel($0) }
+        XCTAssertFalse(english.isEmpty)
+        XCTAssertFalse(multilingual.isEmpty)
+        XCTAssertEqual(english.count + multilingual.count, Config.supportedModels.count)
+    }
+
+    func testConfigDecodeResolvesLargeAlias() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "large",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.modelSize, "large-v3")
+    }
+
     func testConfigDecodesLanguageAuto() throws {
         let json = """
         {

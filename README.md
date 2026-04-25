@@ -68,13 +68,21 @@ Larger models are more accurate but slower and use more memory. The default `bas
 | Model | Size | Speed | Accuracy | Best for |
 |---|---|---|---|---|
 | `tiny.en` | 75 MB | Fastest | Lower | Quick notes, short phrases |
+| `tiny.en-q5_1` | 31 MB | Fastest | Lower | Same as `tiny.en`, smallest download |
 | **`base.en`** | 142 MB | **Fast** | **Good** | **Most users (default)** |
+| `base.en-q5_1` | 57 MB | Fast | Good | Same as `base.en`, smaller download |
 | `small.en` | 466 MB | Moderate | Better | Longer dictation, technical terms |
+| `small.en-q5_1` | 181 MB | Moderate | Better | Same as `small.en`, smaller download |
 | `medium.en` | 1.5 GB | Slower | Great | Maximum accuracy, complex speech |
+| `medium.en-q5_0` | 514 MB | Slower | Great | Same as `medium.en`, smaller download |
 | `large-v3-turbo` | 1.6 GB | Moderate | Great | Fast multilingual, near-large accuracy |
+| `large-v3-turbo-q8_0` | 834 MB | Moderate | Great | Same as `large-v3-turbo`, smaller download |
+| `large-v3-turbo-q5_0` | 547 MB | Moderate | Great | Lightest large-tier model with near-full quality |
 | `large-v3` | 3 GB | Slowest | Best | Multilingual, highest accuracy (M1 Pro+ recommended) |
 
-> **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent model without the `.en` suffix (e.g. `base.en` → `base`) and set the `language` field to your language code. Multilingual models are slightly less accurate for English but support 99 languages.
+> **Quantized variants (`-q5_0`, `-q5_1`, `-q8_0`):** Same architecture and weights as the full model, compressed with integer quantization to roughly a third of the original disk and memory footprint. `q8_0` is the most conservative (smallest quality loss, larger file); `q5_1` and `q5_0` trade a bit more quality for substantially smaller downloads. For dictation the difference is usually imperceptible.
+
+> **Non-English languages:** Models ending in `.en` (including the `.en-q…` quantized variants) are English-only. To use another language, switch to the equivalent multilingual model (e.g. `base.en` → `base`, or `large-v3-turbo` for the fastest large-tier option) and set the `language` field to your language code. Multilingual models are slightly less accurate for English but support 99 languages.
 
 If the Globe key opens the emoji picker: **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 
