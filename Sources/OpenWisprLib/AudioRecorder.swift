@@ -4,27 +4,70 @@ import Foundation
 
 class AudioRecorder {
     private var audioEngine: AVAudioEngine?
-    private var audioFile: AVAudioFile?
+    private var inputFormat: AVAudioFormat?
     private var isRecording = false
     private var currentOutputURL: URL?
     var preferredDeviceID: AudioDeviceID?
 
-    func startRecording(to outputURL: URL) throws {
-        guard !isRecording else { return }
+    /// Bring the audio engine online and keep it running. Subsequent
+    /// startRecording calls only need to install a tap, which is cheap;
+    /// the ~600ms cost of engine.start() is paid once at app launch.
+    func prewarm() {
+        guard audioEngine == nil else { return }
 
         let engine = AVAudioEngine()
 
         if let deviceID = preferredDeviceID,
            deviceID != AudioDeviceManager.getDefaultInputDeviceID() {
-            // Skip when the requested device already is the system default:
-            // changing the AUHAL device via AudioUnitSetProperty in that case
-            // leaves AVAudioEngine's internal connections inconsistent and the
-            // subsequent installTap deadlocks.
             setInputDevice(deviceID, on: engine)
         }
 
-        let inputNode = engine.inputNode
-        let format = inputNode.outputFormat(forBus: 0)
+        let format = engine.inputNode.outputFormat(forBus: 0)
+
+        do {
+            engine.prepare()
+            try engine.start()
+        } catch {
+            print("Audio engine prewarm error: \(error.localizedDescription)")
+            return
+        }
+
+        audioEngine = engine
+        inputFormat = format
+    }
+
+    /// Stop and release the engine. Call before changing input device or on shutdown.
+    func teardown() {
+        if isRecording {
+            audioEngine?.inputNode.removeTap(onBus: 0)
+            isRecording = false
+            currentOutputURL = nil
+        }
+        audioEngine?.stop()
+        audioEngine = nil
+        inputFormat = nil
+    }
+
+    /// Re-prewarm with the current preferredDeviceID. Use after a config change.
+    func reload() {
+        teardown()
+        prewarm()
+    }
+
+    func startRecording(to outputURL: URL) throws {
+        guard !isRecording else { return }
+
+        if audioEngine == nil {
+            prewarm()
+        }
+
+        guard let engine = audioEngine, let inputFmt = inputFormat else {
+            throw NSError(
+                domain: "OpenWispr.AudioRecorder",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Audio engine is not available"]
+            )
+        }
 
         let recordingFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
@@ -42,18 +85,16 @@ class AudioRecorder {
             AVLinearPCMIsBigEndianKey: false,
         ]
 
-        audioFile = try AVAudioFile(forWriting: outputURL, settings: settings)
-        currentOutputURL = outputURL
+        let file = try AVAudioFile(forWriting: outputURL, settings: settings)
+        let converter = AVAudioConverter(from: inputFmt, to: recordingFormat)
 
-        let converter = AVAudioConverter(from: format, to: recordingFormat)
-
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
-            guard let self = self, let converter = converter else { return }
+        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFmt) { buffer, _ in
+            guard let converter = converter else { return }
 
             let convertedBuffer = AVAudioPCMBuffer(
                 pcmFormat: recordingFormat,
                 frameCapacity: AVAudioFrameCount(
-                    Double(buffer.frameLength) * 16000.0 / format.sampleRate
+                    Double(buffer.frameLength) * 16000.0 / inputFmt.sampleRate
                 )
             )!
 
@@ -64,27 +105,24 @@ class AudioRecorder {
             }
 
             if error == nil && convertedBuffer.frameLength > 0 {
-                try? self.audioFile?.write(from: convertedBuffer)
+                try? file.write(from: convertedBuffer)
             }
         }
 
-        engine.prepare()
-        try engine.start()
-
-        audioEngine = engine
+        currentOutputURL = outputURL
         isRecording = true
     }
 
     func stopRecording() -> URL? {
         guard isRecording else { return nil }
-
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.stop()
-        audioEngine = nil
-        audioFile = nil
         isRecording = false
 
-        return currentOutputURL
+        let url = currentOutputURL
+        currentOutputURL = nil
+
+        audioEngine?.inputNode.removeTap(onBus: 0)
+
+        return url
     }
 
     private func setInputDevice(_ deviceID: AudioDeviceID, on engine: AVAudioEngine) {

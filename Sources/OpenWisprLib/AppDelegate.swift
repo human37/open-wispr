@@ -110,6 +110,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        recorder.prewarm()
+
         DispatchQueue.main.async { [weak self] in
             self?.startListening()
         }
@@ -150,8 +152,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         guard isReady else { return }
         let wasDownloading: Bool
         if case .downloading = statusBar.state { wasDownloading = true } else { wasDownloading = false }
+        let deviceChanged = recorder.preferredDeviceID != newConfig.audioInputDeviceID
         config = newConfig
         recorder.preferredDeviceID = config.audioInputDeviceID
+        if deviceChanged {
+            recorder.reload()
+        }
         transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
         inserter = TextInserter()
