@@ -14,7 +14,12 @@ class AudioRecorder {
 
         let engine = AVAudioEngine()
 
-        if let deviceID = preferredDeviceID {
+        if let deviceID = preferredDeviceID,
+           deviceID != AudioDeviceManager.getDefaultInputDeviceID() {
+            // Skip when the requested device already is the system default:
+            // changing the AUHAL device via AudioUnitSetProperty in that case
+            // leaves AVAudioEngine's internal connections inconsistent and the
+            // subsequent installTap deadlocks.
             setInputDevice(deviceID, on: engine)
         }
 
