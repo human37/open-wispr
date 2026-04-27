@@ -88,6 +88,19 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(Config.effectiveMaxRecordings(config.maxRecordings), 0)
     }
 
+    func testConfigDecodesMeetingTranscriptDirectory() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "meetingTranscriptDirectory": "/tmp/transcripts"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.meetingTranscriptDirectory, "/tmp/transcripts")
+    }
+
     // MARK: - toggleMode decoding
 
     func testConfigDecodesToggleModeTrue() throws {
@@ -131,6 +144,10 @@ final class ConfigTests: XCTestCase {
     func testConfigDefaultToggleModeIsFalse() {
         let config = Config.defaultConfig
         XCTAssertEqual(config.toggleMode?.value, false)
+    }
+
+    func testConfigDefaultMeetingTranscriptDirectoryIsNil() {
+        XCTAssertNil(Config.defaultConfig.meetingTranscriptDirectory)
     }
 
     // MARK: - Language and model constants

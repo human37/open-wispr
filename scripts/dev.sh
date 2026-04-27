@@ -262,7 +262,8 @@ bash scripts/bundle-app.sh .build/release/open-wispr OpenWispr.app dev
 rm -rf ~/Applications/OpenWispr.app
 cp -R OpenWispr.app ~/Applications/OpenWispr.app
 rm -rf OpenWispr.app
+/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -f ~/Applications/OpenWispr.app 2>/dev/null || true
 
 # Run
 echo "  Starting..."
-~/Applications/OpenWispr.app/Contents/MacOS/open-wispr start
+open -na ~/Applications/OpenWispr.app --args start

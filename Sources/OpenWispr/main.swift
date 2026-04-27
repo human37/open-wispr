@@ -144,9 +144,15 @@ func cmdStatus() {
 
 let args = CommandLine.arguments
 let command = args.count > 1 ? args[1] : nil
+let isAppBundleLaunch = Bundle.main.bundlePath.hasSuffix(".app")
+let isLaunchServicesPSN = command?.hasPrefix("-psn_") == true
 
 switch command {
 case "start":
+    cmdStart()
+case nil where isAppBundleLaunch:
+    cmdStart()
+case _ where isLaunchServicesPSN:
     cmdStart()
 case "set-hotkey":
     guard args.count > 2 else {

@@ -33,7 +33,15 @@ ok "Removed"
 step "Removing config, model, and logs"
 rm -rf ~/.config/open-wispr
 rm -f /opt/homebrew/var/log/open-wispr.log 2>/dev/null || true
+defaults delete com.human37.open-wispr 2>/dev/null || true
+rm -f ~/Library/Preferences/com.human37.open-wispr.plist 2>/dev/null || true
 ok "Removed"
+
+step "Resetting privacy permissions"
+tccutil reset Accessibility com.human37.open-wispr 2>/dev/null || true
+tccutil reset Microphone com.human37.open-wispr 2>/dev/null || true
+tccutil reset ScreenCapture com.human37.open-wispr 2>/dev/null || true
+ok "Reset"
 
 step "Unregistering from LaunchServices"
 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -u ~/Applications/OpenWispr.app 2>/dev/null || true

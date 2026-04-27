@@ -14,6 +14,7 @@ public struct Config: Codable {
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
     public var audioInputDeviceID: UInt32?
+    public var meetingTranscriptDirectory: String?
 
     public static let supportedLanguages: [LanguageOption] = [
         LanguageOption(code: "auto", name: "Auto-Detect"),
@@ -158,7 +159,9 @@ public struct Config: Codable {
         language: "en",
         spokenPunctuation: FlexBool(false),
         maxRecordings: nil,
-        toggleMode: FlexBool(false)
+        toggleMode: FlexBool(false),
+        audioInputDeviceID: nil,
+        meetingTranscriptDirectory: nil
     )
 
     public static var configDir: URL {

@@ -1,9 +1,14 @@
 import AppKit
 import AVFoundation
 import ApplicationServices
+import CoreGraphics
 import Foundation
 
 struct Permissions {
+    private static let screenCapturePendingRestartKey = "openwispr.screenCapturePendingRestart"
+    private static let screenCaptureWasMissingAtLaunchKey = "openwispr.screenCaptureWasMissingAtLaunch"
+    private static var screenCaptureRequestAttemptedThisLaunch = false
+
     static func ensureMicrophone() {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
@@ -21,39 +26,89 @@ struct Permissions {
         }
     }
 
-    static func promptAccessibility() {
+    static func hasAccessibilityPermission() -> Bool {
+        AXIsProcessTrusted()
+    }
+
+    @discardableResult
+    static func promptAccessibility() -> Bool {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-        AXIsProcessTrustedWithOptions(options)
-    }
-
-    static func resetAccessibility() {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
-        process.arguments = ["reset", "Accessibility", "com.human37.open-wispr"]
-        try? process.run()
-        process.waitUntilExit()
-    }
-
-    static func didUpgrade() -> Bool {
-        let configDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/open-wispr")
-        let versionFile = configDir.appendingPathComponent(".last-version")
-        let current = OpenWispr.version
-        let previous = try? String(contentsOf: versionFile, encoding: .utf8)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if previous == current {
-            return false
-        }
-
-        try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
-        try? current.write(to: versionFile, atomically: true, encoding: .utf8)
-        return true
+        return AXIsProcessTrustedWithOptions(options)
     }
 
     static func openAccessibilitySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    enum ScreenCaptureAccess {
+        case granted
+        case requiresRestart
+        case needsSystemSettings
+    }
+
+    static func noteLaunchPermissionState() {
+        let missingAtLaunch = !CGPreflightScreenCaptureAccess()
+        screenCaptureRequestAttemptedThisLaunch = false
+        UserDefaults.standard.set(missingAtLaunch, forKey: screenCaptureWasMissingAtLaunchKey)
+        if !missingAtLaunch {
+            UserDefaults.standard.set(false, forKey: screenCapturePendingRestartKey)
+        }
+    }
+
+    static func screenCaptureRestartIsPending() -> Bool {
+        UserDefaults.standard.bool(forKey: screenCapturePendingRestartKey)
+    }
+
+    static func clearPendingScreenCaptureRestart() {
+        screenCaptureRequestAttemptedThisLaunch = false
+        UserDefaults.standard.set(false, forKey: screenCapturePendingRestartKey)
+        UserDefaults.standard.set(false, forKey: screenCaptureWasMissingAtLaunchKey)
+    }
+
+    static func screenCapturePermissionWasGrantedAfterLaunch() -> Bool {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: screenCaptureWasMissingAtLaunchKey),
+              CGPreflightScreenCaptureAccess() else {
+            return false
+        }
+
+        defaults.set(true, forKey: screenCapturePendingRestartKey)
+        defaults.set(false, forKey: screenCaptureWasMissingAtLaunchKey)
+        return true
+    }
+
+    static func openScreenCaptureSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    static func ensureScreenCapture() -> ScreenCaptureAccess {
+        if CGPreflightScreenCaptureAccess() {
+            if screenCaptureRestartIsPending() {
+                print("Screen Recording: granted, restart required")
+                return .requiresRestart
+            }
+            print("Screen Recording: granted")
+            clearPendingScreenCaptureRestart()
+            return .granted
+        }
+
+        if screenCaptureRequestAttemptedThisLaunch {
+            print("Screen Recording: already requested this launch")
+            return .needsSystemSettings
+        }
+
+        screenCaptureRequestAttemptedThisLaunch = true
+        print("Screen Recording: requesting...")
+        if CGRequestScreenCaptureAccess() {
+            UserDefaults.standard.set(true, forKey: screenCapturePendingRestartKey)
+            UserDefaults.standard.set(false, forKey: screenCaptureWasMissingAtLaunchKey)
+            return .requiresRestart
+        }
+
+        return .needsSystemSettings
     }
 }

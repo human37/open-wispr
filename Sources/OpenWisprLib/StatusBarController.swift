@@ -19,11 +19,18 @@ class StatusBarController: NSObject {
 
     var reprocessHandler: ((URL) -> Void)?
     var onConfigChange: ((Config) -> Void)?
+    var startMeetingCaptureHandler: (() -> Void)?
+    var stopMeetingCaptureHandler: (() -> Void)?
+    var openTranscriptFolderHandler: (() -> Void)?
+    var openCurrentTranscriptHandler: (() -> Void)?
 
     enum State {
         case idle
         case recording
         case transcribing
+        case meetingStarting
+        case meetingRecording
+        case meetingStopping
         case downloading
         case waitingForPermission
         case copiedToClipboard
@@ -104,6 +111,9 @@ class StatusBarController: NSObject {
             case .idle: stateLabel = "Ready"
             case .recording: stateLabel = "Recording..."
             case .transcribing: stateLabel = "Transcribing..."
+            case .meetingStarting: stateLabel = "Starting meeting capture..."
+            case .meetingRecording: stateLabel = "Capturing meeting audio..."
+            case .meetingStopping: stateLabel = "Stopping meeting capture..."
             case .downloading: stateLabel = "Downloading model..."
             case .waitingForPermission: stateLabel = "Waiting for Accessibility permission..."
             case .copiedToClipboard: stateLabel = "Copied to clipboard"
@@ -112,6 +122,7 @@ class StatusBarController: NSObject {
         }
         if case .waitingForPermission = state {
             let target = MenuItemTarget {
+                _ = Permissions.promptAccessibility()
                 Permissions.openAccessibilitySettings()
             }
             menuItemTargets.append(target)
@@ -268,6 +279,70 @@ class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
+        let transcriptFolderTitle: String
+        if let path = config.meetingTranscriptDirectory, !path.isEmpty {
+            transcriptFolderTitle = URL(fileURLWithPath: path).lastPathComponent
+        } else {
+            transcriptFolderTitle = "Not Set"
+        }
+        let transcriptItem = NSMenuItem(title: "Meeting Transcript Folder: \(transcriptFolderTitle)", action: nil, keyEquivalent: "")
+        let transcriptSubmenu = NSMenu()
+
+        let chooseFolderTarget = MenuItemTarget { [weak self] in
+            self?.chooseMeetingTranscriptFolder()
+        }
+        menuItemTargets.append(chooseFolderTarget)
+        let chooseFolderItem = NSMenuItem(title: "Choose Folder...", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        chooseFolderItem.target = chooseFolderTarget
+        transcriptSubmenu.addItem(chooseFolderItem)
+
+        let openFolderTarget = MenuItemTarget { [weak self] in
+            self?.openTranscriptFolderHandler?()
+        }
+        menuItemTargets.append(openFolderTarget)
+        let openFolderItem = NSMenuItem(title: "Open Folder", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        openFolderItem.target = openFolderTarget
+        openFolderItem.isEnabled = config.meetingTranscriptDirectory?.isEmpty == false
+        transcriptSubmenu.addItem(openFolderItem)
+
+        if let delegate = NSApplication.shared.delegate as? AppDelegate,
+           delegate.currentMeetingTranscriptURL != nil {
+            let openCurrentTarget = MenuItemTarget { [weak self] in
+                self?.openCurrentTranscriptHandler?()
+            }
+            menuItemTargets.append(openCurrentTarget)
+            let openCurrentItem = NSMenuItem(title: "Open Current Transcript", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+            openCurrentItem.target = openCurrentTarget
+            transcriptSubmenu.addItem(openCurrentItem)
+        }
+
+        transcriptItem.submenu = transcriptSubmenu
+        menu.addItem(transcriptItem)
+
+        let delegate = NSApplication.shared.delegate as? AppDelegate
+        let isMeetingActive = delegate?.isMeetingCaptureActive ?? false
+        let isMeetingStopping = delegate?.isStoppingMeetingCapture ?? false
+        let meetingActionTarget = MenuItemTarget { [weak self] in
+            if isMeetingActive || isMeetingStopping {
+                self?.stopMeetingCaptureHandler?()
+            } else {
+                self?.startMeetingCaptureHandler?()
+            }
+        }
+        menuItemTargets.append(meetingActionTarget)
+        let meetingAction = NSMenuItem(
+            title: (isMeetingActive || isMeetingStopping) ? "Stop Meeting Capture" : "Start Meeting Capture",
+            action: #selector(MenuItemTarget.invoke),
+            keyEquivalent: "m"
+        )
+        meetingAction.target = meetingActionTarget
+        if !isMeetingActive && !isMeetingStopping && (config.meetingTranscriptDirectory?.isEmpty != false) {
+            meetingAction.isEnabled = false
+        }
+        menu.addItem(meetingAction)
+
+        menu.addItem(NSMenuItem.separator())
+
         let toggleTarget = MenuItemTarget { [weak self] in
             var cfg = Config.load()
             let current = cfg.toggleMode?.value ?? false
@@ -347,6 +422,22 @@ class StatusBarController: NSObject {
         NSWorkspace.shared.open(configFile)
     }
 
+    private func chooseMeetingTranscriptFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.prompt = "Choose"
+
+        if panel.runModal() == .OK, let url = panel.url {
+            var cfg = Config.load()
+            cfg.meetingTranscriptDirectory = url.path
+            try? cfg.save()
+            onConfigChange?(cfg)
+        }
+    }
+
     private func updateIcon() {
         stopAnimation()
 
@@ -356,6 +447,12 @@ class StatusBarController: NSObject {
         case .recording:
             startRecordingAnimation()
         case .transcribing:
+            startTranscribingAnimation()
+        case .meetingStarting:
+            startTranscribingAnimation()
+        case .meetingRecording:
+            startRecordingAnimation()
+        case .meetingStopping:
             startTranscribingAnimation()
         case .downloading:
             startDownloadingAnimation()

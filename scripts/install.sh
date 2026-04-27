@@ -133,6 +133,9 @@ if brew list open-wispr &>/dev/null || [ -d ~/Applications/OpenWispr.app ]; then
     brew untap human37/open-wispr </dev/null >/dev/null 2>&1 || true
     tccutil reset Accessibility com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
     tccutil reset Microphone com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
+    tccutil reset ScreenCapture com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
+    defaults delete com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
+    rm -f ~/Library/Preferences/com.human37.open-wispr.plist </dev/null >/dev/null 2>&1 || true
     rm -rf ~/Applications/OpenWispr.app
 
     stop_spin
