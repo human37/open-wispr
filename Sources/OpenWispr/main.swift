@@ -113,7 +113,7 @@ func cmdSetLanguage(_ lang: String) {
 
 func cmdGetHotkey() {
     let config = Config.load()
-    let desc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+    let desc = config.hotkeySummary()
     print("Current hotkey: \(desc)")
 }
 
@@ -128,7 +128,7 @@ func cmdDownloadModel(_ size: String) {
 
 func cmdStatus() {
     let config = Config.load()
-    let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+    let hotkeyDesc = config.hotkeySummary()
 
     print("open-wispr v\(version)")
     print("Config:      \(Config.configFile.path)")
@@ -143,10 +143,17 @@ func cmdStatus() {
 }
 
 let args = CommandLine.arguments
-let command = args.count > 1 ? args[1] : nil
+let rawCommand = args.count > 1 ? args[1] : nil
+let command: String? = {
+    if let r = rawCommand, r.hasPrefix("-psn_") { return "start" }
+    return rawCommand
+}()
 
 switch command {
 case "start":
+    if AppBundleLaunch.relaunchThroughAppBundleIfNeeded() {
+        exit(0)
+    }
     cmdStart()
 case "set-hotkey":
     guard args.count > 2 else {

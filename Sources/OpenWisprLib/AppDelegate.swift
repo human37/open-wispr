@@ -2,7 +2,7 @@ import AppKit
 
 public class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBar: StatusBarController!
-    var hotkeyManager: HotkeyManager?
+    var hotkeyManagers: [HotkeyManager] = []
     var recorder: AudioRecorder!
     var transcriber: Transcriber!
     var inserter: TextInserter!
@@ -70,6 +70,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         if !AXIsProcessTrusted() {
             print("Accessibility: not granted")
+            Permissions.promptAccessibility()
             Permissions.openAccessibilitySettings()
             print("Waiting for Accessibility permission...")
             while !AXIsProcessTrusted() {
@@ -116,25 +117,29 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startListening() {
-        hotkeyManager = HotkeyManager(
-            keyCode: config.hotkey.keyCode,
-            modifiers: config.hotkey.modifierFlags
-        )
-
-        hotkeyManager?.start(
-            onKeyDown: { [weak self] in
-                self?.handleKeyDown()
-            },
-            onKeyUp: { [weak self] in
-                self?.handleKeyUp()
-            }
-        )
+        for m in hotkeyManagers { m.stop() }
+        hotkeyManagers = []
+        for hk in config.hotkeys {
+            let manager = HotkeyManager(
+                keyCode: hk.keyCode,
+                modifiers: hk.modifierFlags
+            )
+            manager.start(
+                onKeyDown: { [weak self] in
+                    self?.handleKeyDown()
+                },
+                onKeyUp: { [weak self] in
+                    self?.handleKeyUp()
+                }
+            )
+            hotkeyManagers.append(manager)
+        }
 
         isReady = true
         statusBar.state = .idle
         statusBar.buildMenu()
 
-        let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+        let hotkeyDesc = config.hotkeySummary()
         print("open-wispr v\(OpenWispr.version)")
         print("Hotkey: \(hotkeyDesc)")
         print("Model: \(config.modelSize)")
@@ -156,15 +161,19 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
         inserter = TextInserter()
 
-        hotkeyManager?.stop()
-        hotkeyManager = HotkeyManager(
-            keyCode: config.hotkey.keyCode,
-            modifiers: config.hotkey.modifierFlags
-        )
-        hotkeyManager?.start(
-            onKeyDown: { [weak self] in self?.handleKeyDown() },
-            onKeyUp: { [weak self] in self?.handleKeyUp() }
-        )
+        for m in hotkeyManagers { m.stop() }
+        hotkeyManagers = []
+        for hk in config.hotkeys {
+            let manager = HotkeyManager(
+                keyCode: hk.keyCode,
+                modifiers: hk.modifierFlags
+            )
+            manager.start(
+                onKeyDown: { [weak self] in self?.handleKeyDown() },
+                onKeyUp: { [weak self] in self?.handleKeyUp() }
+            )
+            hotkeyManagers.append(manager)
+        }
 
         if !wasDownloading && !Transcriber.modelExists(modelSize: config.modelSize) {
             statusBar.state = .downloading
@@ -193,7 +202,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusBar.buildMenu()
 
-        let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+        let hotkeyDesc = config.hotkeySummary()
         print("Config updated: lang=\(config.language) model=\(config.modelSize) hotkey=\(hotkeyDesc)")
     }
 

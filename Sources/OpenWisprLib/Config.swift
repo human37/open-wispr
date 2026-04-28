@@ -6,7 +6,7 @@ public struct LanguageOption: Equatable, Sendable {
 }
 
 public struct Config: Codable {
-    public var hotkey: HotkeyConfig
+    public var hotkeys: [HotkeyConfig]
     public var modelPath: String?
     public var modelSize: String
     public var language: String
@@ -14,6 +14,92 @@ public struct Config: Codable {
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
     public var audioInputDeviceID: UInt32?
+
+    public var hotkey: HotkeyConfig {
+        get { hotkeys[0] }
+        set { hotkeys = Config.deduplicateHotkeys([newValue]) }
+    }
+
+    public func hotkeySummary() -> String {
+        hotkeys
+            .map { KeyCodes.describe(keyCode: $0.keyCode, modifiers: $0.modifiers) }
+            .joined(separator: " · ")
+    }
+
+    private static func deduplicateHotkeys(_ list: [HotkeyConfig]) -> [HotkeyConfig] {
+        var out: [HotkeyConfig] = []
+        for h in list where !out.contains(h) {
+            out.append(h)
+        }
+        return out
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case hotkey
+        case hotkeys
+        case modelPath
+        case modelSize
+        case language
+        case spokenPunctuation
+        case maxRecordings
+        case toggleMode
+        case audioInputDeviceID
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let hotkeysList = try c.decodeIfPresent([HotkeyConfig].self, forKey: .hotkeys)
+        let legacyHotkey = try c.decodeIfPresent(HotkeyConfig.self, forKey: .hotkey)
+        if let list = hotkeysList, !list.isEmpty {
+            self.hotkeys = Config.deduplicateHotkeys(list)
+        } else if let legacy = legacyHotkey {
+            self.hotkeys = [legacy]
+        } else {
+            self.hotkeys = [HotkeyConfig(keyCode: 63, modifiers: [])]
+        }
+        self.modelPath = try c.decodeIfPresent(String.self, forKey: .modelPath)
+        self.modelSize = try c.decode(String.self, forKey: .modelSize)
+        self.language = try c.decode(String.self, forKey: .language)
+        self.spokenPunctuation = try c.decodeIfPresent(FlexBool.self, forKey: .spokenPunctuation)
+        self.maxRecordings = try c.decodeIfPresent(Int.self, forKey: .maxRecordings)
+        self.toggleMode = try c.decodeIfPresent(FlexBool.self, forKey: .toggleMode)
+        self.audioInputDeviceID = try c.decodeIfPresent(UInt32.self, forKey: .audioInputDeviceID)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(hotkeys, forKey: .hotkeys)
+        try c.encode(hotkeys[0], forKey: .hotkey)
+        try c.encodeIfPresent(modelPath, forKey: .modelPath)
+        try c.encode(modelSize, forKey: .modelSize)
+        try c.encode(language, forKey: .language)
+        try c.encodeIfPresent(spokenPunctuation, forKey: .spokenPunctuation)
+        try c.encodeIfPresent(maxRecordings, forKey: .maxRecordings)
+        try c.encodeIfPresent(toggleMode, forKey: .toggleMode)
+        try c.encodeIfPresent(audioInputDeviceID, forKey: .audioInputDeviceID)
+    }
+
+    public init(
+        hotkeys: [HotkeyConfig],
+        modelPath: String?,
+        modelSize: String,
+        language: String,
+        spokenPunctuation: FlexBool?,
+        maxRecordings: Int?,
+        toggleMode: FlexBool?,
+        audioInputDeviceID: UInt32? = nil
+    ) {
+        self.hotkeys = hotkeys.isEmpty
+            ? [HotkeyConfig(keyCode: 63, modifiers: [])]
+            : Config.deduplicateHotkeys(hotkeys)
+        self.modelPath = modelPath
+        self.modelSize = modelSize
+        self.language = language
+        self.spokenPunctuation = spokenPunctuation
+        self.maxRecordings = maxRecordings
+        self.toggleMode = toggleMode
+        self.audioInputDeviceID = audioInputDeviceID
+    }
 
     public static let supportedLanguages: [LanguageOption] = [
         LanguageOption(code: "auto", name: "Auto-Detect"),
@@ -152,7 +238,7 @@ public struct Config: Codable {
     }
 
     public static let defaultConfig = Config(
-        hotkey: HotkeyConfig(keyCode: 63, modifiers: []),
+        hotkeys: [HotkeyConfig(keyCode: 63, modifiers: [])],
         modelPath: nil,
         modelSize: "base.en",
         language: "en",
@@ -230,7 +316,7 @@ public struct FlexBool: Codable {
     }
 }
 
-public struct HotkeyConfig: Codable {
+public struct HotkeyConfig: Codable, Equatable {
     public var keyCode: UInt16
     public var modifiers: [String]
 
