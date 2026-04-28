@@ -68,7 +68,7 @@ class StatusBarController: NSObject {
         }
         if let text = text, let item = stateMenuItem {
             let config = Config.load()
-            let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+            let hotkeyDesc = config.hotkeySummary()
             item.title = "\(text) (hotkey: \(hotkeyDesc))"
         } else {
             buildMenu()
@@ -86,7 +86,7 @@ class StatusBarController: NSObject {
         menuItemTargets = []
 
         let config = Config.load()
-        let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+        let hotkeyDesc = config.hotkeySummary()
 
         let menu = NSMenu()
 
