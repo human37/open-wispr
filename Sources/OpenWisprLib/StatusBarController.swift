@@ -281,6 +281,16 @@ class StatusBarController: NSObject {
         toggleItem.state = (config.toggleMode?.value ?? false) ? .on : .off
         menu.addItem(toggleItem)
 
+        let dictTarget = MenuItemTarget {
+            DictionaryWindowController.shared.showWindow(nil)
+            DictionaryWindowController.shared.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        menuItemTargets.append(dictTarget)
+        let dictItem = NSMenuItem(title: "Custom Dictionary...", action: #selector(MenuItemTarget.invoke), keyEquivalent: "d")
+        dictItem.target = dictTarget
+        menu.addItem(dictItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
@@ -336,6 +346,7 @@ class StatusBarController: NSObject {
     @objc private func reloadConfiguration() {
         guard let delegate = NSApplication.shared.delegate as? AppDelegate else { return }
         delegate.reloadConfig()
+        DictionaryWindowController.shared.reload()
     }
 
     @objc private func openConfiguration() {
