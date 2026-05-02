@@ -241,6 +241,60 @@ final class ConfigTests: XCTestCase {
         let config = HotkeyConfig(keyCode: 49, modifiers: ["cmd", "bogus"])
         XCTAssertEqual(config.modifierFlags, UInt64(1 << 20))
     }
+
+    // MARK: - Multiple hotkeys
+
+    func testConfigDecodesHotkeysArray() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": []},
+                {"keyCode": 96, "modifiers": []}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.hotkeys.count, 2)
+        XCTAssertEqual(config.hotkey.keyCode, 63)
+        XCTAssertTrue(config.hotkeySummary().contains("·"))
+    }
+
+    func testConfigDeduplicatesIdenticalHotkeys() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": []},
+                {"keyCode": 63, "modifiers": []}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.hotkeys.count, 1)
+    }
+
+    func testConfigEncodeRoundtripPreservesHotkeys() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": []},
+                {"keyCode": 96, "modifiers": []}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        let data = try JSONEncoder().encode(config)
+        let again = try Config.decode(from: data)
+        XCTAssertEqual(again.hotkeys.count, 2)
+        let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertNotNil(obj?["hotkey"])
+        XCTAssertNotNil(obj?["hotkeys"])
+    }
 }
 
 private struct FlexBoolWrapper: Codable {
