@@ -51,9 +51,23 @@ Edit `~/.config/open-wispr/config.json`:
 
 Then restart: `brew services restart open-wispr`
 
+To bind multiple hotkeys, use the `hotkeys` array instead:
+
+```json
+{
+  "hotkeys": [
+    { "keyCode": 63, "modifiers": [] },
+    { "keyCode": 96, "modifiers": [] }
+  ]
+}
+```
+
+Both `hotkey` (single) and `hotkeys` (array) are supported. If both are present, `hotkeys` takes precedence.
+
 | Option | Default | Values |
 |---|---|---|
 | **hotkey** | `63` | Globe (`63`), Right Option (`61`), F5 (`96`), or any key code |
+| **hotkeys** | — | Array of hotkey objects — bind multiple keys to trigger dictation |
 | **modifiers** | `[]` | `"cmd"`, `"ctrl"`, `"shift"`, `"opt"` — combine for chords |
 | **modelSize** | `"base.en"` | See model table below |
 | **language** | `"en"` | `"auto"` for auto-detect, or any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
