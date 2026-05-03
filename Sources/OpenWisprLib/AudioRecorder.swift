@@ -18,6 +18,7 @@ class AudioRecorder {
             setInputDevice(deviceID, on: engine)
         }
 
+        _ = engine.inputNode
         engine.prepare()
         audioEngine = engine
     }
