@@ -4,14 +4,10 @@ import Foundation
 
 class AudioRecorder {
     private var audioEngine: AVAudioEngine?
-    private var inputFormat: AVAudioFormat?
     private var isRecording = false
     private var currentOutputURL: URL?
     var preferredDeviceID: AudioDeviceID?
 
-    /// Bring the audio engine online and keep it running. Subsequent
-    /// startRecording calls only need to install a tap, which is cheap;
-    /// the ~600ms cost of engine.start() is paid once at app launch.
     func prewarm() {
         guard audioEngine == nil else { return }
 
@@ -22,18 +18,9 @@ class AudioRecorder {
             setInputDevice(deviceID, on: engine)
         }
 
-        let format = engine.inputNode.outputFormat(forBus: 0)
-
-        do {
-            engine.prepare()
-            try engine.start()
-        } catch {
-            print("Audio engine prewarm error: \(error.localizedDescription)")
-            return
-        }
-
+        _ = engine.inputNode
+        engine.prepare()
         audioEngine = engine
-        inputFormat = format
     }
 
     /// Stop and release the engine. Call before changing input device or on shutdown.
@@ -45,7 +32,6 @@ class AudioRecorder {
         }
         audioEngine?.stop()
         audioEngine = nil
-        inputFormat = nil
     }
 
     /// Re-prewarm with the current preferredDeviceID. Use after a config change.
@@ -61,13 +47,17 @@ class AudioRecorder {
             prewarm()
         }
 
-        guard let engine = audioEngine, let inputFmt = inputFormat else {
+        guard let engine = audioEngine else {
             throw NSError(
                 domain: "OpenWispr.AudioRecorder",
                 code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "Audio engine is not available"]
             )
         }
+
+        try engine.start()
+
+        let inputFmt = engine.inputNode.outputFormat(forBus: 0)
 
         let recordingFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
@@ -121,6 +111,7 @@ class AudioRecorder {
         currentOutputURL = nil
 
         audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.stop()
 
         return url
     }
