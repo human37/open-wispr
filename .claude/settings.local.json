@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh release:*)",
+      "Bash(gh api:*)",
+      "Bash(swift test:*)",
+      "Bash(xcodebuild test:*)",
+      "Bash(fgit:*)"
+    ]
+  }
+}

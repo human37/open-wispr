@@ -5,6 +5,16 @@ public struct LanguageOption: Equatable, Sendable {
     public let name: String
 }
 
+public struct DictionaryEntry: Codable, Equatable {
+    public var from: String
+    public var to: String
+
+    public init(from: String, to: String) {
+        self.from = from
+        self.to = to
+    }
+}
+
 public struct Config: Codable {
     public var hotkeys: [HotkeyConfig]
     public var modelPath: String?
@@ -13,6 +23,7 @@ public struct Config: Codable {
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
+    public var customDictionary: [DictionaryEntry]?
     public var audioInputDeviceID: UInt32?
 
     public var hotkey: HotkeyConfig {

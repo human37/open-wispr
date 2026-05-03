@@ -4,6 +4,7 @@ public class Transcriber {
     private let modelSize: String
     private let language: String
     public var spokenPunctuation: Bool = false
+    public var customDictionary: [DictionaryEntry] = []
 
     public init(modelSize: String = "base.en", language: String = "en") {
         self.modelSize = modelSize
@@ -30,6 +31,10 @@ public class Transcriber {
         ]
         if spokenPunctuation {
             args += ["--suppress-regex", "[,\\.\\?!;:\\-—]"]
+        }
+        let prompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
+        if !prompt.isEmpty {
+            args += ["--prompt", prompt]
         }
         process.arguments = args
 
