@@ -16,10 +16,14 @@ class TextInserter {
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        let writeChangeCount = pasteboard.changeCount
 
         simulatePaste()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            // If something else has written to the pasteboard since our write
+            // (user copied something, another tool wrote), do not clobber it.
+            guard pasteboard.changeCount == writeChangeCount else { return }
             self.restorePasteboard(pasteboard, items: savedItems)
         }
     }
