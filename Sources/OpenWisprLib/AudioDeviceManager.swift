@@ -3,6 +3,7 @@ import Foundation
 
 struct AudioInputDevice {
     let id: AudioDeviceID
+    let uid: String?
     let name: String
     let isDefault: Bool
 }
@@ -44,6 +45,7 @@ class AudioDeviceManager {
                   let name = getDeviceName(deviceID: deviceID) else { continue }
             result.append(AudioInputDevice(
                 id: deviceID,
+                uid: getDeviceUID(deviceID: deviceID),
                 name: name,
                 isDefault: deviceID == defaultID
             ))
@@ -67,6 +69,29 @@ class AudioDeviceManager {
             &deviceID
         )
         return deviceID
+    }
+
+    /// Resolve the configured input device to a current AudioDeviceID.
+    /// A stored UID wins over the numeric ID, because AudioDeviceIDs are not
+    /// stable across reboots or device replugs while UIDs are. If a UID is
+    /// set but no longer present, returns nil (system default) rather than
+    /// trusting the possibly-reassigned numeric ID.
+    static func resolveConfiguredDeviceID(uid: String?, legacyID: AudioDeviceID?) -> AudioDeviceID? {
+        guard let uid = uid else { return legacyID }
+        return listInputDevices().first(where: { $0.uid == uid })?.id
+    }
+
+    static func getDeviceUID(deviceID: AudioDeviceID) -> String? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyDeviceUID,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var uid: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &uid)
+        guard status == noErr, let cfUID = uid?.takeRetainedValue() else { return nil }
+        return cfUID as String
     }
 
     private static func isVirtualDevice(deviceID: AudioDeviceID) -> Bool {

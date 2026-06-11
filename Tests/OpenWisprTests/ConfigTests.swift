@@ -133,6 +133,53 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.toggleMode?.value, false)
     }
 
+    // MARK: - audioInputDevice decoding
+
+    func testConfigDecodesAudioInputDeviceUID() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "audioInputDeviceID": 82,
+            "audioInputDeviceUID": "AppleUSBAudioEngine:Vendor:Headset:1234:1"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.audioInputDeviceID, 82)
+        XCTAssertEqual(config.audioInputDeviceUID, "AppleUSBAudioEngine:Vendor:Headset:1234:1")
+    }
+
+    func testConfigDecodesLegacyAudioInputDeviceIDWithoutUID() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "audioInputDeviceID": 82
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.audioInputDeviceID, 82)
+        XCTAssertNil(config.audioInputDeviceUID)
+    }
+
+    func testConfigEncodesAudioInputDeviceUIDRoundTrip() throws {
+        var config = Config.defaultConfig
+        config.audioInputDeviceID = 82
+        config.audioInputDeviceUID = "BuiltInMicrophoneDevice"
+        let data = try JSONEncoder().encode(config)
+        let decoded = try Config.decode(from: data)
+        XCTAssertEqual(decoded.audioInputDeviceID, 82)
+        XCTAssertEqual(decoded.audioInputDeviceUID, "BuiltInMicrophoneDevice")
+    }
+
+    func testConfigOmitsAudioInputDeviceUIDWhenNil() throws {
+        let data = try JSONEncoder().encode(Config.defaultConfig)
+        let json = String(data: data, encoding: .utf8)!
+        XCTAssertFalse(json.contains("audioInputDeviceUID"))
+    }
+
     // MARK: - Language and model constants
 
     func testSupportedLanguagesContainsEnglish() {

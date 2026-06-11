@@ -31,7 +31,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupInner() throws {
         config = Config.load()
         inserter = TextInserter()
-        recorder.preferredDeviceID = config.audioInputDeviceID
+        migrateAudioDeviceUIDIfNeeded()
+        recorder.preferredDeviceID = AudioDeviceManager.resolveConfiguredDeviceID(
+            uid: config.audioInputDeviceUID,
+            legacyID: config.audioInputDeviceID
+        )
         if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
             RecordingStore.deleteAllRecordings()
         }
@@ -153,13 +157,28 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         applyConfigChange(newConfig)
     }
 
+    /// Configs written by older versions store only the numeric AudioDeviceID,
+    /// which is not stable across reboots or device replugs. If that ID still
+    /// refers to a device, persist its UID so the selection survives.
+    private func migrateAudioDeviceUIDIfNeeded() {
+        guard config.audioInputDeviceUID == nil,
+              let legacyID = config.audioInputDeviceID,
+              let uid = AudioDeviceManager.getDeviceUID(deviceID: legacyID) else { return }
+        config.audioInputDeviceUID = uid
+        try? config.save()
+    }
+
     func applyConfigChange(_ newConfig: Config) {
         guard isReady else { return }
         let wasDownloading: Bool
         if case .downloading = statusBar.state { wasDownloading = true } else { wasDownloading = false }
-        let deviceChanged = recorder.preferredDeviceID != newConfig.audioInputDeviceID
+        let newDeviceID = AudioDeviceManager.resolveConfiguredDeviceID(
+            uid: newConfig.audioInputDeviceUID,
+            legacyID: newConfig.audioInputDeviceID
+        )
+        let deviceChanged = recorder.preferredDeviceID != newDeviceID
         config = newConfig
-        recorder.preferredDeviceID = config.audioInputDeviceID
+        recorder.preferredDeviceID = newDeviceID
         if deviceChanged {
             recorder.reload()
         }
