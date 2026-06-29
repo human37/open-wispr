@@ -60,8 +60,13 @@ public class Transcriber {
             "-m", modelPath,
             "-f", audioURL.path,
             "-l", language,
-            "--no-timestamps",
             "-nt",
+            // Disable cross-window context carry-over. whisper.cpp feeds each
+            // 30s window's decoded text as the prompt for the next window; on
+            // long dictation this compounds into repetition/hallucination
+            // loops (sentences repeating verbatim, then trailing off).
+            // max-context 0 decodes each window independently and stops it.
+            "-mc", "0",
         ]
         if let prompt = effectiveWhisperPrompt {
             args += ["--prompt", prompt]

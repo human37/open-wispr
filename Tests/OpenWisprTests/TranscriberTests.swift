@@ -20,6 +20,28 @@ final class TranscriberTests: XCTestCase {
         XCTAssertEqual(args.filter { $0 == prompt }.count, 1)
     }
 
+    func testArgumentsDisableCrossWindowContext() throws {
+        let transcriber = Transcriber(modelSize: "base.en", language: "en")
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav")
+        )
+
+        let flagIndex = try XCTUnwrap(args.firstIndex(of: "-mc"))
+        XCTAssertEqual(args[flagIndex + 1], "0")
+    }
+
+    func testArgumentsUseSingleNoTimestampsFlag() {
+        let transcriber = Transcriber(modelSize: "base.en", language: "en")
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav")
+        )
+
+        XCTAssertTrue(args.contains("-nt"))
+        XCTAssertFalse(args.contains("--no-timestamps"))
+    }
+
     func testArgumentsOmitNilWhisperPrompt() {
         let transcriber = Transcriber(modelSize: "base.en", language: "en")
         let args = transcriber.arguments(
