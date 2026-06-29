@@ -29,7 +29,7 @@ public struct Config: Codable {
 
     private static func deduplicateHotkeys(_ list: [HotkeyConfig]) -> [HotkeyConfig] {
         var out: [HotkeyConfig] = []
-        for h in list where !out.contains(h) {
+        for h in list where !out.contains(where: { $0.hasSameBinding(as: h) }) {
             out.append(h)
         }
         return out
@@ -322,13 +322,48 @@ public struct FlexBool: Codable {
     }
 }
 
+public enum HotkeyMode: String, Equatable {
+    case hold
+    case toggle
+}
+
+public struct HotkeyBinding: Equatable, Hashable {
+    public var keyCode: UInt16
+    public var modifierFlags: UInt64
+
+    public init(keyCode: UInt16, modifierFlags: UInt64) {
+        self.keyCode = keyCode
+        self.modifierFlags = modifierFlags
+    }
+}
+
 public struct HotkeyConfig: Codable, Equatable {
     public var keyCode: UInt16
     public var modifiers: [String]
+    /// Per-key recording mode: "hold" or "toggle". When nil, falls back to the
+    /// global Config.toggleMode. Lets different hotkeys use different modes.
+    public var mode: String?
 
-    public init(keyCode: UInt16, modifiers: [String]) {
+    public init(keyCode: UInt16, modifiers: [String], mode: String? = nil) {
         self.keyCode = keyCode
         self.modifiers = modifiers
+        self.mode = mode
+    }
+
+    public var binding: HotkeyBinding {
+        HotkeyBinding(keyCode: keyCode, modifierFlags: modifierFlags)
+    }
+
+    public func hasSameBinding(as other: HotkeyConfig) -> Bool {
+        binding == other.binding
+    }
+
+    public func resolvedMode(globalToggle: Bool) -> HotkeyMode {
+        switch mode?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case HotkeyMode.toggle.rawValue: return .toggle
+        case HotkeyMode.hold.rawValue: return .hold
+        default: return globalToggle ? .toggle : .hold
+        }
     }
 
     public var modifierFlags: UInt64 {

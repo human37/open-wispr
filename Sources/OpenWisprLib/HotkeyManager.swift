@@ -55,6 +55,7 @@ class HotkeyManager {
                 guard currentMods & requiredModifiers == requiredModifiers else { return }
             }
             if event.type == .keyDown {
+                guard !event.isARepeat else { return }
                 onKeyDown?()
             } else if event.type == .keyUp {
                 onKeyUp?()
