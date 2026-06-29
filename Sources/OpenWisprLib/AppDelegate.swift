@@ -7,7 +7,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     var transcriber: Transcriber!
     var inserter: TextInserter!
     var config: Config!
-    var isPressed = false
+    var recordingHotkeyState = RecordingHotkeyState()
     var isReady = false
     public var lastTranscription: String?
 
@@ -123,23 +123,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startListening() {
-        for m in hotkeyManagers { m.stop() }
-        hotkeyManagers = []
-        for hk in config.hotkeys {
-            let manager = HotkeyManager(
-                keyCode: hk.keyCode,
-                modifiers: hk.modifierFlags
-            )
-            manager.start(
-                onKeyDown: { [weak self] in
-                    self?.handleKeyDown()
-                },
-                onKeyUp: { [weak self] in
-                    self?.handleKeyUp()
-                }
-            )
-            hotkeyManagers.append(manager)
-        }
+        rebuildHotkeyManagers()
 
         isReady = true
         statusBar.state = .idle
@@ -186,19 +170,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
         inserter = TextInserter()
 
-        for m in hotkeyManagers { m.stop() }
-        hotkeyManagers = []
-        for hk in config.hotkeys {
-            let manager = HotkeyManager(
-                keyCode: hk.keyCode,
-                modifiers: hk.modifierFlags
-            )
-            manager.start(
-                onKeyDown: { [weak self] in self?.handleKeyDown() },
-                onKeyUp: { [weak self] in self?.handleKeyUp() }
-            )
-            hotkeyManagers.append(manager)
-        }
+        rebuildHotkeyManagers()
 
         if !wasDownloading && !Transcriber.modelExists(modelSize: config.modelSize) {
             statusBar.state = .downloading
@@ -231,33 +203,46 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         print("Config updated: lang=\(config.language) model=\(config.modelSize) hotkey=\(hotkeyDesc)")
     }
 
-    private func handleKeyDown() {
-        guard isReady else { return }
-
-        let isToggle = config.toggleMode?.value ?? false
-
-        if isToggle {
-            if isPressed {
-                handleRecordingStop()
-            } else {
-                handleRecordingStart()
-            }
-        } else {
-            guard !isPressed else { return }
-            handleRecordingStart()
+    private func rebuildHotkeyManagers() {
+        for m in hotkeyManagers { m.stop() }
+        hotkeyManagers = []
+        for hk in config.hotkeys {
+            let binding = hk.binding
+            let mode = hk.resolvedMode(globalToggle: config.toggleMode?.value ?? false)
+            let manager = HotkeyManager(
+                keyCode: hk.keyCode,
+                modifiers: hk.modifierFlags
+            )
+            manager.start(
+                onKeyDown: { [weak self] in self?.handleKeyDown(binding: binding, mode: mode) },
+                onKeyUp: { [weak self] in self?.handleKeyUp(binding: binding, mode: mode) }
+            )
+            hotkeyManagers.append(manager)
         }
     }
 
-    private func handleKeyUp() {
-        let isToggle = config.toggleMode?.value ?? false
-        if isToggle { return }
+    private func handleKeyDown(binding: HotkeyBinding, mode: HotkeyMode) {
+        guard isReady else { return }
 
-        handleRecordingStop()
+        switch recordingHotkeyState.keyDown(binding: binding, mode: mode) {
+        case .start:
+            handleRecordingStart()
+        case .stop:
+            handleRecordingStop()
+        case .none:
+            break
+        }
+    }
+
+    private func handleKeyUp(binding: HotkeyBinding, mode: HotkeyMode) {
+        guard isReady else { return }
+
+        if recordingHotkeyState.keyUp(binding: binding, mode: mode) == .stop {
+            handleRecordingStop()
+        }
     }
 
     private func handleRecordingStart() {
-        guard !isPressed else { return }
-        isPressed = true
         statusBar.state = .recording
         do {
             let outputURL: URL
@@ -269,14 +254,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             try recorder.startRecording(to: outputURL)
         } catch {
             print("Error: \(error.localizedDescription)")
-            isPressed = false
+            recordingHotkeyState.reset()
             statusBar.state = .idle
         }
     }
 
     private func handleRecordingStop() {
-        guard isPressed else { return }
-        isPressed = false
+        recordingHotkeyState.reset()
 
         guard let audioURL = recorder.stopRecording() else {
             statusBar.state = .idle

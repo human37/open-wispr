@@ -289,6 +289,47 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.modifierFlags, UInt64(1 << 20))
     }
 
+    // MARK: - HotkeyConfig mode
+
+    func testHotkeyModeResolvesExplicitModes() {
+        let hold = HotkeyConfig(keyCode: 63, modifiers: [], mode: "hold")
+        let toggle = HotkeyConfig(keyCode: 61, modifiers: [], mode: "toggle")
+
+        XCTAssertEqual(hold.resolvedMode(globalToggle: true), .hold)
+        XCTAssertEqual(toggle.resolvedMode(globalToggle: false), .toggle)
+    }
+
+    func testHotkeyModeFallbackUsesGlobalToggle() {
+        let missing = HotkeyConfig(keyCode: 63, modifiers: [])
+        let unknown = HotkeyConfig(keyCode: 61, modifiers: [], mode: "press")
+
+        XCTAssertEqual(missing.resolvedMode(globalToggle: false), .hold)
+        XCTAssertEqual(missing.resolvedMode(globalToggle: true), .toggle)
+        XCTAssertEqual(unknown.resolvedMode(globalToggle: false), .hold)
+        XCTAssertEqual(unknown.resolvedMode(globalToggle: true), .toggle)
+    }
+
+    func testConfigDecodesPerHotkeyModes() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": [], "mode": "hold"},
+                {"keyCode": 61, "modifiers": [], "mode": "toggle"}
+            ],
+            "modelSize": "base.en",
+            "language": "en",
+            "toggleMode": false
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+
+        XCTAssertEqual(config.hotkeys.count, 2)
+        XCTAssertEqual(config.hotkeys[0].mode, "hold")
+        XCTAssertEqual(config.hotkeys[0].resolvedMode(globalToggle: true), .hold)
+        XCTAssertEqual(config.hotkeys[1].mode, "toggle")
+        XCTAssertEqual(config.hotkeys[1].resolvedMode(globalToggle: false), .toggle)
+    }
+
     // MARK: - Multiple hotkeys
 
     func testConfigDecodesHotkeysArray() throws {
@@ -323,12 +364,45 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.hotkeys.count, 1)
     }
 
+    func testConfigDeduplicatesSameBindingWithDifferentModes() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": [], "mode": "hold"},
+                {"keyCode": 63, "modifiers": [], "mode": "toggle"}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+
+        XCTAssertEqual(config.hotkeys.count, 1)
+        XCTAssertEqual(config.hotkeys[0].mode, "hold")
+    }
+
+    func testConfigDeduplicatesEquivalentModifierBindings() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 49, "modifiers": ["cmd"]},
+                {"keyCode": 49, "modifiers": ["command"]}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+
+        XCTAssertEqual(config.hotkeys.count, 1)
+    }
+
     func testConfigEncodeRoundtripPreservesHotkeys() throws {
         let json = """
         {
             "hotkeys": [
-                {"keyCode": 63, "modifiers": []},
-                {"keyCode": 96, "modifiers": []}
+                {"keyCode": 63, "modifiers": [], "mode": "hold"},
+                {"keyCode": 96, "modifiers": [], "mode": "toggle"}
             ],
             "modelSize": "base.en",
             "language": "en"
@@ -338,6 +412,8 @@ final class ConfigTests: XCTestCase {
         let data = try JSONEncoder().encode(config)
         let again = try Config.decode(from: data)
         XCTAssertEqual(again.hotkeys.count, 2)
+        XCTAssertEqual(again.hotkeys[0].mode, "hold")
+        XCTAssertEqual(again.hotkeys[1].mode, "toggle")
         let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         XCTAssertNotNil(obj?["hotkey"])
         XCTAssertNotNil(obj?["hotkeys"])
