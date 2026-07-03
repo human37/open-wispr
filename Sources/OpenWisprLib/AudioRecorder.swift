@@ -8,6 +8,12 @@ class AudioRecorder {
     private var currentOutputURL: URL?
     var preferredDeviceID: AudioDeviceID?
 
+    /// Called on the audio thread with a smoothed 0–1 RMS level each buffer.
+    var onLevelUpdate: ((Float) -> Void)?
+    // smoothedLevel is written on the audio thread and read nowhere outside this
+    // class — safe. Callers receive values only via the onLevelUpdate callback.
+    private var smoothedLevel: Float = 0
+
     func prewarm() {
         guard audioEngine == nil else { return }
 
@@ -78,7 +84,7 @@ class AudioRecorder {
         let file = try AVAudioFile(forWriting: outputURL, settings: settings)
         let converter = AVAudioConverter(from: inputFmt, to: recordingFormat)
 
-        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFmt) { buffer, _ in
+        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFmt) { [weak self] buffer, _ in
             guard let converter = converter else { return }
 
             let convertedBuffer = AVAudioPCMBuffer(
@@ -96,6 +102,30 @@ class AudioRecorder {
 
             if error == nil && convertedBuffer.frameLength > 0 {
                 try? file.write(from: convertedBuffer)
+            }
+
+            // Compute RMS from the raw input buffer and report a smoothed level.
+            if let self, let cb = self.onLevelUpdate,
+               let ch = buffer.floatChannelData {
+                let n = Int(buffer.frameLength)
+                var sum: Float = 0
+                let ptr = ch[0]
+                let step = max(1, n / 256)
+                var count = 0
+                var i = 0
+                while i < n { let v = ptr[i]; sum += v * v; count += 1; i += step }
+                let rms = count > 0 ? sqrtf(sum / Float(count)) : 0
+                // Scale factor: typical conversational speech produces RMS ~0.02–0.06
+                // on a 0–1 float PCM scale. Multiplying by 28 maps the mid-range of
+                // normal speech (RMS ≈ 0.035) to roughly 1.0 so the bars read full
+                // during active dictation and drop to near-zero in silence.
+                let norm = min(1.0, rms * 28)
+                // Asymmetric smoothing: fast attack (0.75), slow release (0.18).
+                // Bars jump up instantly when you speak and decay gradually —
+                // the same envelope shape used in broadcast audio meters.
+                let alpha: Float = norm > self.smoothedLevel ? 0.75 : 0.18
+                self.smoothedLevel = self.smoothedLevel * (1 - alpha) + norm * alpha
+                cb(self.smoothedLevel)
             }
         }
 

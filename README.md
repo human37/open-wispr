@@ -139,6 +139,16 @@ swift build -c release
 .build/release/open-wispr start
 ```
 
+## Troubleshooting
+
+**App won't open on macOS 26 (Tahoe) or later**
+
+macOS 26 blocks ad-hoc signed apps launched from Finder, Raycast, or Spotlight with no error shown. open-wispr is designed to run as a background service — use `brew services` instead of double-clicking the app:
+
+```bash
+brew services start open-wispr   # start now and on every login
+```
+
 ## Support
 
 open-wispr is free and always will be. If you find it useful, you can [leave a tip](https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00).

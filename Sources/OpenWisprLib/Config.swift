@@ -11,8 +11,15 @@ public struct Config: Codable {
     public var modelSize: String
     public var language: String
     public var spokenPunctuation: FlexBool?
+    /// When true, TextPolisher strips disfluencies/fillers (um, uh, like, …).
+    /// Off by default: the filler list includes ordinary English words, so
+    /// removal can only be opted into, never applied silently.
+    public var removeFillers: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
+    /// When true, a floating pill near the cursor shows "Listening"/"Transcribing".
+    /// Off by default; toggle via the "Show Overlay" menu item.
+    public var showOverlay: FlexBool?
     public var audioInputDeviceID: UInt32?
     public var audioInputDeviceUID: String?
 
@@ -42,8 +49,10 @@ public struct Config: Codable {
         case modelSize
         case language
         case spokenPunctuation
+        case removeFillers
         case maxRecordings
         case toggleMode
+        case showOverlay
         case audioInputDeviceID
         case audioInputDeviceUID
     }
@@ -63,8 +72,10 @@ public struct Config: Codable {
         self.modelSize = try c.decode(String.self, forKey: .modelSize)
         self.language = try c.decode(String.self, forKey: .language)
         self.spokenPunctuation = try c.decodeIfPresent(FlexBool.self, forKey: .spokenPunctuation)
+        self.removeFillers = try c.decodeIfPresent(FlexBool.self, forKey: .removeFillers)
         self.maxRecordings = try c.decodeIfPresent(Int.self, forKey: .maxRecordings)
         self.toggleMode = try c.decodeIfPresent(FlexBool.self, forKey: .toggleMode)
+        self.showOverlay = try c.decodeIfPresent(FlexBool.self, forKey: .showOverlay)
         self.audioInputDeviceID = try c.decodeIfPresent(UInt32.self, forKey: .audioInputDeviceID)
         self.audioInputDeviceUID = try c.decodeIfPresent(String.self, forKey: .audioInputDeviceUID)
     }
@@ -77,8 +88,10 @@ public struct Config: Codable {
         try c.encode(modelSize, forKey: .modelSize)
         try c.encode(language, forKey: .language)
         try c.encodeIfPresent(spokenPunctuation, forKey: .spokenPunctuation)
+        try c.encodeIfPresent(removeFillers, forKey: .removeFillers)
         try c.encodeIfPresent(maxRecordings, forKey: .maxRecordings)
         try c.encodeIfPresent(toggleMode, forKey: .toggleMode)
+        try c.encodeIfPresent(showOverlay, forKey: .showOverlay)
         try c.encodeIfPresent(audioInputDeviceID, forKey: .audioInputDeviceID)
         try c.encodeIfPresent(audioInputDeviceUID, forKey: .audioInputDeviceUID)
     }
@@ -91,6 +104,8 @@ public struct Config: Codable {
         spokenPunctuation: FlexBool?,
         maxRecordings: Int?,
         toggleMode: FlexBool?,
+        removeFillers: FlexBool? = nil,
+        showOverlay: FlexBool? = nil,
         audioInputDeviceID: UInt32? = nil,
         audioInputDeviceUID: String? = nil
     ) {
@@ -101,8 +116,10 @@ public struct Config: Codable {
         self.modelSize = modelSize
         self.language = language
         self.spokenPunctuation = spokenPunctuation
+        self.removeFillers = removeFillers
         self.maxRecordings = maxRecordings
         self.toggleMode = toggleMode
+        self.showOverlay = showOverlay
         self.audioInputDeviceID = audioInputDeviceID
         self.audioInputDeviceUID = audioInputDeviceUID
     }
@@ -250,7 +267,9 @@ public struct Config: Codable {
         language: "en",
         spokenPunctuation: FlexBool(false),
         maxRecordings: nil,
-        toggleMode: FlexBool(false)
+        toggleMode: FlexBool(false),
+        removeFillers: FlexBool(false),
+        showOverlay: FlexBool(false)
     )
 
     public static var configDir: URL {

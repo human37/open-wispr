@@ -283,6 +283,18 @@ class StatusBarController: NSObject {
         toggleItem.state = (config.toggleMode?.value ?? false) ? .on : .off
         menu.addItem(toggleItem)
 
+        let overlayTarget = MenuItemTarget { [weak self] in
+            var cfg = Config.load()
+            cfg.showOverlay = FlexBool(!(cfg.showOverlay?.value ?? false))
+            try? cfg.save()
+            self?.onConfigChange?(cfg)
+        }
+        menuItemTargets.append(overlayTarget)
+        let overlayItem = NSMenuItem(title: "Show Overlay", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        overlayItem.target = overlayTarget
+        overlayItem.state = (config.showOverlay?.value ?? false) ? .on : .off
+        menu.addItem(overlayItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
@@ -370,57 +382,56 @@ class StatusBarController: NSObject {
         }
     }
 
-    // MARK: - Recording animation: wave
+    // MARK: - Recording animation: real mic-level wave
 
-    private static let waveFrameCount = 30
+    /// Live mic level (0–1). Written from the audio thread via onLevelUpdate,
+    /// read on the main thread by the animation timer. On arm64, aligned 32-bit
+    /// stores are atomic at the hardware level — benign race for a display value.
+    var liveLevel: Float = 0
 
-    private static func prerenderWaveFrames() -> [NSImage] {
-        let count = waveFrameCount
-        let baseHeights: [CGFloat] = [4, 8, 12, 8, 4]
-        let minScale: CGFloat = 0.3
-        let phaseOffsets: [Double] = [0.0, 0.15, 0.3, 0.45, 0.6]
-
-        return (0..<count).map { frame in
-            let t = Double(frame) / Double(count)
-
-            let size = NSSize(width: 18, height: 18)
-            let image = NSImage(size: size, flipped: false) { rect in
-                NSColor.black.setFill()
-
-                let barWidth: CGFloat = 2.0
-                let gap: CGFloat = 2.5
-                let radius: CGFloat = 1.5
-                let centerX = rect.midX
-                let centerY = rect.midY
-
-                let totalWidth = CGFloat(baseHeights.count) * barWidth + CGFloat(baseHeights.count - 1) * gap
-                let startX = centerX - totalWidth / 2
-
-                for (i, baseHeight) in baseHeights.enumerated() {
-                    let phase = t - phaseOffsets[i]
-                    let scale = minScale + (1.0 - minScale) * CGFloat((sin(phase * 2.0 * .pi) + 1.0) / 2.0)
-                    let height = baseHeight * scale
-                    let x = startX + CGFloat(i) * (barWidth + gap)
-                    let y = centerY - height / 2
-                    let barRect = NSRect(x: x, y: y, width: barWidth, height: height)
-                    NSBezierPath(roundedRect: barRect, xRadius: radius, yRadius: radius).fill()
-                }
-                return true
+    /// Draw the 5-bar wave icon driven by `level` (0–1).
+    /// Bell-curve envelope: centre bar is tallest, edges shortest.
+    static func drawWave(level: CGFloat) -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSColor.black.setFill()
+            let barWidth: CGFloat = 2.0
+            let gap: CGFloat = 2.5
+            let radius: CGFloat = 1.0
+            let centerX = rect.midX
+            let centerY = rect.midY
+            // Idle min height 2px; at full level, bell-curve peaks at 16px (centre bar)
+            let maxHeights: [CGFloat] = [8, 12, 16, 12, 8]
+            let minH: CGFloat = 2
+            let totalWidth = CGFloat(maxHeights.count) * barWidth + CGFloat(maxHeights.count - 1) * gap
+            let startX = centerX - totalWidth / 2
+            for (i, maxH) in maxHeights.enumerated() {
+                let h = minH + level * (maxH - minH)
+                let x = startX + CGFloat(i) * (barWidth + gap)
+                let y = centerY - h / 2
+                NSBezierPath(roundedRect: NSRect(x: x, y: y, width: barWidth, height: h),
+                             xRadius: radius, yRadius: radius).fill()
             }
-            image.isTemplate = true
-            return image
+            return true
         }
+        image.isTemplate = true
+        return image
     }
 
-    private func startRecordingAnimation() {
-        animationFrame = 0
-        animationFrames = StatusBarController.prerenderWaveFrames()
-        setIcon(animationFrames[0])
+    private var lastRenderedLevel: CGFloat = -1   // –1 forces the first draw
 
+    private func startRecordingAnimation() {
+        liveLevel = 0
+        lastRenderedLevel = -1
+        setIcon(StatusBarController.drawWave(level: 0))
         animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.animationFrame = (self.animationFrame + 1) % StatusBarController.waveFrameCount
-            self.setIcon(self.animationFrames[self.animationFrame])
+            let level = CGFloat(self.liveLevel)
+            // Skip the NSImage allocation when the level hasn't moved enough to
+            // produce a visible change (~1 px on the tallest bar ≈ 0.07 delta).
+            guard abs(level - self.lastRenderedLevel) > 0.015 else { return }
+            self.lastRenderedLevel = level
+            self.setIcon(StatusBarController.drawWave(level: level))
         }
     }
 
