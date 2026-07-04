@@ -8,6 +8,9 @@ class AudioRecorder {
     private var currentOutputURL: URL?
     var preferredDeviceID: AudioDeviceID?
 
+    // Called on the main queue with a normalized 0...1 input level for visualization.
+    var onLevel: ((Float) -> Void)?
+
     func prewarm() {
         guard audioEngine == nil else { return }
 
@@ -77,6 +80,8 @@ class AudioRecorder {
 
         let file = try AVAudioFile(forWriting: outputURL, settings: settings)
         let converter = AVAudioConverter(from: inputFmt, to: recordingFormat)
+        // Capture by value so the tap closure doesn't retain self.
+        let levelCallback = onLevel
 
         engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFmt) { buffer, _ in
             guard let converter = converter else { return }
@@ -96,11 +101,33 @@ class AudioRecorder {
 
             if error == nil && convertedBuffer.frameLength > 0 {
                 try? file.write(from: convertedBuffer)
+                AudioRecorder.reportLevel(from: convertedBuffer, to: levelCallback)
             }
         }
 
         currentOutputURL = outputURL
         isRecording = true
+    }
+
+    private static func reportLevel(from buffer: AVAudioPCMBuffer, to onLevel: ((Float) -> Void)?) {
+        guard let onLevel = onLevel,
+              let channel = buffer.floatChannelData?[0] else { return }
+
+        let frameCount = Int(buffer.frameLength)
+        var sum: Float = 0
+        for i in 0..<frameCount {
+            let sample = channel[i]
+            sum += sample * sample
+        }
+        let rms = frameCount > 0 ? sqrt(sum / Float(frameCount)) : 0
+
+        // Map RMS to a perceptual 0...1 range: speech rarely exceeds ~0.3 RMS,
+        // so scale up and clamp, then apply a curve so quieter speech still
+        // drives visible movement.
+        let scaled = min(1.0, rms * 7.5)
+        let level = powf(scaled, 0.5)
+
+        DispatchQueue.main.async { onLevel(level) }
     }
 
     func stopRecording() -> URL? {

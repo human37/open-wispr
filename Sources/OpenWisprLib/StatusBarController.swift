@@ -283,6 +283,19 @@ class StatusBarController: NSObject {
         toggleItem.state = (config.toggleMode?.value ?? false) ? .on : .off
         menu.addItem(toggleItem)
 
+        let overlayTarget = MenuItemTarget { [weak self] in
+            var cfg = Config.load()
+            let current = cfg.overlay?.value ?? true
+            cfg.overlay = FlexBool(!current)
+            try? cfg.save()
+            self?.onConfigChange?(cfg)
+        }
+        menuItemTargets.append(overlayTarget)
+        let overlayItem = NSMenuItem(title: "Show Recording Overlay", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        overlayItem.target = overlayTarget
+        overlayItem.state = (config.overlay?.value ?? true) ? .on : .off
+        menu.addItem(overlayItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
