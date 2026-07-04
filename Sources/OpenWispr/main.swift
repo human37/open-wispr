@@ -140,6 +140,8 @@ func cmdStatus() {
     print("Language:    \(langName) (\(config.language))")
     let toggleMode = config.toggleMode?.value ?? false
     print("Toggle:      \(toggleMode ? "on (press to start/stop)" : "off (hold to talk)")")
+    let overlay = config.overlay?.value ?? true
+    print("Overlay:     \(overlay ? "on" : "off")")
 }
 
 let args = CommandLine.arguments
