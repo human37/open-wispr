@@ -8,6 +8,16 @@ class AudioRecorder {
     private var currentOutputURL: URL?
     var preferredDeviceID: AudioDeviceID?
 
+    /// Select the tap format after binding an input device. The input bus is
+    /// the device's hardware format; the output bus can retain the previous
+    /// device's sample rate after AUHAL is rebound.
+    static func tapFormat(
+        hardwareInputFormat: AVAudioFormat,
+        graphOutputFormat _: AVAudioFormat
+    ) -> AVAudioFormat {
+        hardwareInputFormat
+    }
+
     func prewarm() {
         guard audioEngine == nil else { return }
 
@@ -57,7 +67,11 @@ class AudioRecorder {
 
         try engine.start()
 
-        let inputFmt = engine.inputNode.outputFormat(forBus: 0)
+        let inputNode = engine.inputNode
+        let inputFmt = Self.tapFormat(
+            hardwareInputFormat: inputNode.inputFormat(forBus: 0),
+            graphOutputFormat: inputNode.outputFormat(forBus: 0)
+        )
 
         let recordingFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
@@ -78,7 +92,7 @@ class AudioRecorder {
         let file = try AVAudioFile(forWriting: outputURL, settings: settings)
         let converter = AVAudioConverter(from: inputFmt, to: recordingFormat)
 
-        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFmt) { buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFmt) { buffer, _ in
             guard let converter = converter else { return }
 
             let convertedBuffer = AVAudioPCMBuffer(
