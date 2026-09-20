@@ -33,6 +33,18 @@ func printUsage() {
 }
 
 func cmdStart() {
+    let instanceLock: DaemonInstanceLock
+    do {
+        guard let acquiredLock = try DaemonInstanceLock.acquire() else {
+            fputs("OpenWispr is already running.\n", stderr)
+            exit(0)
+        }
+        instanceLock = acquiredLock
+    } catch {
+        fputs("Error: could not acquire the OpenWispr instance lock: \(error.localizedDescription)\n", stderr)
+        exit(1)
+    }
+
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
 
@@ -44,7 +56,9 @@ func cmdStart() {
         exit(0)
     }
 
-    app.run()
+    withExtendedLifetime(instanceLock) {
+        app.run()
+    }
 }
 
 func cmdSetHotkey(_ keyString: String) {

@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 
 enum AppBundleLaunch {
@@ -42,22 +43,30 @@ enum AppBundleLaunch {
         if isExecutableInsideAppBundle(exec) { return false }
         guard let appURL = findOpenWisprAppBundle() else { return false }
 
+        let executableURL = appURL.appendingPathComponent("Contents/MacOS/open-wispr")
+        guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
+            fputs("Error: app bundle executable not found at \(executableURL.path)\n", stderr)
+            return false
+        }
+
         fputs("Relaunching via \(appURL.path) so Microphone/Accessibility apply to OpenWispr, not Terminal.\n", stdout)
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        process.arguments = ["-a", appURL.path, "--args", "start"]
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            fputs("Error: could not start OpenWispr.app: \(error.localizedDescription)\n", stderr)
-            return false
+        let execError = executableURL.path.withCString { executable in
+            "start".withCString { start in
+                var arguments: [UnsafeMutablePointer<CChar>?] = [
+                    UnsafeMutablePointer(mutating: executable),
+                    UnsafeMutablePointer(mutating: start),
+                    nil,
+                ]
+                _ = arguments.withUnsafeMutableBufferPointer { buffer in
+                    Darwin.execv(executable, buffer.baseAddress)
+                }
+                return errno
+            }
         }
-        if process.terminationStatus != 0 {
-            fputs("Error: 'open' exited with status \(process.terminationStatus)\n", stderr)
-            return false
-        }
-        return true
+
+        let message = String(cString: strerror(execError))
+        fputs("Error: could not start OpenWispr.app: \(message)\n", stderr)
+        return false
     }
 }
