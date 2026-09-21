@@ -24,6 +24,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
+        recorder?.teardown()
         unregisterSleepWakeObservers()
     }
 
@@ -121,8 +122,6 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        recorder.prewarm()
-
         DispatchQueue.main.async { [weak self] in
             self?.startListening()
         }
@@ -156,6 +155,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         print("Hotkey: \(hotkeyDesc)")
         print("Model: \(config.modelSize)")
         print("Ready.")
+        recorder.prepare()
     }
 
     public func reloadConfig() {
@@ -182,12 +182,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             uid: newConfig.audioInputDeviceUID,
             legacyID: newConfig.audioInputDeviceID
         )
-        let deviceChanged = recorder.preferredDeviceID != newDeviceID
         config = newConfig
         recorder.preferredDeviceID = newDeviceID
-        if deviceChanged {
-            recorder.reload()
-        }
+        recorder.prepare()
         transcriber = makeTranscriber(for: config)
         inserter = TextInserter()
 
@@ -274,6 +271,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleRecordingStart() {
         statusBar.state = .recording
         do {
+            recorder.preferredDeviceID = AudioDeviceManager.resolveConfiguredDeviceID(
+                uid: config.audioInputDeviceUID,
+                legacyID: config.audioInputDeviceID
+            )
             let outputURL: URL
             if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
                 outputURL = RecordingStore.tempRecordingURL()
@@ -342,9 +343,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func handleSystemWillSleep() {
+        recorder.teardown()
         guard recordingLifecycle.systemWillSleep() == .cancelRecording else { return }
 
-        recorder.teardown()
         RecordingCancellation.discardTrackedPartialRecording(&currentRecordingURL)
         resetRecordingStatusToIdleIfNeeded()
     }
@@ -356,7 +357,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             uid: config.audioInputDeviceUID,
             legacyID: config.audioInputDeviceID
         )
-        recorder.reload()
+        recorder.prepare()
     }
 
     private func registerSleepWakeObservers() {

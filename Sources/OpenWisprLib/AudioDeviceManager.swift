@@ -54,10 +54,18 @@ class AudioDeviceManager {
     }
 
     static func getDefaultInputDeviceID() -> AudioDeviceID {
+        getDefaultDeviceID(selector: kAudioHardwarePropertyDefaultInputDevice)
+    }
+
+    static func getDefaultOutputDeviceID() -> AudioDeviceID {
+        getDefaultDeviceID(selector: kAudioHardwarePropertyDefaultOutputDevice)
+    }
+
+    private static func getDefaultDeviceID(selector: AudioObjectPropertySelector) -> AudioDeviceID {
         var deviceID: AudioDeviceID = 0
         var size = UInt32(MemoryLayout<AudioDeviceID>.size)
         var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mSelector: selector,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
@@ -109,14 +117,55 @@ class AudioDeviceManager {
     }
 
     private static func hasInputStreams(deviceID: AudioDeviceID) -> Bool {
+        let inputTypes = streamTerminalTypes(deviceID: deviceID, scope: kAudioObjectPropertyScopeInput)
+        let outputTypes = streamTerminalTypes(deviceID: deviceID, scope: kAudioObjectPropertyScopeOutput)
+        let transport = uint32Property(deviceID, selector: kAudioDevicePropertyTransportType)
+        return hasRecordingInput(inputTerminalTypes: inputTypes, outputTerminalTypes: outputTypes, transportType: transport)
+    }
+
+    static func hasRecordingInput(inputTerminalTypes: [UInt32?], outputTerminalTypes: [UInt32?], transportType: UInt32?) -> Bool {
+        inputTerminalTypes.contains { terminal in
+            guard let terminal else { return true }
+            guard !isPlaybackTerminal(terminal) else { return false }
+            if terminal != kAudioStreamTerminalTypeUnknown { return true }
+            return transportType != kAudioDeviceTransportTypeBuiltIn
+                || !outputTerminalTypes.contains { $0.map(isPlaybackTerminal) ?? false }
+        }
+    }
+
+    private static func isPlaybackTerminal(_ terminal: UInt32) -> Bool {
+        switch terminal {
+        case kAudioStreamTerminalTypeSpeaker, kAudioStreamTerminalTypeHeadphones,
+             kAudioStreamTerminalTypeLFESpeaker, kAudioStreamTerminalTypeReceiverSpeaker,
+             0x0300...0x0307:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func uint32Property(_ objectID: AudioObjectID, selector: AudioObjectPropertySelector) -> UInt32? {
+        var value: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,
+                                                 mElement: kAudioObjectPropertyElementMain)
+        let status = AudioObjectGetPropertyData(objectID, &address, 0, nil, &size, &value)
+        return status == noErr ? value : nil
+    }
+
+    private static func streamTerminalTypes(deviceID: AudioDeviceID, scope: AudioObjectPropertyScope) -> [UInt32?] {
         var size: UInt32 = 0
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyStreams,
-            mScope: kAudioObjectPropertyScopeInput,
+            mScope: scope,
             mElement: kAudioObjectPropertyElementMain
         )
-        let status = AudioObjectGetPropertyDataSize(deviceID, &address, 0, nil, &size)
-        return status == noErr && size > 0
+        guard AudioObjectGetPropertyDataSize(deviceID, &address, 0, nil, &size) == noErr, size > 0 else { return [] }
+        var streams = [AudioStreamID](repeating: 0, count: Int(size) / MemoryLayout<AudioStreamID>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &streams) == noErr else { return [] }
+        return streams.prefix(Int(size) / MemoryLayout<AudioStreamID>.size).map {
+            uint32Property($0, selector: kAudioStreamPropertyTerminalType)
+        }
     }
 
     private static func getDeviceName(deviceID: AudioDeviceID) -> String? {

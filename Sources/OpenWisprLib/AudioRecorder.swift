@@ -1,138 +1,83 @@
-import AVFoundation
 import CoreAudio
 import Foundation
 
 class AudioRecorder {
-    private var audioEngine: AVAudioEngine?
-    private var isRecording = false
+    private let queue = DispatchQueue(label: "OpenWispr.AudioRecorder", qos: .userInitiated)
+    private var capture: AudioCaptureUnit?
     private var currentOutputURL: URL?
-    var preferredDeviceID: AudioDeviceID?
+    private var selectedDeviceID: AudioDeviceID?
 
-    func prewarm() {
-        guard audioEngine == nil else { return }
-
-        let engine = AVAudioEngine()
-
-        if let deviceID = preferredDeviceID,
-           deviceID != AudioDeviceManager.getDefaultInputDeviceID() {
-            setInputDevice(deviceID, on: engine)
-        }
-
-        _ = engine.inputNode
-        engine.prepare()
-        audioEngine = engine
+    var preferredDeviceID: AudioDeviceID? {
+        get { queue.sync { selectedDeviceID } }
+        set { queue.async { self.selectedDeviceID = newValue } }
     }
 
-    /// Stop and release the engine. Call before changing input device or on shutdown.
+    func prepare() {
+        queue.async {
+            guard self.currentOutputURL == nil else { return }
+            do {
+                _ = try self.configuredCapture()
+            } catch {
+                self.capture = nil
+                print("Microphone preparation failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
     func teardown() {
-        if isRecording {
-            audioEngine?.inputNode.removeTap(onBus: 0)
-            isRecording = false
+        queue.sync {
+            capture = nil
             currentOutputURL = nil
         }
-        audioEngine?.stop()
-        audioEngine = nil
     }
 
-    /// Re-prewarm with the current preferredDeviceID. Use after a config change.
-    func reload() {
-        teardown()
-        prewarm()
+    private func configuredCapture() throws -> AudioCaptureUnit {
+        let defaultInput = AudioDeviceManager.getDefaultInputDeviceID()
+        let route = AudioEngineCacheState.Route(
+            inputDeviceID: selectedDeviceID ?? defaultInput,
+            outputDeviceID: AudioDeviceManager.getDefaultOutputDeviceID(),
+            defaultInputDeviceID: defaultInput
+        )
+        if let capture, capture.cacheState.canReuse(for: route) { return capture }
+        capture = nil
+        let startedAt = DispatchTime.now().uptimeNanoseconds
+        let voiceProcessing: Bool
+        if #available(macOS 14.0, *) { voiceProcessing = true } else { voiceProcessing = false }
+        let configured = try AudioCaptureUnit(route: route, voiceProcessing: voiceProcessing)
+        capture = configured
+        print("Audio setup: \((DispatchTime.now().uptimeNanoseconds - startedAt) / 1_000_000) ms; input=\(route.inputDeviceID), output=\(route.outputDeviceID)")
+        return configured
     }
 
     func startRecording(to outputURL: URL) throws {
-        guard !isRecording else { return }
-
-        if audioEngine == nil {
-            prewarm()
-        }
-
-        guard let engine = audioEngine else {
-            throw NSError(
-                domain: "OpenWispr.AudioRecorder",
-                code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Audio engine is not available"]
-            )
-        }
-
-        try engine.start()
-
-        let inputFmt = engine.inputNode.outputFormat(forBus: 0)
-
-        let recordingFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: 16000,
-            channels: 1,
-            interleaved: false
-        )!
-
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 16000,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsBigEndianKey: false,
-        ]
-
-        let file = try AVAudioFile(forWriting: outputURL, settings: settings)
-        let converter = AVAudioConverter(from: inputFmt, to: recordingFormat)
-
-        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFmt) { buffer, _ in
-            guard let converter = converter else { return }
-
-            let convertedBuffer = AVAudioPCMBuffer(
-                pcmFormat: recordingFormat,
-                frameCapacity: AVAudioFrameCount(
-                    Double(buffer.frameLength) * 16000.0 / inputFmt.sampleRate
-                )
-            )!
-
-            var error: NSError?
-            converter.convert(to: convertedBuffer, error: &error) { _, outStatus in
-                outStatus.pointee = .haveData
-                return buffer
-            }
-
-            if error == nil && convertedBuffer.frameLength > 0 {
-                try? file.write(from: convertedBuffer)
+        let requestedAt = DispatchTime.now().uptimeNanoseconds
+        try queue.sync {
+            guard currentOutputURL == nil else { return }
+            do {
+                let capture = try configuredCapture()
+                try capture.start(to: outputURL, requestedAt: requestedAt)
+                currentOutputURL = outputURL
+                print("Microphone ready in \((DispatchTime.now().uptimeNanoseconds - requestedAt) / 1_000_000) ms (voice processing: \(capture.voiceProcessing))")
+            } catch {
+                capture = nil
+                throw error
             }
         }
-
-        currentOutputURL = outputURL
-        isRecording = true
     }
 
     func stopRecording() -> URL? {
-        guard isRecording else { return nil }
-        isRecording = false
-
-        let url = currentOutputURL
-        currentOutputURL = nil
-
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.stop()
-
-        return url
-    }
-
-    private func setInputDevice(_ deviceID: AudioDeviceID, on engine: AVAudioEngine) {
-        guard let audioUnit = engine.inputNode.audioUnit else {
-            print("Warning: could not access audio unit to set input device")
-            return
-        }
-
-        var devID = deviceID
-        let status = AudioUnitSetProperty(
-            audioUnit,
-            kAudioOutputUnitProperty_CurrentDevice,
-            kAudioUnitScope_Global,
-            0,
-            &devID,
-            UInt32(MemoryLayout<AudioDeviceID>.size)
-        )
-        if status != noErr {
-            print("Warning: failed to set audio input device (status: \(status))")
+        queue.sync {
+            guard let url = currentOutputURL else { return nil }
+            currentOutputURL = nil
+            do {
+                try capture?.stop()
+                return url
+            } catch {
+                capture = nil
+                try? FileManager.default.removeItem(at: url)
+                print("Recording failed: \(error.localizedDescription)")
+                return nil
+            }
         }
     }
 }
