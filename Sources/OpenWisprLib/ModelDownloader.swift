@@ -2,6 +2,8 @@ import Foundation
 
 public class ModelDownloader: NSObject, URLSessionDownloadDelegate {
     static let baseURL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main"
+    static let vadModelFileName = "ggml-silero-v6.2.0.bin"
+    private static let vadModelURL = "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin"
 
     private var onProgress: ((Double) -> Void)?
     private var completion: ((Error?) -> Void)?
@@ -9,22 +11,33 @@ public class ModelDownloader: NSObject, URLSessionDownloadDelegate {
 
     public static func download(modelSize: String, onProgress: ((Double) -> Void)? = nil) throws {
         let modelFileName = "ggml-\(modelSize).bin"
+        try downloadFile(named: modelFileName, from: "\(baseURL)/\(modelFileName)", onProgress: onProgress)
+    }
+
+    public static func downloadVAD(onProgress: ((Double) -> Void)? = nil) throws {
+        try downloadFile(named: vadModelFileName, from: vadModelURL, onProgress: onProgress)
+    }
+
+    private static func downloadFile(named modelFileName: String, from urlString: String,
+                                     onProgress: ((Double) -> Void)?) throws {
         let modelsDir = Config.configDir.appendingPathComponent("models")
         let destPath = modelsDir.appendingPathComponent(modelFileName)
 
         if FileManager.default.fileExists(atPath: destPath.path) {
-            print("Model '\(modelSize)' already exists at \(destPath.path)")
-            return
+            if isValidGGMLFile(at: destPath) {
+                print("Model already exists at \(destPath.path)")
+                return
+            }
+            throw ModelDownloadError.invalidModelData
         }
 
         try FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
 
-        let urlString = "\(baseURL)/\(modelFileName)"
         guard let url = URL(string: urlString) else {
             throw ModelDownloadError.downloadFailed
         }
 
-        print("Downloading \(modelSize) model from \(urlString)...")
+        print("Downloading \(modelFileName) from \(urlString)...")
 
         let downloader = ModelDownloader()
         downloader.onProgress = onProgress

@@ -119,6 +119,9 @@ class StatusBarController: NSObject {
             stateItem.target = target
             menu.addItem(stateItem)
             stateMenuItem = stateItem
+            let recoveryItem = NSMenuItem(title: "If already ON, toggle OpenWispr OFF, then ON", action: nil, keyEquivalent: "")
+            recoveryItem.isEnabled = false
+            menu.addItem(recoveryItem)
         } else {
             let stateItem = NSMenuItem(title: "\(stateLabel) (hotkey: \(hotkeyDesc))", action: nil, keyEquivalent: "")
             stateItem.isEnabled = false
@@ -295,6 +298,16 @@ class StatusBarController: NSObject {
         soundItem.state = config.isSoundFeedbackEnabled ? .on : .off
         menu.addItem(soundItem)
 
+        let dictTarget = MenuItemTarget {
+            DictionaryWindowController.shared.showWindow(nil)
+            DictionaryWindowController.shared.window?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        menuItemTargets.append(dictTarget)
+        let dictItem = NSMenuItem(title: "Custom Dictionary...", action: #selector(MenuItemTarget.invoke), keyEquivalent: "d")
+        dictItem.target = dictTarget
+        menu.addItem(dictItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription
@@ -350,6 +363,7 @@ class StatusBarController: NSObject {
     @objc private func reloadConfiguration() {
         guard let delegate = NSApplication.shared.delegate as? AppDelegate else { return }
         delegate.reloadConfig()
+        DictionaryWindowController.shared.reload()
     }
 
     @objc private func openConfiguration() {
