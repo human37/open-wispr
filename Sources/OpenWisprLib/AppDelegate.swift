@@ -8,6 +8,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     var inserter: TextInserter!
     var config: Config!
     var recordingLifecycle = RecordingLifecycle()
+    private let recordingSoundFeedback = RecordingSoundFeedback()
     var currentRecordingURL: URL?
     private var sleepWakeObservers: [NSObjectProtocol] = []
     private var accessibilityPollTimer: Timer?
@@ -349,6 +350,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
             try recorder.startRecording(to: outputURL)
             currentRecordingURL = outputURL
+            if config.isSoundFeedbackEnabled {
+                recordingSoundFeedback.playStarted()
+            }
         } catch {
             print("Error: \(error.localizedDescription)")
             recordingLifecycle.recordingStartFailed()
@@ -366,6 +370,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         currentRecordingURL = nil
         statusBar.state = .transcribing
+        if config.isSoundFeedbackEnabled {
+            recordingSoundFeedback.playStopped()
+        }
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }

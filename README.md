@@ -52,7 +52,8 @@ Edit `~/.config/open-wispr/config.json`:
   "voiceActivityDetection": false,
   "vadThreshold": 0.5,
   "maxRecordings": 0,
-  "toggleMode": false
+  "toggleMode": false,
+  "soundFeedback": false
 }
 ```
 
@@ -84,6 +85,7 @@ Both `hotkey` (single) and `hotkeys` (array) are supported. If both are present,
 | **vadThreshold** | `0.5` | Speech detection sensitivity from `0` to `1`; lower values detect quieter speech but may admit more background audio. |
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
 | **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
+| **soundFeedback** | `false` | Play short system sounds when recording starts and stops. Turn on in the menu bar or set to `true`. |
 
 Caps Lock cannot be used as a hotkey: macOS toggles its state rather than sending a release event, so it cannot provide reliable hold-to-talk behavior.
 
