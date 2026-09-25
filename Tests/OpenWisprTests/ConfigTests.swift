@@ -160,6 +160,61 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.toggleMode?.value, false)
     }
 
+    // MARK: - customDictionary decoding
+
+    func testConfigDecodesWithCustomDictionary() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "customDictionary": [
+                {"from": "nural", "to": "neural"},
+                {"from": "chat gee pee tee", "to": "ChatGPT"}
+            ]
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.customDictionary?.count, 2)
+        XCTAssertEqual(config.customDictionary?[0].from, "nural")
+        XCTAssertEqual(config.customDictionary?[0].to, "neural")
+        XCTAssertEqual(config.customDictionary?[1].from, "chat gee pee tee")
+        XCTAssertEqual(config.customDictionary?[1].to, "ChatGPT")
+    }
+
+    func testConfigDecodesWithoutCustomDictionary() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertNil(config.customDictionary)
+    }
+
+    func testConfigDecodesEmptyCustomDictionary() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "customDictionary": []
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.customDictionary?.count, 0)
+    }
+
+    func testConfigEncodesCustomDictionaryRoundTrip() throws {
+        var config = Config.defaultConfig
+        config.customDictionary = [DictionaryEntry(from: "nural", to: "neural")]
+        let data = try JSONEncoder().encode(config)
+        let decoded = try Config.decode(from: data)
+        XCTAssertEqual(decoded.customDictionary, config.customDictionary)
+    }
+
     // MARK: - audioInputDevice decoding
 
     func testConfigDecodesAudioInputDeviceUID() throws {
