@@ -10,6 +10,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     var recordingLifecycle = RecordingLifecycle()
     var currentRecordingURL: URL?
     private var sleepWakeObservers: [NSObjectProtocol] = []
+    private var accessibilityPollTimer: Timer?
     var isReady = false
     public var lastTranscription: String?
 
@@ -24,6 +25,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
+        accessibilityPollTimer?.invalidate()
         recorder?.teardown()
         unregisterSleepWakeObservers()
     }
@@ -64,16 +66,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        if Permissions.didUpgrade() {
-            print("Accessibility: upgrade detected, resetting permissions...")
-            Permissions.resetAccessibility()
-            Thread.sleep(forTimeInterval: 1)
-        }
-
-        if !AXIsProcessTrusted() {
-            DispatchQueue.main.async {
-                self.statusBar.state = .waitingForPermission
-                self.statusBar.buildMenu()
+        let didUpgrade = Permissions.didUpgrade()
+        if Permissions.shouldResetAccessibility(afterUpgrade: didUpgrade, isTrusted: AXIsProcessTrusted()) {
+            print("Accessibility: version changed and permission is not granted; resetting stale entry...")
+            if Permissions.resetAccessibility() {
+                Permissions.recordCurrentVersion()
+                Thread.sleep(forTimeInterval: 1)
+            } else {
+                print("Accessibility: reset failed; toggle OpenWispr OFF, then ON in System Settings")
             }
         }
 
@@ -81,17 +81,48 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         if !AXIsProcessTrusted() {
             print("Accessibility: not granted")
-            Permissions.promptAccessibility()
-            Permissions.openAccessibilitySettings()
             print("Waiting for Accessibility permission...")
-            while !AXIsProcessTrusted() {
-                Thread.sleep(forTimeInterval: 0.5)
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.statusBar.state = .waitingForPermission
+                self.statusBar.buildMenu()
+                Permissions.promptAccessibility()
+                Permissions.openAccessibilitySettings()
+                self.startAccessibilityPolling()
             }
-            print("Accessibility: granted")
-        } else {
-            print("Accessibility: granted")
+            return
         }
 
+        print("Accessibility: granted")
+        Permissions.recordCurrentVersion()
+        try finishSetup()
+    }
+
+    private func startAccessibilityPolling() {
+        guard accessibilityPollTimer == nil else { return }
+        accessibilityPollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.resumeWhenAccessibilityGranted()
+        }
+        resumeWhenAccessibilityGranted()
+    }
+
+    private func resumeWhenAccessibilityGranted() {
+        guard AXIsProcessTrusted() else { return }
+        accessibilityPollTimer?.invalidate()
+        accessibilityPollTimer = nil
+        print("Accessibility: granted")
+        Permissions.recordCurrentVersion()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            do {
+                try self.finishSetup()
+            } catch {
+                print("Fatal setup error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func finishSetup() throws {
         if !Transcriber.modelExists(modelSize: config.modelSize) {
             DispatchQueue.main.async {
                 self.statusBar.state = .downloading

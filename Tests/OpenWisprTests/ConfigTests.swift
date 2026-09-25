@@ -311,9 +311,16 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.modifierFlags, 0)
     }
 
-    func testModifierFlagsIgnoresUnknown() {
+    func testModifierFlagsFailClosedForUnknown() {
         let config = HotkeyConfig(keyCode: 49, modifiers: ["cmd", "bogus"])
-        XCTAssertEqual(config.modifierFlags, UInt64(1 << 20))
+        XCTAssertEqual(config.modifierFlags, UInt64.max)
+    }
+
+    func testModifierFlagsFunctionAliases() {
+        for name in ["fn", "globe", "function"] {
+            let config = HotkeyConfig(keyCode: 55, modifiers: [name])
+            XCTAssertEqual(config.modifierFlags, UInt64(1 << 23), name)
+        }
     }
 
     // MARK: - Multiple hotkeys

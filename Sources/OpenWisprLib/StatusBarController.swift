@@ -119,6 +119,9 @@ class StatusBarController: NSObject {
             stateItem.target = target
             menu.addItem(stateItem)
             stateMenuItem = stateItem
+            let recoveryItem = NSMenuItem(title: "If already ON, toggle OpenWispr OFF, then ON", action: nil, keyEquivalent: "")
+            recoveryItem.isEnabled = false
+            menu.addItem(recoveryItem)
         } else {
             let stateItem = NSMenuItem(title: "\(stateLabel) (hotkey: \(hotkeyDesc))", action: nil, keyEquivalent: "")
             stateItem.isEnabled = false

@@ -341,14 +341,21 @@ public struct HotkeyConfig: Codable, Equatable {
     public var modifierFlags: UInt64 {
         var flags: UInt64 = 0
         for mod in modifiers {
-            switch mod.lowercased() {
-            case "cmd", "command": flags |= UInt64(1 << 20)
-            case "shift": flags |= UInt64(1 << 17)
-            case "ctrl", "control": flags |= UInt64(1 << 18)
-            case "opt", "option", "alt": flags |= UInt64(1 << 19)
-            default: break
-            }
+            // An invalid value in a hand-edited config must never broaden a hotkey.
+            guard let flag = Self.flag(for: mod) else { return UInt64.max }
+            flags |= flag
         }
         return flags
+    }
+
+    public static func flag(for modifier: String) -> UInt64? {
+        switch modifier.lowercased() {
+        case "cmd", "command": return UInt64(1 << 20)
+        case "shift": return UInt64(1 << 17)
+        case "ctrl", "control": return UInt64(1 << 18)
+        case "opt", "option", "alt": return UInt64(1 << 19)
+        case "fn", "globe", "function": return UInt64(1 << 23)
+        default: return nil
+        }
     }
 }
