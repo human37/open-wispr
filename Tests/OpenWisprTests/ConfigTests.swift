@@ -115,6 +115,20 @@ final class ConfigTests: XCTestCase {
         XCTAssertFalse(json.contains("whisperPrompt"))
     }
 
+    func testVADDefaultsOffForLegacyConfigAndThresholdIsBounded() throws {
+        let json = #"{"modelSize":"base.en","language":"en"}"#.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertFalse(config.isVADEnabled)
+        XCTAssertEqual(config.effectiveVADThreshold, 0.5)
+
+        var updated = config
+        updated.voiceActivityDetection = true
+        updated.vadThreshold = 2.0
+        let decoded = try Config.decode(from: JSONEncoder().encode(updated))
+        XCTAssertTrue(decoded.isVADEnabled)
+        XCTAssertEqual(decoded.effectiveVADThreshold, 1.0)
+    }
+
     // MARK: - toggleMode decoding
 
     func testConfigDecodesToggleModeTrue() throws {

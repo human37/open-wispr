@@ -4,12 +4,17 @@ public class Transcriber {
     private let modelSize: String
     private let language: String
     private let whisperPrompt: String?
+    private let vadEnabled: Bool
+    private let vadThreshold: Double
     public var spokenPunctuation: Bool = false
 
-    public init(modelSize: String = "base.en", language: String = "en", whisperPrompt: String? = nil) {
+    public init(modelSize: String = "base.en", language: String = "en", whisperPrompt: String? = nil,
+                vadEnabled: Bool = false, vadThreshold: Double = 0.5) {
         self.modelSize = modelSize
         self.language = language
         self.whisperPrompt = whisperPrompt
+        self.vadEnabled = vadEnabled
+        self.vadThreshold = vadThreshold
     }
 
     public func transcribe(audioURL: URL) throws -> String {
@@ -21,9 +26,17 @@ public class Transcriber {
             throw TranscriberError.modelNotFound(modelSize)
         }
 
+        let vadModelPath: String?
+        if vadEnabled {
+            guard let path = Transcriber.findVADModel() else { throw TranscriberError.vadModelNotFound }
+            vadModelPath = path
+        } else {
+            vadModelPath = nil
+        }
+
         let process = Process()
         process.executableURL = URL(fileURLWithPath: whisperPath)
-        process.arguments = arguments(modelPath: modelPath, audioURL: audioURL)
+        process.arguments = arguments(modelPath: modelPath, audioURL: audioURL, vadModelPath: vadModelPath)
 
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -55,7 +68,7 @@ public class Transcriber {
         return output
     }
 
-    func arguments(modelPath: String, audioURL: URL) -> [String] {
+    func arguments(modelPath: String, audioURL: URL, vadModelPath: String? = nil) -> [String] {
         var args = [
             "-m", modelPath,
             "-f", audioURL.path,
@@ -73,6 +86,10 @@ public class Transcriber {
         }
         if spokenPunctuation {
             args += ["--suppress-regex", "[,\\.\\?!;:\\-—]"]
+        }
+        if vadEnabled, let vadModelPath {
+            args += ["--vad", "--vad-model", vadModelPath,
+                     "--vad-threshold", String(vadThreshold)]
         }
 
         return args
@@ -154,6 +171,16 @@ public class Transcriber {
         return findModel(modelSize: modelSize) != nil
     }
 
+    static func findVADModel() -> String? {
+        let name = ModelDownloader.vadModelFileName
+        let candidates = [
+            Config.configDir.appendingPathComponent("models/\(name)").path,
+            "/opt/homebrew/share/whisper-cpp/models/\(name)",
+            "/usr/local/share/whisper-cpp/models/\(name)",
+        ]
+        return candidates.first { ModelDownloader.isValidGGMLFile(at: URL(fileURLWithPath: $0)) }
+    }
+
     static func findModel(modelSize: String) -> String? {
         let modelFileName = "ggml-\(modelSize).bin"
 
@@ -177,6 +204,7 @@ public class Transcriber {
 enum TranscriberError: LocalizedError {
     case whisperNotFound
     case modelNotFound(String)
+    case vadModelNotFound
     case transcriptionFailed
 
     var errorDescription: String? {
@@ -185,6 +213,8 @@ enum TranscriberError: LocalizedError {
             return "whisper-cpp not found. Install it with: brew install whisper-cpp"
         case .modelNotFound(let size):
             return "Whisper model '\(size)' not found. Download it with: open-wispr download-model \(size)"
+        case .vadModelNotFound:
+            return "Voice activity model not found. Restart OpenWispr to download it, or disable voiceActivityDetection in config.json."
         case .transcriptionFailed:
             return "Transcription failed"
         }

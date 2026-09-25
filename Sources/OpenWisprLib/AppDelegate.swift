@@ -33,6 +33,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             try setupInner()
         } catch {
             print("Fatal setup error: \(error.localizedDescription)")
+            DispatchQueue.main.async { [weak self] in
+                self?.statusBar.state = .error(error.localizedDescription)
+                self?.statusBar.updateDownloadProgress(nil)
+            }
         }
     }
 
@@ -122,6 +126,19 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        if config.isVADEnabled && Transcriber.findVADModel() == nil {
+            DispatchQueue.main.async {
+                self.statusBar.state = .downloading
+                self.statusBar.updateDownloadProgress("Downloading voice activity model...")
+            }
+            try ModelDownloader.downloadVAD { [weak self] percent in
+                DispatchQueue.main.async {
+                    self?.statusBar.updateDownloadProgress("Downloading voice activity model... \(Int(percent))%", percent: percent)
+                }
+            }
+            DispatchQueue.main.async { self.statusBar.updateDownloadProgress(nil) }
+        }
+
         DispatchQueue.main.async { [weak self] in
             self?.startListening()
         }
@@ -202,15 +219,30 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             hotkeyManagers.append(manager)
         }
 
-        if !wasDownloading && !Transcriber.modelExists(modelSize: config.modelSize) {
+        let needsWhisperModel = !Transcriber.modelExists(modelSize: config.modelSize)
+        let needsVADModel = config.isVADEnabled && Transcriber.findVADModel() == nil
+        if !wasDownloading && (needsWhisperModel || needsVADModel) {
             statusBar.state = .downloading
-            statusBar.updateDownloadProgress("Downloading \(config.modelSize) model...")
+            statusBar.updateDownloadProgress(needsWhisperModel
+                ? "Downloading \(config.modelSize) model..."
+                : "Downloading voice activity model...")
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 do {
-                    try ModelDownloader.download(modelSize: newConfig.modelSize) { percent in
+                    if needsWhisperModel {
+                        try ModelDownloader.download(modelSize: newConfig.modelSize) { percent in
+                            DispatchQueue.main.async {
+                                self?.statusBar.updateDownloadProgress("Downloading \(newConfig.modelSize) model... \(Int(percent))%", percent: percent)
+                            }
+                        }
+                    }
+                    if needsVADModel {
                         DispatchQueue.main.async {
-                            let pct = Int(percent)
-                            self?.statusBar.updateDownloadProgress("Downloading \(newConfig.modelSize) model... \(pct)%", percent: percent)
+                            self?.statusBar.updateDownloadProgress("Downloading voice activity model...")
+                        }
+                        try ModelDownloader.downloadVAD { percent in
+                            DispatchQueue.main.async {
+                                self?.statusBar.updateDownloadProgress("Downloading voice activity model... \(Int(percent))%", percent: percent)
+                            }
                         }
                     }
                     DispatchQueue.main.async {
@@ -220,8 +252,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 } catch {
                     DispatchQueue.main.async {
                         print("Error downloading model: \(error.localizedDescription)")
-                        self?.statusBar.state = .idle
-                        self?.statusBar.updateDownloadProgress(nil)
+                        self?.statusBar.state = .error(error.localizedDescription)
+                        self?.statusBar.buildMenu()
                     }
                 }
             }
@@ -237,7 +269,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let transcriber = Transcriber(
             modelSize: config.modelSize,
             language: config.language,
-            whisperPrompt: config.whisperPrompt
+            whisperPrompt: config.whisperPrompt,
+            vadEnabled: config.isVADEnabled,
+            vadThreshold: config.effectiveVADThreshold
         )
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
         return transcriber
