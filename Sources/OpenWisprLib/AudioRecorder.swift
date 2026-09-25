@@ -15,12 +15,9 @@ class AudioRecorder {
     func prepare() {
         queue.async {
             guard self.currentOutputURL == nil else { return }
-            do {
-                _ = try self.configuredCapture()
-            } catch {
-                self.capture = nil
-                print("Microphone preparation failed: \(error.localizedDescription)")
-            }
+            // An initialized input unit can keep Bluetooth headphones in headset mode.
+            // Pick up the current route only when recording starts.
+            self.capture = nil
         }
     }
 
@@ -41,9 +38,9 @@ class AudioRecorder {
         if let capture, capture.cacheState.canReuse(for: route) { return capture }
         capture = nil
         let startedAt = DispatchTime.now().uptimeNanoseconds
-        let voiceProcessing: Bool
-        if #available(macOS 14.0, *) { voiceProcessing = true } else { voiceProcessing = false }
-        let configured = try AudioCaptureUnit(route: route, voiceProcessing: voiceProcessing)
+        // VoiceProcessingIO binds the output device and takes about a second to
+        // initialize on some routes. HAL input-only capture avoids both effects.
+        let configured = try AudioCaptureUnit(route: route, voiceProcessing: false)
         capture = configured
         print("Audio setup: \((DispatchTime.now().uptimeNanoseconds - startedAt) / 1_000_000) ms; input=\(route.inputDeviceID), output=\(route.outputDeviceID)")
         return configured
@@ -69,11 +66,11 @@ class AudioRecorder {
         queue.sync {
             guard let url = currentOutputURL else { return nil }
             currentOutputURL = nil
+            defer { capture = nil }
             do {
                 try capture?.stop()
                 return url
             } catch {
-                capture = nil
                 try? FileManager.default.removeItem(at: url)
                 print("Recording failed: \(error.localizedDescription)")
                 return nil
