@@ -5,6 +5,16 @@ public struct LanguageOption: Equatable, Sendable {
     public let name: String
 }
 
+public struct DictionaryEntry: Codable, Equatable {
+    public var from: String
+    public var to: String
+
+    public init(from: String, to: String) {
+        self.from = from
+        self.to = to
+    }
+}
+
 public struct Config: Codable {
     public var hotkeys: [HotkeyConfig]
     public var modelPath: String?
@@ -16,6 +26,7 @@ public struct Config: Codable {
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
+    public var customDictionary: [DictionaryEntry]?
     public var audioInputDeviceID: UInt32?
     public var audioInputDeviceUID: String?
 
@@ -50,6 +61,7 @@ public struct Config: Codable {
         case spokenPunctuation
         case maxRecordings
         case toggleMode
+        case customDictionary
         case audioInputDeviceID
         case audioInputDeviceUID
     }
@@ -74,6 +86,7 @@ public struct Config: Codable {
         self.spokenPunctuation = try c.decodeIfPresent(FlexBool.self, forKey: .spokenPunctuation)
         self.maxRecordings = try c.decodeIfPresent(Int.self, forKey: .maxRecordings)
         self.toggleMode = try c.decodeIfPresent(FlexBool.self, forKey: .toggleMode)
+        self.customDictionary = try c.decodeIfPresent([DictionaryEntry].self, forKey: .customDictionary)
         self.audioInputDeviceID = try c.decodeIfPresent(UInt32.self, forKey: .audioInputDeviceID)
         self.audioInputDeviceUID = try c.decodeIfPresent(String.self, forKey: .audioInputDeviceUID)
     }
@@ -91,6 +104,7 @@ public struct Config: Codable {
         try c.encodeIfPresent(spokenPunctuation, forKey: .spokenPunctuation)
         try c.encodeIfPresent(maxRecordings, forKey: .maxRecordings)
         try c.encodeIfPresent(toggleMode, forKey: .toggleMode)
+        try c.encodeIfPresent(customDictionary, forKey: .customDictionary)
         try c.encodeIfPresent(audioInputDeviceID, forKey: .audioInputDeviceID)
         try c.encodeIfPresent(audioInputDeviceUID, forKey: .audioInputDeviceUID)
     }
@@ -106,6 +120,7 @@ public struct Config: Codable {
         spokenPunctuation: FlexBool?,
         maxRecordings: Int?,
         toggleMode: FlexBool?,
+        customDictionary: [DictionaryEntry]? = nil,
         audioInputDeviceID: UInt32? = nil,
         audioInputDeviceUID: String? = nil
     ) {
@@ -121,6 +136,7 @@ public struct Config: Codable {
         self.spokenPunctuation = spokenPunctuation
         self.maxRecordings = maxRecordings
         self.toggleMode = toggleMode
+        self.customDictionary = customDictionary
         self.audioInputDeviceID = audioInputDeviceID
         self.audioInputDeviceUID = audioInputDeviceUID
     }
@@ -361,14 +377,21 @@ public struct HotkeyConfig: Codable, Equatable {
     public var modifierFlags: UInt64 {
         var flags: UInt64 = 0
         for mod in modifiers {
-            switch mod.lowercased() {
-            case "cmd", "command": flags |= UInt64(1 << 20)
-            case "shift": flags |= UInt64(1 << 17)
-            case "ctrl", "control": flags |= UInt64(1 << 18)
-            case "opt", "option", "alt": flags |= UInt64(1 << 19)
-            default: break
-            }
+            // An invalid value in a hand-edited config must never broaden a hotkey.
+            guard let flag = Self.flag(for: mod) else { return UInt64.max }
+            flags |= flag
         }
         return flags
+    }
+
+    public static func flag(for modifier: String) -> UInt64? {
+        switch modifier.lowercased() {
+        case "cmd", "command": return UInt64(1 << 20)
+        case "shift": return UInt64(1 << 17)
+        case "ctrl", "control": return UInt64(1 << 18)
+        case "opt", "option", "alt": return UInt64(1 << 19)
+        case "fn", "globe", "function": return UInt64(1 << 23)
+        default: return nil
+        }
     }
 }

@@ -12,7 +12,6 @@ public struct KeyCodes {
         "`": 50, "delete": 51, "escape": 53,
         "rightcmd": 54, "cmd": 55, "leftcmd": 55,
         "shift": 56, "leftshift": 56,
-        "capslock": 57,
         "option": 58, "leftoption": 58, "alt": 58, "leftalt": 58,
         "ctrl": 59, "leftctrl": 59, "control": 59,
         "rightshift": 60,
@@ -35,13 +34,17 @@ public struct KeyCodes {
     }()
 
     public static func parse(_ input: String) -> (keyCode: UInt16, modifiers: [String])? {
-        let parts = input.lowercased().split(separator: "+").map { String($0).trimmingCharacters(in: .whitespaces) }
+        let parts = input.lowercased().split(separator: "+", omittingEmptySubsequences: false)
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
 
         guard let keyName = parts.last, let code = nameToCode[keyName] else {
             return nil
         }
 
         let modifiers = Array(parts.dropLast())
+        guard modifiers.allSatisfy({ HotkeyConfig.flag(for: $0) != nil }) else {
+            return nil
+        }
         return (code, modifiers)
     }
 

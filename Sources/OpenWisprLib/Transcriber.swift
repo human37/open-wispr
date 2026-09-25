@@ -7,6 +7,7 @@ public class Transcriber {
     private let vadEnabled: Bool
     private let vadThreshold: Double
     public var spokenPunctuation: Bool = false
+    public var customDictionary: [DictionaryEntry] = []
 
     public init(modelSize: String = "base.en", language: String = "en", whisperPrompt: String? = nil,
                 vadEnabled: Bool = false, vadThreshold: Double = 0.5) {
@@ -81,7 +82,11 @@ public class Transcriber {
             // max-context 0 decodes each window independently and stops it.
             "-mc", "0",
         ]
-        if let prompt = effectiveWhisperPrompt {
+        let dictionaryPrompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
+        let prompt = [effectiveWhisperPrompt, dictionaryPrompt.isEmpty ? nil : dictionaryPrompt]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        if !prompt.isEmpty {
             args += ["--prompt", prompt]
         }
         if spokenPunctuation {

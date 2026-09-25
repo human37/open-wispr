@@ -20,6 +20,31 @@ final class TranscriberTests: XCTestCase {
         XCTAssertEqual(args.filter { $0 == prompt }.count, 1)
     }
 
+    func testArgumentsCombineWhisperPromptAndDictionaryVocabulary() throws {
+        let transcriber = Transcriber(whisperPrompt: "Use short sentences.")
+        transcriber.customDictionary = [DictionaryEntry(from: "nural", to: "neural")]
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav")
+        )
+
+        let promptFlagIndex = try XCTUnwrap(args.firstIndex(of: "--prompt"))
+        XCTAssertEqual(args[promptFlagIndex + 1], "Use short sentences. Vocabulary: neural.")
+        XCTAssertEqual(args.filter { $0 == "--prompt" }.count, 1)
+    }
+
+    func testArgumentsUseDictionaryVocabularyWithoutWhisperPrompt() throws {
+        let transcriber = Transcriber()
+        transcriber.customDictionary = [DictionaryEntry(from: "nural", to: "neural")]
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav")
+        )
+
+        let promptFlagIndex = try XCTUnwrap(args.firstIndex(of: "--prompt"))
+        XCTAssertEqual(args[promptFlagIndex + 1], "Vocabulary: neural.")
+    }
+
     func testArgumentsDisableCrossWindowContext() throws {
         let transcriber = Transcriber(modelSize: "base.en", language: "en")
         let args = transcriber.arguments(

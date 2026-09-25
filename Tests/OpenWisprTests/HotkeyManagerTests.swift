@@ -3,6 +3,32 @@ import XCTest
 @testable import OpenWisprLib
 
 final class HotkeyManagerTests: XCTestCase {
+    func testFnCmdDoesNotActivateOnPlainCmd() throws {
+        var handler: ((NSEvent) -> Void)?
+        var downCount = 0
+        var upCount = 0
+        let hotkey = HotkeyConfig(keyCode: 55, modifiers: ["fn"])
+        let manager = HotkeyManager(
+            keyCode: hotkey.keyCode,
+            modifiers: hotkey.modifierFlags,
+            addGlobalMonitor: { _, callback in handler = callback; return NSObject() },
+            addLocalMonitor: { _, _ in nil },
+            removeMonitor: { _ in }
+        )
+        manager.start(onKeyDown: { downCount += 1 }, onKeyUp: { upCount += 1 })
+        defer { manager.stop() }
+
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 55, flags: [.command])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 55)))
+        XCTAssertEqual(downCount, 0)
+        XCTAssertEqual(upCount, 0)
+
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 55, flags: [.command, .function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 55, flags: [.function])))
+        XCTAssertEqual(downCount, 1)
+        XCTAssertEqual(upCount, 1)
+    }
+
     func testMonitorsHotkeyEventsFromOtherAppsAndOpenWisprItself() throws {
         let globalToken = NSObject()
         let localToken = NSObject()
@@ -52,11 +78,15 @@ final class HotkeyManagerTests: XCTestCase {
         XCTAssertTrue(removedTokens.contains { $0 === localToken })
     }
 
-    private func makeKeyEvent(type: NSEvent.EventType, keyCode: UInt16) -> NSEvent? {
+    private func makeKeyEvent(
+        type: NSEvent.EventType,
+        keyCode: UInt16,
+        flags: NSEvent.ModifierFlags = []
+    ) -> NSEvent? {
         NSEvent.keyEvent(
             with: type,
             location: .zero,
-            modifierFlags: [],
+            modifierFlags: flags,
             timestamp: 0,
             windowNumber: 0,
             context: nil,
