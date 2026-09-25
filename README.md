@@ -120,7 +120,7 @@ Click the waveform icon for status and options. **Recent Recordings** lists your
 | Downloading model | Progress ring |
 | Waiting for permission | Lock |
 
-Click the menu bar icon to access **Copy Last Dictation** — recovers your most recent transcription if you dictated without a text field focused.
+If no text field is focused, the transcription is copied to the clipboard automatically. **Copy Last Dictation** in the menu bar also lets you copy the most recent transcription again.
 
 ## Compare
 
