@@ -12,7 +12,6 @@ public struct KeyCodes {
         "`": 50, "delete": 51, "escape": 53,
         "rightcmd": 54, "cmd": 55, "leftcmd": 55,
         "shift": 56, "leftshift": 56,
-        "capslock": 57,
         "option": 58, "leftoption": 58, "alt": 58, "leftalt": 58,
         "ctrl": 59, "leftctrl": 59, "control": 59,
         "rightshift": 60,
