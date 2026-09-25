@@ -20,9 +20,13 @@ curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/ins
 
 The script handles everything: installs via Homebrew, walks you through granting permissions, downloads the Whisper model, and starts the service. You'll see live feedback as each step completes.
 
+> **Note:** Recent versions of Homebrew (6.0+) have tightened security around third-party taps, so you may be asked to trust this package before it installs. If that happens, the installer prints the exact `brew trust` command to run.
+
 A waveform icon appears in your menu bar when it's running.
 
 The default hotkey is the **Globe key** (🌐, bottom-left). Hold it, speak, release.
+
+On macOS 14 and later, OpenWispr uses native voice processing to reduce playback volume during recording. Playback returns to normal when recording stops.
 
 > **[Full installation guide](docs/install-guide.md)** — permissions walkthrough with screenshots, non-English macOS instructions, and troubleshooting.
 
@@ -44,6 +48,7 @@ Edit `~/.config/open-wispr/config.json`:
   "modelSize": "base.en",
   "language": "en",
   "spokenPunctuation": false,
+  "whisperPrompt": "Use punctuation and capitalization.",
   "maxRecordings": 0,
   "toggleMode": false
 }
@@ -51,13 +56,28 @@ Edit `~/.config/open-wispr/config.json`:
 
 Then restart: `brew services restart open-wispr`
 
+To bind multiple hotkeys, use the `hotkeys` array instead:
+
+```json
+{
+  "hotkeys": [
+    { "keyCode": 63, "modifiers": [] },
+    { "keyCode": 96, "modifiers": [] }
+  ]
+}
+```
+
+Both `hotkey` (single) and `hotkeys` (array) are supported. If both are present, `hotkeys` takes precedence.
+
 | Option | Default | Values |
 |---|---|---|
 | **hotkey** | `63` | Globe (`63`), Right Option (`61`), F5 (`96`), or any key code |
+| **hotkeys** | — | Array of hotkey objects — bind multiple keys to trigger dictation |
 | **modifiers** | `[]` | `"cmd"`, `"ctrl"`, `"shift"`, `"opt"` — combine for chords |
 | **modelSize** | `"base.en"` | See model table below |
 | **language** | `"en"` | `"auto"` for auto-detect, or any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
+| **whisperPrompt** | — | Optional prompt text passed to Whisper to guide style, vocabulary, or punctuation. Omit it or leave it blank to use Whisper's default behavior. |
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
 | **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
 
@@ -74,7 +94,9 @@ Larger models are more accurate but slower and use more memory. The default `bas
 | `large-v3-turbo` | 1.6 GB | Moderate | Great | Fast multilingual, near-large accuracy |
 | `large-v3` | 3 GB | Slowest | Best | Multilingual, highest accuracy (M1 Pro+ recommended) |
 
-> **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent model without the `.en` suffix (e.g. `base.en` → `base`) and set the `language` field to your language code. Multilingual models are slightly less accurate for English but support 99 languages.
+Each model also has quantized `-q5_0` / `-q5_1` / `-q8_0` variants at ~⅓–½ the disk and RAM with minimal quality loss. See **[MODELS.md](MODELS.md)** for the complete list and tradeoffs.
+
+> **Non-English languages:** Models ending in `.en` are English-only. To use another language, switch to the equivalent multilingual model (e.g. `base.en` → `base`, or `large-v3-turbo` for the fastest large-tier option) and set the `language` field to your language code. Multilingual models are slightly less accurate for English but support 99 languages.
 
 If the Globe key opens the emoji picker: **System Settings → Keyboard → "Press 🌐 key to" → "Do Nothing"**
 

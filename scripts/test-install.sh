@@ -7,6 +7,14 @@ FAIL=0
 pass() { PASS=$((PASS + 1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL + 1)); echo "  FAIL: $1"; }
 
+INSTALLER_TRUST_TMPDIR=""
+
+cleanup_installer_trust() {
+    if [ -n "$INSTALLER_TRUST_TMPDIR" ]; then
+        rm -rf "$INSTALLER_TRUST_TMPDIR"
+    fi
+}
+
 check_output() {
     local description="$1"
     local pattern="$2"
@@ -19,6 +27,158 @@ check_output() {
         fail "$description"
     fi
 }
+
+run_stubbed_installer() {
+    local failure_mode="$1"
+
+    PATH="$INSTALLER_TRUST_TMPDIR/bin:$PATH" \
+    HOME="$INSTALLER_TRUST_TMPDIR/home" \
+    OPEN_WISPR_TEST_TAP_DIR="$INSTALLER_TRUST_TMPDIR/tap" \
+    OPEN_WISPR_TEST_PREFIX_DIR="$INSTALLER_TRUST_TMPDIR/prefix" \
+    OPEN_WISPR_TEST_BREW_FAILURE="$failure_mode" \
+    bash scripts/install.sh 2>&1
+}
+
+check_trust_failure_output() {
+    local description="$1"
+    local output="$2"
+    local status="$3"
+
+    if [ "$status" -eq 0 ]; then
+        fail "$description exits non-zero"
+    elif echo "$output" | grep -q "binary not found"; then
+        fail "$description does not fall through to binary-not-found"
+    elif ! echo "$output" | grep -q "tap is not trusted"; then
+        fail "$description explains Homebrew trust"
+    elif ! echo "$output" | grep -q -- "brew trust --formula human37/open-wispr/open-wispr"; then
+        fail "$description prints remediation command"
+    else
+        pass "$description prints remediation without binary fallback"
+    fi
+}
+
+run_installer_trust_test() {
+    local output
+    local status
+
+    INSTALLER_TRUST_TMPDIR=$(mktemp -d /tmp/open-wispr-installer-trust.XXXXXX)
+
+    mkdir -p "$INSTALLER_TRUST_TMPDIR/bin" "$INSTALLER_TRUST_TMPDIR/home" "$INSTALLER_TRUST_TMPDIR/tap"
+
+    cat > "$INSTALLER_TRUST_TMPDIR/bin/uname" <<'STUB'
+#!/bin/bash
+if [ "${1:-}" = "-m" ]; then
+    echo "arm64"
+    exit 0
+fi
+exec /usr/bin/uname "$@"
+STUB
+
+    cat > "$INSTALLER_TRUST_TMPDIR/bin/brew" <<'STUB'
+#!/bin/bash
+set -u
+
+print_trust_error() {
+    echo "Error: Cannot install human37/open-wispr/open-wispr because its tap is not trusted" >&2
+    echo "To trust this formula, run:" >&2
+    echo "  brew trust --formula human37/open-wispr/open-wispr" >&2
+}
+
+case "${1:-}" in
+    list)
+        exit 1
+        ;;
+    tap)
+        exit 0
+        ;;
+    --repository)
+        if [ "${2:-}" = "human37/open-wispr" ]; then
+            echo "${OPEN_WISPR_TEST_TAP_DIR:?}"
+            exit 0
+        fi
+        ;;
+    install)
+        if [ "${2:-}" = "open-wispr" ]; then
+            case "${OPEN_WISPR_TEST_BREW_FAILURE:-install-trust}" in
+                install-trust)
+                    print_trust_error
+                    exit 1
+                    ;;
+                reinstall-trust)
+                    exit 0
+                    ;;
+                generic)
+                    echo "Error: failed to download bottle" >&2
+                    exit 1
+                    ;;
+            esac
+        fi
+        ;;
+    reinstall)
+        if [ "${2:-}" = "open-wispr" ]; then
+            case "${OPEN_WISPR_TEST_BREW_FAILURE:-install-trust}" in
+                reinstall-trust)
+                    print_trust_error
+                    exit 1
+                    ;;
+                generic)
+                    echo "Error: failed to download bottle" >&2
+                    exit 1
+                    ;;
+                *)
+                    exit 0
+                    ;;
+            esac
+        fi
+        ;;
+    --prefix)
+        if [ "${2:-}" = "open-wispr" ]; then
+            echo "${OPEN_WISPR_TEST_PREFIX_DIR:?}"
+            exit 0
+        fi
+        ;;
+esac
+
+echo "unexpected brew invocation: $*" >&2
+exit 1
+STUB
+
+    chmod +x "$INSTALLER_TRUST_TMPDIR/bin/uname" "$INSTALLER_TRUST_TMPDIR/bin/brew"
+
+    output=$(run_stubbed_installer install-trust)
+    status=$?
+    check_trust_failure_output "installer trust error from brew install" "$output" "$status"
+
+    output=$(run_stubbed_installer reinstall-trust)
+    status=$?
+    check_trust_failure_output "installer trust error from brew reinstall" "$output" "$status"
+
+    output=$(run_stubbed_installer generic)
+    status=$?
+
+    if [ "$status" -eq 0 ]; then
+        fail "generic installer failure exits non-zero"
+    elif ! echo "$output" | grep -q "binary not found"; then
+        fail "generic installer failure keeps binary-not-found fallback"
+    elif echo "$output" | grep -q "brew trust"; then
+        fail "generic installer failure does not print trust remediation"
+    else
+        pass "generic installer failure keeps binary fallback"
+    fi
+
+    cleanup_installer_trust
+}
+
+if [ "${1:-}" = "--installer-trust" ]; then
+    echo "open-wispr installer trust test"
+    echo "-------------------------------"
+    run_installer_trust_test
+    echo ""
+    echo "-------------------------------"
+    echo "Results: $PASS passed, $FAIL failed"
+    [ "$FAIL" -eq 0 ] || exit 1
+    exit 0
+fi
 
 CONFIG_FILE="$HOME/.config/open-wispr/config.json"
 CONFIG_BACKUP=""
@@ -39,6 +199,10 @@ restore_config() {
 
 echo "open-wispr install smoke tests"
 echo "-------------------------------"
+
+echo ""
+echo "Testing installer trust handling..."
+run_installer_trust_test
 
 echo ""
 echo "Building..."

@@ -10,7 +10,7 @@ The installer handles everything automatically — Homebrew tap, formula install
 
 ## What the installer does
 
-1. **Installs via Homebrew** — taps `human37/open-wispr` and installs the formula
+1. **Installs via Homebrew** — taps `human37/open-wispr` and installs the formula. Recent versions of Homebrew (6.0+) have tightened security around third-party taps, so you may be asked to trust the package first — the installer prints the exact `brew trust` command to run if so.
 2. **Copies the app bundle** to `~/Applications/OpenWispr.app`
 3. **Requests permissions** — Microphone and Accessibility
 4. **Downloads the Whisper model** (~142 MB, one-time)
@@ -132,8 +132,12 @@ The multilingual model will be downloaded automatically on next use.
 | base | `base.en` | `base` | ~142 MB |
 | small | `small.en` | `small` | ~466 MB |
 | medium | `medium.en` | `medium` | ~1.5 GB |
+| large (turbo) | — | `large-v3-turbo` | ~1.6 GB |
+| large (v3) | — | `large-v3` | ~3 GB |
 
-Larger models are more accurate but slower. `base` is a good starting point for most languages.
+Larger models are more accurate but slower. `base` is a good starting point for most languages. There is no English-only large model upstream — pick `large-v3-turbo` for the fastest large-tier option (multilingual, near-large quality).
+
+Each model also has quantized variants at ~⅓–½ the size with minimal quality loss. See [MODELS.md](https://github.com/human37/open-wispr/blob/main/MODELS.md) for the complete list and tradeoffs.
 
 ### Common language codes
 

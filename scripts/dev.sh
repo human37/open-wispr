@@ -212,16 +212,22 @@ fi
 
 # Write config
 mkdir -p "$(dirname "$CONFIG_FILE")"
-cat > "$CONFIG_FILE" << EOF
-{
-  "language": "$lang",
-  "modelSize": "$model",
-  "spokenPunctuation": $punct,
-  "maxRecordings": $max_recordings,
-  "toggleMode": $toggle,
-  "hotkey": { "keyCode": $hotkey_code, "modifiers": $hotkey_mods_json }
-}
-EOF
+config_tmp=$(mktemp "${CONFIG_FILE}.XXXXXX")
+trap 'rm -f "$config_tmp"' EXIT
+if [ -f "$CONFIG_FILE" ]; then
+    /usr/bin/plutil -convert xml1 -o "$config_tmp" "$CONFIG_FILE"
+else
+    /usr/bin/plutil -create xml1 "$config_tmp"
+fi
+/usr/bin/plutil -replace language -string "$lang" "$config_tmp"
+/usr/bin/plutil -replace modelSize -string "$model" "$config_tmp"
+/usr/bin/plutil -replace spokenPunctuation -bool "$punct" "$config_tmp"
+/usr/bin/plutil -replace maxRecordings -integer "$max_recordings" "$config_tmp"
+/usr/bin/plutil -replace toggleMode -bool "$toggle" "$config_tmp"
+/usr/bin/plutil -replace hotkey -json "{\"keyCode\": $hotkey_code, \"modifiers\": $hotkey_mods_json}" "$config_tmp"
+/usr/bin/plutil -convert json -r "$config_tmp"
+mv "$config_tmp" "$CONFIG_FILE"
+trap - EXIT
 
 echo ""
 hotkey_name=$(keycode_to_name "$hotkey_code")

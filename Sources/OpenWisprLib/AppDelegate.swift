@@ -2,22 +2,30 @@ import AppKit
 
 public class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBar: StatusBarController!
-    var hotkeyManager: HotkeyManager?
+    var hotkeyManagers: [HotkeyManager] = []
     var recorder: AudioRecorder!
     var transcriber: Transcriber!
     var inserter: TextInserter!
     var config: Config!
-    var isPressed = false
+    var recordingLifecycle = RecordingLifecycle()
+    var currentRecordingURL: URL?
+    private var sleepWakeObservers: [NSObjectProtocol] = []
     var isReady = false
     public var lastTranscription: String?
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         statusBar = StatusBarController()
         recorder = AudioRecorder()
+        registerSleepWakeObservers()
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             self?.setup()
         }
+    }
+
+    public func applicationWillTerminate(_ notification: Notification) {
+        recorder?.teardown()
+        unregisterSleepWakeObservers()
     }
 
     private func setup() {
@@ -31,13 +39,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupInner() throws {
         config = Config.load()
         inserter = TextInserter()
-        recorder.preferredDeviceID = config.audioInputDeviceID
+        migrateAudioDeviceUIDIfNeeded()
+        recorder.preferredDeviceID = AudioDeviceManager.resolveConfiguredDeviceID(
+            uid: config.audioInputDeviceUID,
+            legacyID: config.audioInputDeviceID
+        )
         if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
             RecordingStore.deleteAllRecordings()
         }
-        transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
-        transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
-        transcriber.customDictionary = config.customDictionary ?? []
+        transcriber = makeTranscriber(for: config)
 
         DispatchQueue.main.async {
             self.statusBar.reprocessHandler = { [weak self] url in
@@ -71,6 +81,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         if !AXIsProcessTrusted() {
             print("Accessibility: not granted")
+            Permissions.promptAccessibility()
             Permissions.openAccessibilitySettings()
             print("Waiting for Accessibility permission...")
             while !AXIsProcessTrusted() {
@@ -117,29 +128,34 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func startListening() {
-        hotkeyManager = HotkeyManager(
-            keyCode: config.hotkey.keyCode,
-            modifiers: config.hotkey.modifierFlags
-        )
-
-        hotkeyManager?.start(
-            onKeyDown: { [weak self] in
-                self?.handleKeyDown()
-            },
-            onKeyUp: { [weak self] in
-                self?.handleKeyUp()
-            }
-        )
+        for m in hotkeyManagers { m.stop() }
+        hotkeyManagers = []
+        for hk in config.hotkeys {
+            let manager = HotkeyManager(
+                keyCode: hk.keyCode,
+                modifiers: hk.modifierFlags
+            )
+            manager.start(
+                onKeyDown: { [weak self] in
+                    self?.handleKeyDown()
+                },
+                onKeyUp: { [weak self] in
+                    self?.handleKeyUp()
+                }
+            )
+            hotkeyManagers.append(manager)
+        }
 
         isReady = true
         statusBar.state = .idle
         statusBar.buildMenu()
 
-        let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+        let hotkeyDesc = config.hotkeySummary()
         print("open-wispr v\(OpenWispr.version)")
         print("Hotkey: \(hotkeyDesc)")
         print("Model: \(config.modelSize)")
         print("Ready.")
+        recorder.prepare()
     }
 
     public func reloadConfig() {
@@ -147,26 +163,44 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         applyConfigChange(newConfig)
     }
 
+    /// Configs written by older versions store only the numeric AudioDeviceID,
+    /// which is not stable across reboots or device replugs. If that ID still
+    /// refers to a device, persist its UID so the selection survives.
+    private func migrateAudioDeviceUIDIfNeeded() {
+        guard config.audioInputDeviceUID == nil,
+              let legacyID = config.audioInputDeviceID,
+              let uid = AudioDeviceManager.getDeviceUID(deviceID: legacyID) else { return }
+        config.audioInputDeviceUID = uid
+        try? config.save()
+    }
+
     func applyConfigChange(_ newConfig: Config) {
         guard isReady else { return }
         let wasDownloading: Bool
         if case .downloading = statusBar.state { wasDownloading = true } else { wasDownloading = false }
+        let newDeviceID = AudioDeviceManager.resolveConfiguredDeviceID(
+            uid: newConfig.audioInputDeviceUID,
+            legacyID: newConfig.audioInputDeviceID
+        )
         config = newConfig
-        recorder.preferredDeviceID = config.audioInputDeviceID
-        transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
-        transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
-        transcriber.customDictionary = config.customDictionary ?? []
+        recorder.preferredDeviceID = newDeviceID
+        recorder.prepare()
+        transcriber = makeTranscriber(for: config)
         inserter = TextInserter()
 
-        hotkeyManager?.stop()
-        hotkeyManager = HotkeyManager(
-            keyCode: config.hotkey.keyCode,
-            modifiers: config.hotkey.modifierFlags
-        )
-        hotkeyManager?.start(
-            onKeyDown: { [weak self] in self?.handleKeyDown() },
-            onKeyUp: { [weak self] in self?.handleKeyUp() }
-        )
+        for m in hotkeyManagers { m.stop() }
+        hotkeyManagers = []
+        for hk in config.hotkeys {
+            let manager = HotkeyManager(
+                keyCode: hk.keyCode,
+                modifiers: hk.modifierFlags
+            )
+            manager.start(
+                onKeyDown: { [weak self] in self?.handleKeyDown() },
+                onKeyUp: { [weak self] in self?.handleKeyUp() }
+            )
+            hotkeyManagers.append(manager)
+        }
 
         if !wasDownloading && !Transcriber.modelExists(modelSize: config.modelSize) {
             statusBar.state = .downloading
@@ -195,8 +229,19 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusBar.buildMenu()
 
-        let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+        let hotkeyDesc = config.hotkeySummary()
         print("Config updated: lang=\(config.language) model=\(config.modelSize) hotkey=\(hotkeyDesc)")
+    }
+
+    private func makeTranscriber(for config: Config) -> Transcriber {
+        let transcriber = Transcriber(
+            modelSize: config.modelSize,
+            language: config.language,
+            whisperPrompt: config.whisperPrompt
+        )
+        transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
+        transcriber.customDictionary = config.customDictionary ?? []
+        return transcriber
     }
 
     private func handleKeyDown() {
@@ -204,30 +249,33 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         let isToggle = config.toggleMode?.value ?? false
 
-        if isToggle {
-            if isPressed {
-                handleRecordingStop()
-            } else {
-                handleRecordingStart()
-            }
-        } else {
-            guard !isPressed else { return }
+        switch recordingLifecycle.keyDown(toggleMode: isToggle) {
+        case .startRecording:
             handleRecordingStart()
+        case .stopRecording:
+            handleRecordingStop()
+        case .none, .cancelRecording, .prepareRecorder:
+            break
         }
     }
 
     private func handleKeyUp() {
-        let isToggle = config.toggleMode?.value ?? false
-        if isToggle { return }
+        guard isReady else { return }
 
-        handleRecordingStop()
+        let isToggle = config.toggleMode?.value ?? false
+
+        if recordingLifecycle.keyUp(toggleMode: isToggle) == .stopRecording {
+            handleRecordingStop()
+        }
     }
 
     private func handleRecordingStart() {
-        guard !isPressed else { return }
-        isPressed = true
         statusBar.state = .recording
         do {
+            recorder.preferredDeviceID = AudioDeviceManager.resolveConfiguredDeviceID(
+                uid: config.audioInputDeviceUID,
+                legacyID: config.audioInputDeviceID
+            )
             let outputURL: URL
             if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
                 outputURL = RecordingStore.tempRecordingURL()
@@ -235,22 +283,23 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 outputURL = RecordingStore.newRecordingURL()
             }
             try recorder.startRecording(to: outputURL)
+            currentRecordingURL = outputURL
         } catch {
             print("Error: \(error.localizedDescription)")
-            isPressed = false
+            recordingLifecycle.recordingStartFailed()
+            currentRecordingURL = nil
             statusBar.state = .idle
         }
     }
 
     private func handleRecordingStop() {
-        guard isPressed else { return }
-        isPressed = false
-
         guard let audioURL = recorder.stopRecording() else {
+            RecordingCancellation.discardTrackedPartialRecording(&currentRecordingURL)
             statusBar.state = .idle
             return
         }
 
+        currentRecordingURL = nil
         statusBar.state = .transcribing
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -298,6 +347,60 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         var text = (config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
         text = DictionaryPostProcessor.process(text, dictionary: config.customDictionary ?? [])
         return text
+    }
+
+    func handleSystemWillSleep() {
+        recorder.teardown()
+        guard recordingLifecycle.systemWillSleep() == .cancelRecording else { return }
+
+        RecordingCancellation.discardTrackedPartialRecording(&currentRecordingURL)
+        resetRecordingStatusToIdleIfNeeded()
+    }
+
+    func handleSystemDidWake() {
+        guard recordingLifecycle.systemDidWake(isReady: isReady) == .prepareRecorder else { return }
+
+        recorder.preferredDeviceID = AudioDeviceManager.resolveConfiguredDeviceID(
+            uid: config.audioInputDeviceUID,
+            legacyID: config.audioInputDeviceID
+        )
+        recorder.prepare()
+    }
+
+    private func registerSleepWakeObservers() {
+        guard sleepWakeObservers.isEmpty else { return }
+
+        let center = NSWorkspace.shared.notificationCenter
+        sleepWakeObservers = [
+            center.addObserver(
+                forName: NSWorkspace.willSleepNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.handleSystemWillSleep()
+            },
+            center.addObserver(
+                forName: NSWorkspace.didWakeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.handleSystemDidWake()
+            },
+        ]
+    }
+
+    private func unregisterSleepWakeObservers() {
+        let center = NSWorkspace.shared.notificationCenter
+        for observer in sleepWakeObservers {
+            center.removeObserver(observer)
+        }
+        sleepWakeObservers = []
+    }
+
+    private func resetRecordingStatusToIdleIfNeeded() {
+        guard case .recording = statusBar.state else { return }
+        statusBar.state = .idle
+        statusBar.buildMenu()
     }
 
     public func reprocess(audioURL: URL) {

@@ -26,7 +26,9 @@ public class RecordingStore {
     }
 
     public static func tempRecordingURL() -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("open-wispr-recording.wav")
+        let unique = String(UUID().uuidString.prefix(8))
+        return FileManager.default.temporaryDirectory
+            .appendingPathComponent("open-wispr-recording-\(unique).wav")
     }
 
     public static func newRecordingURL() -> URL {

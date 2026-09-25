@@ -88,6 +88,33 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(Config.effectiveMaxRecordings(config.maxRecordings), 0)
     }
 
+    func testConfigDecodesWhisperPrompt() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base",
+            "language": "auto",
+            "whisperPrompt": "Use punctuation and capitalization."
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.whisperPrompt, "Use punctuation and capitalization.")
+    }
+
+    func testConfigEncodesWhisperPromptRoundTrip() throws {
+        var config = Config.defaultConfig
+        config.whisperPrompt = "Prefer concise sentences."
+        let data = try JSONEncoder().encode(config)
+        let decoded = try Config.decode(from: data)
+        XCTAssertEqual(decoded.whisperPrompt, "Prefer concise sentences.")
+    }
+
+    func testConfigOmitsWhisperPromptWhenNil() throws {
+        let data = try JSONEncoder().encode(Config.defaultConfig)
+        let json = String(data: data, encoding: .utf8)!
+        XCTAssertFalse(json.contains("whisperPrompt"))
+    }
+
     // MARK: - toggleMode decoding
 
     func testConfigDecodesToggleModeTrue() throws {
@@ -180,6 +207,61 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.customDictionary?.count, 0)
     }
 
+    func testConfigEncodesCustomDictionaryRoundTrip() throws {
+        var config = Config.defaultConfig
+        config.customDictionary = [DictionaryEntry(from: "nural", to: "neural")]
+        let data = try JSONEncoder().encode(config)
+        let decoded = try Config.decode(from: data)
+        XCTAssertEqual(decoded.customDictionary, config.customDictionary)
+    }
+
+    // MARK: - audioInputDevice decoding
+
+    func testConfigDecodesAudioInputDeviceUID() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "audioInputDeviceID": 82,
+            "audioInputDeviceUID": "AppleUSBAudioEngine:Vendor:Headset:1234:1"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.audioInputDeviceID, 82)
+        XCTAssertEqual(config.audioInputDeviceUID, "AppleUSBAudioEngine:Vendor:Headset:1234:1")
+    }
+
+    func testConfigDecodesLegacyAudioInputDeviceIDWithoutUID() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "audioInputDeviceID": 82
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.audioInputDeviceID, 82)
+        XCTAssertNil(config.audioInputDeviceUID)
+    }
+
+    func testConfigEncodesAudioInputDeviceUIDRoundTrip() throws {
+        var config = Config.defaultConfig
+        config.audioInputDeviceID = 82
+        config.audioInputDeviceUID = "BuiltInMicrophoneDevice"
+        let data = try JSONEncoder().encode(config)
+        let decoded = try Config.decode(from: data)
+        XCTAssertEqual(decoded.audioInputDeviceID, 82)
+        XCTAssertEqual(decoded.audioInputDeviceUID, "BuiltInMicrophoneDevice")
+    }
+
+    func testConfigOmitsAudioInputDeviceUIDWhenNil() throws {
+        let data = try JSONEncoder().encode(Config.defaultConfig)
+        let json = String(data: data, encoding: .utf8)!
+        XCTAssertFalse(json.contains("audioInputDeviceUID"))
+    }
+
     // MARK: - Language and model constants
 
     func testSupportedLanguagesContainsEnglish() {
@@ -192,6 +274,66 @@ final class ConfigTests: XCTestCase {
 
     func testSupportedModelsContainsDefault() {
         XCTAssertTrue(Config.supportedModels.contains("base.en"))
+    }
+
+    // MARK: - Model alias resolution
+
+    func testResolveModelAliasMapsLargeToLargeV3() {
+        XCTAssertEqual(Config.resolveModelAlias("large"), "large-v3")
+    }
+
+    func testResolveModelAliasReturnsInputForNonAliased() {
+        XCTAssertEqual(Config.resolveModelAlias("base.en"), "base.en")
+        XCTAssertEqual(Config.resolveModelAlias("large-v3"), "large-v3")
+        XCTAssertEqual(Config.resolveModelAlias("nonexistent"), "nonexistent")
+    }
+
+    func testModelAliasDestinationsAreSupported() {
+        for canonical in Config.modelAliases.values {
+            XCTAssertTrue(
+                Config.supportedModels.contains(canonical),
+                "Alias destination '\(canonical)' must be in Config.supportedModels"
+            )
+        }
+    }
+
+    func testIsEnglishOnlyModelMatchesEnSuffix() {
+        XCTAssertTrue(Config.isEnglishOnlyModel("base.en"))
+        XCTAssertTrue(Config.isEnglishOnlyModel("medium.en"))
+    }
+
+    func testIsEnglishOnlyModelMatchesQuantizedEn() {
+        XCTAssertTrue(Config.isEnglishOnlyModel("tiny.en-q5_1"))
+        XCTAssertTrue(Config.isEnglishOnlyModel("medium.en-q5_0"))
+    }
+
+    func testIsEnglishOnlyModelRejectsMultilingual() {
+        XCTAssertFalse(Config.isEnglishOnlyModel("base"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3-turbo"))
+        XCTAssertFalse(Config.isEnglishOnlyModel("large-v3-turbo-q5_0"))
+    }
+
+    func testEveryEnglishModelHasMultilingualPeer() {
+        // Sanity: each English model should be a recognised English variant
+        // and each multilingual model should not.
+        let english = Config.supportedModels.filter { Config.isEnglishOnlyModel($0) }
+        let multilingual = Config.supportedModels.filter { !Config.isEnglishOnlyModel($0) }
+        XCTAssertFalse(english.isEmpty)
+        XCTAssertFalse(multilingual.isEmpty)
+        XCTAssertEqual(english.count + multilingual.count, Config.supportedModels.count)
+    }
+
+    func testConfigDecodeResolvesLargeAlias() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "large",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.modelSize, "large-v3")
     }
 
     func testConfigDecodesLanguageAuto() throws {
@@ -227,6 +369,60 @@ final class ConfigTests: XCTestCase {
     func testModifierFlagsIgnoresUnknown() {
         let config = HotkeyConfig(keyCode: 49, modifiers: ["cmd", "bogus"])
         XCTAssertEqual(config.modifierFlags, UInt64(1 << 20))
+    }
+
+    // MARK: - Multiple hotkeys
+
+    func testConfigDecodesHotkeysArray() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": []},
+                {"keyCode": 96, "modifiers": []}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.hotkeys.count, 2)
+        XCTAssertEqual(config.hotkey.keyCode, 63)
+        XCTAssertTrue(config.hotkeySummary().contains("·"))
+    }
+
+    func testConfigDeduplicatesIdenticalHotkeys() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": []},
+                {"keyCode": 63, "modifiers": []}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.hotkeys.count, 1)
+    }
+
+    func testConfigEncodeRoundtripPreservesHotkeys() throws {
+        let json = """
+        {
+            "hotkeys": [
+                {"keyCode": 63, "modifiers": []},
+                {"keyCode": 96, "modifiers": []}
+            ],
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        let data = try JSONEncoder().encode(config)
+        let again = try Config.decode(from: data)
+        XCTAssertEqual(again.hotkeys.count, 2)
+        let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertNotNil(obj?["hotkey"])
+        XCTAssertNotNil(obj?["hotkeys"])
     }
 }
 

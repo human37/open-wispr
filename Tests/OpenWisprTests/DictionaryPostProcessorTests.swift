@@ -89,6 +89,18 @@ final class DictionaryPostProcessorTests: XCTestCase {
         XCTAssertEqual(result, "hello world")
     }
 
+    func testNoMatchPreservesWhitespace() {
+        let entries = [DictionaryEntry(from: "nural", to: "neural")]
+        let text = " hello  world\tagain\n"
+        XCTAssertEqual(DictionaryPostProcessor.process(text, dictionary: entries), text)
+    }
+
+    func testReplacementPreservesSurroundingWhitespace() {
+        let entries = [DictionaryEntry(from: "chat gee pee tee", to: "ChatGPT")]
+        let result = DictionaryPostProcessor.process("Use\tchat  gee pee tee\nnow", dictionary: entries)
+        XCTAssertEqual(result, "Use\tChatGPT\nnow")
+    }
+
     func testEmptyDictionaryPassesThrough() {
         let result = DictionaryPostProcessor.process("hello world", dictionary: [])
         XCTAssertEqual(result, "hello world")

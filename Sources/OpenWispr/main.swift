@@ -33,7 +33,30 @@ func printUsage() {
 }
 
 func cmdStart() {
+    let instanceLock: DaemonInstanceLock
+    do {
+        guard let acquiredLock = try DaemonInstanceLock.acquire() else {
+            fputs("OpenWispr is already running.\n", stderr)
+            exit(0)
+        }
+        instanceLock = acquiredLock
+    } catch {
+        fputs("Error: could not acquire the OpenWispr instance lock: \(error.localizedDescription)\n", stderr)
+        exit(1)
+    }
+
     let app = NSApplication.shared
+    let terminationResult = LegacyInstanceTerminator.terminatePreviousInstances()
+    if terminationResult.foundCount > 0 {
+        print("Stopped \(terminationResult.foundCount) previous OpenWispr instance(s).")
+    }
+    if !terminationResult.remainingProcessIdentifiers.isEmpty {
+        let processList = terminationResult.remainingProcessIdentifiers
+            .map(String.init)
+            .joined(separator: ", ")
+        fputs("Could not stop previous OpenWispr process(es): \(processList).\n", stderr)
+        exit(0)
+    }
     app.setActivationPolicy(.accessory)
 
     let delegate = AppDelegate()
@@ -44,7 +67,9 @@ func cmdStart() {
         exit(0)
     }
 
-    app.run()
+    withExtendedLifetime(instanceLock) {
+        app.run()
+    }
 }
 
 func cmdSetHotkey(_ keyString: String) {
@@ -113,7 +138,7 @@ func cmdSetLanguage(_ lang: String) {
 
 func cmdGetHotkey() {
     let config = Config.load()
-    let desc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+    let desc = config.hotkeySummary()
     print("Current hotkey: \(desc)")
 }
 
@@ -128,7 +153,7 @@ func cmdDownloadModel(_ size: String) {
 
 func cmdStatus() {
     let config = Config.load()
-    let hotkeyDesc = KeyCodes.describe(keyCode: config.hotkey.keyCode, modifiers: config.hotkey.modifiers)
+    let hotkeyDesc = config.hotkeySummary()
 
     print("open-wispr v\(version)")
     print("Config:      \(Config.configFile.path)")
@@ -143,10 +168,17 @@ func cmdStatus() {
 }
 
 let args = CommandLine.arguments
-let command = args.count > 1 ? args[1] : nil
+let rawCommand = args.count > 1 ? args[1] : nil
+let command: String? = {
+    if let r = rawCommand, r.hasPrefix("-psn_") { return "start" }
+    return rawCommand
+}()
 
 switch command {
 case "start":
+    if AppBundleLaunch.relaunchThroughAppBundleIfNeeded() {
+        exit(0)
+    }
     cmdStart()
 case "set-hotkey":
     guard args.count > 2 else {

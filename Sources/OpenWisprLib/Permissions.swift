@@ -39,14 +39,19 @@ struct Permissions {
             .appendingPathComponent(".config/open-wispr")
         let versionFile = configDir.appendingPathComponent(".last-version")
         let current = OpenWispr.version
-        let previous = try? String(contentsOf: versionFile, encoding: .utf8)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let raw = (try? String(contentsOf: versionFile, encoding: .utf8))?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let previous = raw.isEmpty ? nil : raw
 
+        try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
+
+        if previous == nil {
+            try? current.write(to: versionFile, atomically: true, encoding: .utf8)
+            return false
+        }
         if previous == current {
             return false
         }
-
-        try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
         try? current.write(to: versionFile, atomically: true, encoding: .utf8)
         return true
     }

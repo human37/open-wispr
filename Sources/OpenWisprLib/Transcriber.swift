@@ -3,12 +3,14 @@ import Foundation
 public class Transcriber {
     private let modelSize: String
     private let language: String
+    private let whisperPrompt: String?
     public var spokenPunctuation: Bool = false
     public var customDictionary: [DictionaryEntry] = []
 
-    public init(modelSize: String = "base.en", language: String = "en") {
+    public init(modelSize: String = "base.en", language: String = "en", whisperPrompt: String? = nil) {
         self.modelSize = modelSize
         self.language = language
+        self.whisperPrompt = whisperPrompt
     }
 
     public func transcribe(audioURL: URL) throws -> String {
@@ -22,21 +24,7 @@ public class Transcriber {
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: whisperPath)
-        var args = [
-            "-m", modelPath,
-            "-f", audioURL.path,
-            "-l", language,
-            "--no-timestamps",
-            "-nt",
-        ]
-        if spokenPunctuation {
-            args += ["--suppress-regex", "[,\\.\\?!;:\\-—]"]
-        }
-        let prompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
-        if !prompt.isEmpty {
-            args += ["--prompt", prompt]
-        }
-        process.arguments = args
+        process.arguments = arguments(modelPath: modelPath, audioURL: audioURL)
 
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -66,6 +54,38 @@ public class Transcriber {
         }
 
         return output
+    }
+
+    func arguments(modelPath: String, audioURL: URL) -> [String] {
+        var args = [
+            "-m", modelPath,
+            "-f", audioURL.path,
+            "-l", language,
+            "-nt",
+            // Disable cross-window context carry-over. whisper.cpp feeds each
+            // 30s window's decoded text as the prompt for the next window; on
+            // long dictation this compounds into repetition/hallucination
+            // loops (sentences repeating verbatim, then trailing off).
+            // max-context 0 decodes each window independently and stops it.
+            "-mc", "0",
+        ]
+        let dictionaryPrompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
+        let prompt = [effectiveWhisperPrompt, dictionaryPrompt.isEmpty ? nil : dictionaryPrompt]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        if !prompt.isEmpty {
+            args += ["--prompt", prompt]
+        }
+        if spokenPunctuation {
+            args += ["--suppress-regex", "[,\\.\\?!;:\\-—]"]
+        }
+
+        return args
+    }
+
+    private var effectiveWhisperPrompt: String? {
+        guard let whisperPrompt else { return nil }
+        return whisperPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : whisperPrompt
     }
 
     private static let knownMarkers: Set<String> = [

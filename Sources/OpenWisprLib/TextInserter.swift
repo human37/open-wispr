@@ -3,28 +3,87 @@ import Foundation
 import Cocoa
 import Carbon.HIToolbox
 
+protocol TextInsertionPasteboard: AnyObject {
+    var pasteboardItems: [NSPasteboardItem]? { get }
+    var changeCount: Int { get }
+
+    @discardableResult
+    func clearContents() -> Int
+
+    @discardableResult
+    func setString(_ string: String, forType dataType: NSPasteboard.PasteboardType) -> Bool
+
+    @discardableResult
+    func writeItems(_ items: [NSPasteboardItem]) -> Bool
+}
+
+extension NSPasteboard: TextInsertionPasteboard {
+    func writeItems(_ items: [NSPasteboardItem]) -> Bool {
+        writeObjects(items)
+    }
+}
+
 class TextInserter {
+    typealias PasteboardProvider = () -> any TextInsertionPasteboard
+    typealias PasteAction = (CGKeyCode) -> Void
+    typealias RestoreScheduler = (_ delay: TimeInterval, _ action: @escaping () -> Void) -> Void
+
+    static let defaultRestoreDelay: TimeInterval = 1.0
+
     let pasteKeyCode: CGKeyCode
 
-    init() {
-        self.pasteKeyCode = TextInserter.resolveKeyCode(for: "v") ?? 9
+    private let pasteboardProvider: PasteboardProvider
+    private let pasteAction: PasteAction
+    private let restoreDelay: TimeInterval
+    private let scheduleRestore: RestoreScheduler
+
+    convenience init() {
+        let pasteKeyCode = TextInserter.resolveKeyCode(for: "v") ?? 9
+        self.init(
+            pasteKeyCode: pasteKeyCode,
+            pasteboardProvider: { NSPasteboard.general },
+            pasteAction: TextInserter.simulatePaste,
+            scheduleRestore: { delay, action in
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    action()
+                }
+            }
+        )
+    }
+
+    init(
+        pasteKeyCode: CGKeyCode,
+        pasteboardProvider: @escaping PasteboardProvider,
+        pasteAction: @escaping PasteAction,
+        restoreDelay: TimeInterval = TextInserter.defaultRestoreDelay,
+        scheduleRestore: @escaping RestoreScheduler
+    ) {
+        self.pasteKeyCode = pasteKeyCode
+        self.pasteboardProvider = pasteboardProvider
+        self.pasteAction = pasteAction
+        self.restoreDelay = restoreDelay
+        self.scheduleRestore = scheduleRestore
     }
 
     func insert(text: String) {
-        let pasteboard = NSPasteboard.general
+        let pasteboard = pasteboardProvider()
         let savedItems = savePasteboard(pasteboard)
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        let writeChangeCount = pasteboard.changeCount
 
-        simulatePaste()
+        pasteAction(pasteKeyCode)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        scheduleRestore(restoreDelay) {
+            // If something else has written to the pasteboard since our write
+            // (user copied something, another tool wrote), do not clobber it.
+            guard pasteboard.changeCount == writeChangeCount else { return }
             self.restorePasteboard(pasteboard, items: savedItems)
         }
     }
 
-    private func savePasteboard(_ pasteboard: NSPasteboard) -> [[(NSPasteboard.PasteboardType, Data)]] {
+    private func savePasteboard(_ pasteboard: any TextInsertionPasteboard) -> [[(NSPasteboard.PasteboardType, Data)]] {
         guard let items = pasteboard.pasteboardItems else { return [] }
         return items.map { item in
             item.types.compactMap { type in
@@ -34,7 +93,7 @@ class TextInserter {
         }
     }
 
-    private func restorePasteboard(_ pasteboard: NSPasteboard, items: [[(NSPasteboard.PasteboardType, Data)]]) {
+    private func restorePasteboard(_ pasteboard: any TextInsertionPasteboard, items: [[(NSPasteboard.PasteboardType, Data)]]) {
         pasteboard.clearContents()
         guard !items.isEmpty else { return }
         let pasteboardItems = items.map { entries -> NSPasteboardItem in
@@ -44,7 +103,7 @@ class TextInserter {
             }
             return item
         }
-        pasteboard.writeObjects(pasteboardItems)
+        pasteboard.writeItems(pasteboardItems)
     }
 
     private static func resolveKeyCode(for target: Character) -> CGKeyCode? {
@@ -91,9 +150,7 @@ class TextInserter {
         return nil
     }
 
-    private func simulatePaste() {
-        let keyCode = pasteKeyCode
-
+    private static func simulatePaste(keyCode: CGKeyCode) {
         guard let source = CGEventSource(stateID: .hidSystemState),
             let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true),
             let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false) else {

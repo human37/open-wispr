@@ -14,7 +14,12 @@ public struct DictionaryPostProcessor {
     public static func process(_ text: String, dictionary entries: [DictionaryEntry]) -> String {
         guard !entries.isEmpty, !text.isEmpty else { return text }
 
-        let tokens = text.components(separatedBy: " ").filter { !$0.isEmpty }
+        let wordPattern = try! NSRegularExpression(pattern: "\\S+")
+        let tokenRanges = wordPattern.matches(
+            in: text,
+            range: NSRange(text.startIndex..<text.endIndex, in: text)
+        ).compactMap { Range($0.range, in: text) }
+        let tokens = tokenRanges.map { String(text[$0]) }
         guard !tokens.isEmpty else { return text }
 
         var lookup: [String: [DictionaryEntry]] = [:]
@@ -27,7 +32,8 @@ public struct DictionaryPostProcessor {
             lookup[key]?.sort { phraseTokenCount($0.from) > phraseTokenCount($1.from) }
         }
 
-        var result: [String] = []
+        var result = ""
+        var cursor = text.startIndex
         var i = 0
 
         while i < tokens.count {
@@ -56,23 +62,24 @@ public struct DictionaryPostProcessor {
                     if allMatch {
                         let lastToken = tokens[i + phraseLen - 1]
                         let lastStripped = stripPunctuation(lastToken)
-                        result.append(entry.to + lastStripped.punctuation)
+                        result += text[cursor..<tokenRanges[i].lowerBound]
+                        result += entry.to + lastStripped.punctuation
+                        cursor = tokenRanges[i + phraseLen - 1].upperBound
                         i += phraseLen
                         matched = true
                         break
                     }
                 }
                 if !matched {
-                    result.append(tokens[i])
                     i += 1
                 }
             } else {
-                result.append(tokens[i])
                 i += 1
             }
         }
 
-        return result.joined(separator: " ")
+        result += text[cursor...]
+        return result
     }
 
     private static func phraseTokenCount(_ phrase: String) -> Int {

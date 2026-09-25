@@ -16,15 +16,118 @@ public struct DictionaryEntry: Codable, Equatable {
 }
 
 public struct Config: Codable {
-    public var hotkey: HotkeyConfig
+    public var hotkeys: [HotkeyConfig]
     public var modelPath: String?
     public var modelSize: String
     public var language: String
+    public var whisperPrompt: String?
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
     public var customDictionary: [DictionaryEntry]?
     public var audioInputDeviceID: UInt32?
+    public var audioInputDeviceUID: String?
+
+    public var hotkey: HotkeyConfig {
+        get { hotkeys[0] }
+        set { hotkeys = Config.deduplicateHotkeys([newValue]) }
+    }
+
+    public func hotkeySummary() -> String {
+        hotkeys
+            .map { KeyCodes.describe(keyCode: $0.keyCode, modifiers: $0.modifiers) }
+            .joined(separator: " · ")
+    }
+
+    private static func deduplicateHotkeys(_ list: [HotkeyConfig]) -> [HotkeyConfig] {
+        var out: [HotkeyConfig] = []
+        for h in list where !out.contains(h) {
+            out.append(h)
+        }
+        return out
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case hotkey
+        case hotkeys
+        case modelPath
+        case modelSize
+        case language
+        case whisperPrompt
+        case spokenPunctuation
+        case maxRecordings
+        case toggleMode
+        case customDictionary
+        case audioInputDeviceID
+        case audioInputDeviceUID
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let hotkeysList = try c.decodeIfPresent([HotkeyConfig].self, forKey: .hotkeys)
+        let legacyHotkey = try c.decodeIfPresent(HotkeyConfig.self, forKey: .hotkey)
+        if let list = hotkeysList, !list.isEmpty {
+            self.hotkeys = Config.deduplicateHotkeys(list)
+        } else if let legacy = legacyHotkey {
+            self.hotkeys = [legacy]
+        } else {
+            self.hotkeys = [HotkeyConfig(keyCode: 63, modifiers: [])]
+        }
+        self.modelPath = try c.decodeIfPresent(String.self, forKey: .modelPath)
+        self.modelSize = try c.decode(String.self, forKey: .modelSize)
+        self.language = try c.decode(String.self, forKey: .language)
+        self.whisperPrompt = try c.decodeIfPresent(String.self, forKey: .whisperPrompt)
+        self.spokenPunctuation = try c.decodeIfPresent(FlexBool.self, forKey: .spokenPunctuation)
+        self.maxRecordings = try c.decodeIfPresent(Int.self, forKey: .maxRecordings)
+        self.toggleMode = try c.decodeIfPresent(FlexBool.self, forKey: .toggleMode)
+        self.customDictionary = try c.decodeIfPresent([DictionaryEntry].self, forKey: .customDictionary)
+        self.audioInputDeviceID = try c.decodeIfPresent(UInt32.self, forKey: .audioInputDeviceID)
+        self.audioInputDeviceUID = try c.decodeIfPresent(String.self, forKey: .audioInputDeviceUID)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(hotkeys, forKey: .hotkeys)
+        try c.encode(hotkeys[0], forKey: .hotkey)
+        try c.encodeIfPresent(modelPath, forKey: .modelPath)
+        try c.encode(modelSize, forKey: .modelSize)
+        try c.encode(language, forKey: .language)
+        try c.encodeIfPresent(whisperPrompt, forKey: .whisperPrompt)
+        try c.encodeIfPresent(spokenPunctuation, forKey: .spokenPunctuation)
+        try c.encodeIfPresent(maxRecordings, forKey: .maxRecordings)
+        try c.encodeIfPresent(toggleMode, forKey: .toggleMode)
+        try c.encodeIfPresent(customDictionary, forKey: .customDictionary)
+        try c.encodeIfPresent(audioInputDeviceID, forKey: .audioInputDeviceID)
+        try c.encodeIfPresent(audioInputDeviceUID, forKey: .audioInputDeviceUID)
+    }
+
+    public init(
+        hotkeys: [HotkeyConfig],
+        modelPath: String?,
+        modelSize: String,
+        language: String,
+        whisperPrompt: String? = nil,
+        spokenPunctuation: FlexBool?,
+        maxRecordings: Int?,
+        toggleMode: FlexBool?,
+        customDictionary: [DictionaryEntry]? = nil,
+        audioInputDeviceID: UInt32? = nil,
+        audioInputDeviceUID: String? = nil
+    ) {
+        self.hotkeys = hotkeys.isEmpty
+            ? [HotkeyConfig(keyCode: 63, modifiers: [])]
+            : Config.deduplicateHotkeys(hotkeys)
+        self.modelPath = modelPath
+        self.modelSize = modelSize
+        self.language = language
+        self.whisperPrompt = whisperPrompt
+        self.spokenPunctuation = spokenPunctuation
+        self.maxRecordings = maxRecordings
+        self.toggleMode = toggleMode
+        self.customDictionary = customDictionary
+        self.audioInputDeviceID = audioInputDeviceID
+        self.audioInputDeviceUID = audioInputDeviceUID
+    }
 
     public static let supportedLanguages: [LanguageOption] = [
         LanguageOption(code: "auto", name: "Auto-Detect"),
@@ -130,12 +233,29 @@ public struct Config: Codable {
     ]
 
     public static let supportedModels: [String] = [
-        "tiny.en", "tiny",
-        "base.en", "base",
-        "small.en", "small",
-        "medium.en", "medium",
-        "large-v3-turbo", "large-v3",
+        "tiny.en", "tiny.en-q5_1",
+        "tiny",
+        "base.en", "base.en-q5_1",
+        "base",
+        "small.en", "small.en-q5_1",
+        "small",
+        "medium.en", "medium.en-q5_0",
+        "medium",
+        "large-v3-turbo", "large-v3-turbo-q8_0", "large-v3-turbo-q5_0",
+        "large-v3",
     ]
+
+    public static let modelAliases: [String: String] = [
+        "large": "large-v3",
+    ]
+
+    public static func resolveModelAlias(_ size: String) -> String {
+        return modelAliases[size] ?? size
+    }
+
+    public static func isEnglishOnlyModel(_ name: String) -> Bool {
+        return name.hasSuffix(".en") || name.contains(".en-")
+    }
 
     public static let defaultMaxRecordings = 0
 
@@ -146,10 +266,11 @@ public struct Config: Codable {
     }
 
     public static let defaultConfig = Config(
-        hotkey: HotkeyConfig(keyCode: 63, modifiers: []),
+        hotkeys: [HotkeyConfig(keyCode: 63, modifiers: [])],
         modelPath: nil,
         modelSize: "base.en",
         language: "en",
+        whisperPrompt: nil,
         spokenPunctuation: FlexBool(false),
         maxRecordings: nil,
         toggleMode: FlexBool(false)
@@ -172,7 +293,13 @@ public struct Config: Codable {
         }
 
         do {
-            return try JSONDecoder().decode(Config.self, from: data)
+            var config = try JSONDecoder().decode(Config.self, from: data)
+            let resolved = Config.resolveModelAlias(config.modelSize)
+            if resolved != config.modelSize {
+                config.modelSize = resolved
+                try? config.save()
+            }
+            return config
         } catch {
             fputs("Warning: unable to parse \(configFile.path): \(error.localizedDescription)\n", stderr)
             return Config.defaultConfig
@@ -180,7 +307,9 @@ public struct Config: Codable {
     }
 
     public static func decode(from data: Data) throws -> Config {
-        return try JSONDecoder().decode(Config.self, from: data)
+        var config = try JSONDecoder().decode(Config.self, from: data)
+        config.modelSize = Config.resolveModelAlias(config.modelSize)
+        return config
     }
 
     public func save() throws {
@@ -216,7 +345,7 @@ public struct FlexBool: Codable {
     }
 }
 
-public struct HotkeyConfig: Codable {
+public struct HotkeyConfig: Codable, Equatable {
     public var keyCode: UInt16
     public var modifiers: [String]
 

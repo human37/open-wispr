@@ -83,6 +83,74 @@ die() {
     exit 1
 }
 
+restore_formula() {
+    if [ -n "$VERSION" ] && [ -n "$TAP_DIR" ]; then
+        git -C "$TAP_DIR" checkout main -- open-wispr.rb 2>/dev/null || true
+    fi
+}
+
+is_homebrew_trust_error() {
+    local output="$1"
+    printf "%s\n" "$output" | grep -Eiq "(tap.*not trusted|formula.*not trusted|not trusted.*(tap|formula)|untrusted (tap|formula)|brew trust --(formula|tap))"
+}
+
+homebrew_trust_command() {
+    local output="$1"
+    local trust_command
+
+    trust_command=$(
+        printf "%s\n" "$output" |
+            grep -Eo "brew trust --(formula|tap)[[:space:]]+[^[:space:]]+" |
+            head -n 1 |
+            tr -d '`'
+    )
+    trust_command="${trust_command%.}"
+    trust_command="${trust_command%,}"
+
+    if [ -n "$trust_command" ]; then
+        printf "%s\n" "$trust_command"
+    else
+        printf "brew trust --formula human37/open-wispr/open-wispr\n"
+    fi
+}
+
+die_homebrew_trust_error() {
+    local output="$1"
+    local trust_command
+
+    stop_spin
+    restore_formula
+
+    fail "Homebrew requires trust before installing open-wispr."
+    printf "\n"
+    info "Homebrew reported:"
+    while IFS= read -r line; do
+        [ -n "$line" ] && info "$line"
+    done <<< "$output"
+
+    trust_command="$(homebrew_trust_command "$output")"
+
+    printf "\n"
+    info "If you trust human37/open-wispr, run:"
+    printf "\n"
+    printf "  ${BOLD}%s${NC}\n" "$trust_command"
+    printf "\n"
+    info "Then re-run this installer."
+    exit 1
+}
+
+run_brew_install_step() {
+    local action="$1"
+    local output
+    local status
+
+    output=$(brew "$action" open-wispr </dev/null 2>&1)
+    status=$?
+    if [ "$status" -ne 0 ] && is_homebrew_trust_error "$output"; then
+        die_homebrew_trust_error "$output"
+    fi
+}
+
 # ── Parse arguments ──────────────────────────────────────────────────
 VERSION=""
 while [[ $# -gt 0 ]]; do
@@ -162,11 +230,10 @@ if [ -n "$VERSION" ]; then
 fi
 
 start_spin "Installing open-wispr${VERSION:+ v$VERSION}..."
-brew install open-wispr </dev/null >/dev/null 2>&1 || true
-brew reinstall open-wispr </dev/null >/dev/null 2>&1 || true
-if [ -n "$VERSION" ]; then
-    git -C "$TAP_DIR" checkout main -- open-wispr.rb 2>/dev/null || true
-fi
+run_brew_install_step install
+run_brew_install_step reinstall
+
+restore_formula
 stop_spin
 
 BREW_PREFIX="$(brew --prefix open-wispr 2>/dev/null)"

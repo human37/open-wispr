@@ -1,104 +1,83 @@
-import AVFoundation
 import CoreAudio
 import Foundation
 
 class AudioRecorder {
-    private var audioEngine: AVAudioEngine?
-    private var audioFile: AVAudioFile?
-    private var isRecording = false
+    private let queue = DispatchQueue(label: "OpenWispr.AudioRecorder", qos: .userInitiated)
+    private var capture: AudioCaptureUnit?
     private var currentOutputURL: URL?
-    var preferredDeviceID: AudioDeviceID?
+    private var selectedDeviceID: AudioDeviceID?
+
+    var preferredDeviceID: AudioDeviceID? {
+        get { queue.sync { selectedDeviceID } }
+        set { queue.async { self.selectedDeviceID = newValue } }
+    }
+
+    func prepare() {
+        queue.async {
+            guard self.currentOutputURL == nil else { return }
+            do {
+                _ = try self.configuredCapture()
+            } catch {
+                self.capture = nil
+                print("Microphone preparation failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func teardown() {
+        queue.sync {
+            capture = nil
+            currentOutputURL = nil
+        }
+    }
+
+    private func configuredCapture() throws -> AudioCaptureUnit {
+        let defaultInput = AudioDeviceManager.getDefaultInputDeviceID()
+        let route = AudioEngineCacheState.Route(
+            inputDeviceID: selectedDeviceID ?? defaultInput,
+            outputDeviceID: AudioDeviceManager.getDefaultOutputDeviceID(),
+            defaultInputDeviceID: defaultInput
+        )
+        if let capture, capture.cacheState.canReuse(for: route) { return capture }
+        capture = nil
+        let startedAt = DispatchTime.now().uptimeNanoseconds
+        let voiceProcessing: Bool
+        if #available(macOS 14.0, *) { voiceProcessing = true } else { voiceProcessing = false }
+        let configured = try AudioCaptureUnit(route: route, voiceProcessing: voiceProcessing)
+        capture = configured
+        print("Audio setup: \((DispatchTime.now().uptimeNanoseconds - startedAt) / 1_000_000) ms; input=\(route.inputDeviceID), output=\(route.outputDeviceID)")
+        return configured
+    }
 
     func startRecording(to outputURL: URL) throws {
-        guard !isRecording else { return }
-
-        let engine = AVAudioEngine()
-
-        if let deviceID = preferredDeviceID {
-            setInputDevice(deviceID, on: engine)
-        }
-
-        let inputNode = engine.inputNode
-        let format = inputNode.outputFormat(forBus: 0)
-
-        let recordingFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: 16000,
-            channels: 1,
-            interleaved: false
-        )!
-
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 16000,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsBigEndianKey: false,
-        ]
-
-        audioFile = try AVAudioFile(forWriting: outputURL, settings: settings)
-        currentOutputURL = outputURL
-
-        let converter = AVAudioConverter(from: format, to: recordingFormat)
-
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
-            guard let self = self, let converter = converter else { return }
-
-            let convertedBuffer = AVAudioPCMBuffer(
-                pcmFormat: recordingFormat,
-                frameCapacity: AVAudioFrameCount(
-                    Double(buffer.frameLength) * 16000.0 / format.sampleRate
-                )
-            )!
-
-            var error: NSError?
-            converter.convert(to: convertedBuffer, error: &error) { _, outStatus in
-                outStatus.pointee = .haveData
-                return buffer
-            }
-
-            if error == nil && convertedBuffer.frameLength > 0 {
-                try? self.audioFile?.write(from: convertedBuffer)
+        let requestedAt = DispatchTime.now().uptimeNanoseconds
+        try queue.sync {
+            guard currentOutputURL == nil else { return }
+            do {
+                let capture = try configuredCapture()
+                try capture.start(to: outputURL, requestedAt: requestedAt)
+                currentOutputURL = outputURL
+                print("Microphone ready in \((DispatchTime.now().uptimeNanoseconds - requestedAt) / 1_000_000) ms (voice processing: \(capture.voiceProcessing))")
+            } catch {
+                capture = nil
+                throw error
             }
         }
-
-        engine.prepare()
-        try engine.start()
-
-        audioEngine = engine
-        isRecording = true
     }
 
     func stopRecording() -> URL? {
-        guard isRecording else { return nil }
-
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.stop()
-        audioEngine = nil
-        audioFile = nil
-        isRecording = false
-
-        return currentOutputURL
-    }
-
-    private func setInputDevice(_ deviceID: AudioDeviceID, on engine: AVAudioEngine) {
-        guard let audioUnit = engine.inputNode.audioUnit else {
-            print("Warning: could not access audio unit to set input device")
-            return
-        }
-
-        var devID = deviceID
-        let status = AudioUnitSetProperty(
-            audioUnit,
-            kAudioOutputUnitProperty_CurrentDevice,
-            kAudioUnitScope_Global,
-            0,
-            &devID,
-            UInt32(MemoryLayout<AudioDeviceID>.size)
-        )
-        if status != noErr {
-            print("Warning: failed to set audio input device (status: \(status))")
+        queue.sync {
+            guard let url = currentOutputURL else { return nil }
+            currentOutputURL = nil
+            do {
+                try capture?.stop()
+                return url
+            } catch {
+                capture = nil
+                try? FileManager.default.removeItem(at: url)
+                print("Recording failed: \(error.localizedDescription)")
+                return nil
+            }
         }
     }
 }
