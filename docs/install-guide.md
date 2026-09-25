@@ -65,7 +65,7 @@ For reference, here's the path in a few languages:
 
 The installer waits up to 5 minutes for Accessibility. The app remains open and will finish setup when macOS grants access. If OpenWispr already appears ON in **System Settings → Privacy & Security → Accessibility**, toggle it **OFF**, then **ON** again. The existing switch can refer to the previous app binary after a reinstall.
 
-If OpenWispr is missing from the list, add it using the steps below. You do not need to reinstall after granting access.
+If toggling does not help, remove the old OpenWispr entry and add the current app using the steps below. You do not need to reinstall after granting access.
 
 ### App not appearing in Accessibility list
 

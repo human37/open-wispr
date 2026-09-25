@@ -66,6 +66,13 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        let didUpgrade = Permissions.didUpgrade()
+        if Permissions.shouldResetAccessibility(afterUpgrade: didUpgrade, isTrusted: AXIsProcessTrusted()) {
+            print("Accessibility: version changed and permission is not granted; resetting stale entry...")
+            Permissions.resetAccessibility()
+            Thread.sleep(forTimeInterval: 1)
+        }
+
         Permissions.ensureMicrophone()
 
         if !AXIsProcessTrusted() {
