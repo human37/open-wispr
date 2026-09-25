@@ -298,6 +298,23 @@ class StatusBarController: NSObject {
         soundItem.state = config.isSoundFeedbackEnabled ? .on : .off
         menu.addItem(soundItem)
 
+        let voiceTarget = MenuItemTarget { [weak self] in
+            var cfg = Config.load()
+            cfg.voiceProcessing = FlexBool(!cfg.isVoiceProcessingEnabled)
+            try? cfg.save()
+            self?.onConfigChange?(cfg)
+        }
+        menuItemTargets.append(voiceTarget)
+        let voiceItem = NSMenuItem(title: "Voice Processing (slower)", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        voiceItem.target = voiceTarget
+        voiceItem.state = config.isVoiceProcessingEnabled ? .on : .off
+        if #available(macOS 14.0, *) {
+            voiceItem.isEnabled = true
+        } else {
+            voiceItem.isEnabled = false
+        }
+        menu.addItem(voiceItem)
+
         let dictTarget = MenuItemTarget {
             DictionaryWindowController.shared.showWindow(nil)
             DictionaryWindowController.shared.window?.makeKeyAndOrderFront(nil)
