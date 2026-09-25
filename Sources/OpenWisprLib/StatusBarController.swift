@@ -283,6 +283,18 @@ class StatusBarController: NSObject {
         toggleItem.state = (config.toggleMode?.value ?? false) ? .on : .off
         menu.addItem(toggleItem)
 
+        let soundTarget = MenuItemTarget { [weak self] in
+            var cfg = Config.load()
+            cfg.soundFeedback = FlexBool(!cfg.isSoundFeedbackEnabled)
+            try? cfg.save()
+            self?.onConfigChange?(cfg)
+        }
+        menuItemTargets.append(soundTarget)
+        let soundItem = NSMenuItem(title: "Recording Sounds", action: #selector(MenuItemTarget.invoke), keyEquivalent: "")
+        soundItem.target = soundTarget
+        soundItem.state = config.isSoundFeedbackEnabled ? .on : .off
+        menu.addItem(soundItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let lastText = (NSApplication.shared.delegate as? AppDelegate)?.lastTranscription

@@ -160,6 +160,19 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.toggleMode?.value, false)
     }
 
+    func testSoundFeedbackDefaultsOffForExistingConfigs() throws {
+        let json = #"{"modelSize":"base.en","language":"en"}"#.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertFalse(config.isSoundFeedbackEnabled)
+    }
+
+    func testSoundFeedbackCanBeEnabledAndRoundTrips() throws {
+        var config = Config.defaultConfig
+        config.soundFeedback = FlexBool(true)
+        let decoded = try Config.decode(from: JSONEncoder().encode(config))
+        XCTAssertTrue(decoded.isSoundFeedbackEnabled)
+    }
+
     // MARK: - audioInputDevice decoding
 
     func testConfigDecodesAudioInputDeviceUID() throws {
