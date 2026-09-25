@@ -69,8 +69,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let didUpgrade = Permissions.didUpgrade()
         if Permissions.shouldResetAccessibility(afterUpgrade: didUpgrade, isTrusted: AXIsProcessTrusted()) {
             print("Accessibility: version changed and permission is not granted; resetting stale entry...")
-            Permissions.resetAccessibility()
-            Thread.sleep(forTimeInterval: 1)
+            if Permissions.resetAccessibility() {
+                Permissions.recordCurrentVersion()
+                Thread.sleep(forTimeInterval: 1)
+            } else {
+                print("Accessibility: reset failed; toggle OpenWispr OFF, then ON in System Settings")
+            }
         }
 
         Permissions.ensureMicrophone()
@@ -90,6 +94,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         print("Accessibility: granted")
+        Permissions.recordCurrentVersion()
         try finishSetup()
     }
 
@@ -106,6 +111,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         accessibilityPollTimer?.invalidate()
         accessibilityPollTimer = nil
         print("Accessibility: granted")
+        Permissions.recordCurrentVersion()
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             do {
