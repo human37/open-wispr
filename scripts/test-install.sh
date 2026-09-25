@@ -46,6 +46,8 @@ check_trust_failure_output() {
 
     if [ "$status" -eq 0 ]; then
         fail "$description exits non-zero"
+    elif [[ "$output" == *$'\033'* || "$output" == *$'\r'* ]]; then
+        fail "$description keeps piped output free of terminal control sequences"
     elif echo "$output" | grep -q "binary not found"; then
         fail "$description does not fall through to binary-not-found"
     elif ! echo "$output" | grep -q "tap is not trusted"; then
