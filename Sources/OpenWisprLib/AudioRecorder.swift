@@ -12,14 +12,15 @@ class AudioRecorder {
         set { queue.async { self.selectedDeviceID = newValue } }
     }
 
-    /// Releases any idle capture unit so the next recording picks up the current route.
-    /// The unit is not created here: an initialized voice-processing unit holds the
-    /// microphone and speakers in voice-processing mode, which silences the built-in
-    /// microphone for other apps and ducks playback even while OpenWispr is idle.
     func prepare() {
         queue.async {
             guard self.currentOutputURL == nil else { return }
-            self.capture = nil
+            do {
+                _ = try self.configuredCapture()
+            } catch {
+                self.capture = nil
+                print("Microphone preparation failed: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -68,12 +69,11 @@ class AudioRecorder {
         queue.sync {
             guard let url = currentOutputURL else { return nil }
             currentOutputURL = nil
-            // Release the unit so the devices leave voice-processing mode between recordings.
-            defer { capture = nil }
             do {
                 try capture?.stop()
                 return url
             } catch {
+                capture = nil
                 try? FileManager.default.removeItem(at: url)
                 print("Recording failed: \(error.localizedDescription)")
                 return nil
