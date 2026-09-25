@@ -12,7 +12,8 @@ final class HotkeyManagerTests: XCTestCase {
             keyCode: hotkey.keyCode,
             modifiers: hotkey.modifierFlags,
             addGlobalMonitor: { _, callback in handler = callback; return NSObject() },
-            addLocalMonitor: { _, _ in nil }
+            addLocalMonitor: { _, _ in nil },
+            removeMonitor: { _ in }
         )
         manager.start(onKeyDown: { downCount += 1 }, onKeyUp: { upCount += 1 })
         defer { manager.stop() }
