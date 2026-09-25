@@ -30,13 +30,14 @@ check_output() {
 
 run_stubbed_installer() {
     local failure_mode="$1"
+    shift
 
     PATH="$INSTALLER_TRUST_TMPDIR/bin:$PATH" \
     HOME="$INSTALLER_TRUST_TMPDIR/home" \
     OPEN_WISPR_TEST_TAP_DIR="$INSTALLER_TRUST_TMPDIR/tap" \
     OPEN_WISPR_TEST_PREFIX_DIR="$INSTALLER_TRUST_TMPDIR/prefix" \
     OPEN_WISPR_TEST_BREW_FAILURE="$failure_mode" \
-    bash scripts/install.sh 2>&1
+    bash scripts/install.sh "$@" 2>&1
 }
 
 check_trust_failure_output() {
@@ -54,8 +55,10 @@ check_trust_failure_output() {
         fail "$description explains Homebrew trust"
     elif ! echo "$output" | grep -q -- "brew trust --formula human37/open-wispr/open-wispr"; then
         fail "$description prints remediation command"
+    elif ! echo "$output" | grep -Fq -- "curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh | bash"; then
+        fail "$description prints installer retry command"
     else
-        pass "$description prints remediation without binary fallback"
+        pass "$description prints trust and retry commands without binary fallback"
     fi
 }
 
@@ -145,7 +148,15 @@ echo "unexpected brew invocation: $*" >&2
 exit 1
 STUB
 
-    chmod +x "$INSTALLER_TRUST_TMPDIR/bin/uname" "$INSTALLER_TRUST_TMPDIR/bin/brew"
+    cat > "$INSTALLER_TRUST_TMPDIR/bin/git" <<'STUB'
+#!/bin/bash
+case " $* " in
+    *" log "*) echo "test-formula-commit" ;;
+esac
+exit 0
+STUB
+
+    chmod +x "$INSTALLER_TRUST_TMPDIR/bin/uname" "$INSTALLER_TRUST_TMPDIR/bin/brew" "$INSTALLER_TRUST_TMPDIR/bin/git"
 
     output=$(run_stubbed_installer install-trust)
     status=$?
@@ -154,6 +165,14 @@ STUB
     output=$(run_stubbed_installer reinstall-trust)
     status=$?
     check_trust_failure_output "installer trust error from brew reinstall" "$output" "$status"
+
+    output=$(run_stubbed_installer install-trust --version 1.2.3)
+    status=$?
+    if [ "$status" -eq 0 ] || ! echo "$output" | grep -Fq -- "| bash -s -- --version 1.2.3"; then
+        fail "installer retry preserves requested version"
+    else
+        pass "installer retry preserves requested version"
+    fi
 
     output=$(run_stubbed_installer generic)
     status=$?

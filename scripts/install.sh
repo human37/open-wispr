@@ -154,7 +154,13 @@ die_homebrew_trust_error() {
     printf "\n"
     printf "  ${BOLD}%s${NC}\n" "$trust_command"
     printf "\n"
-    info "Then re-run this installer."
+    info "Then reinstall with:"
+    printf "\n"
+    printf "  ${BOLD}curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh | bash"
+    if [ -n "$VERSION" ]; then
+        printf ' -s -- --version %q' "$VERSION"
+    fi
+    printf "${NC}\n"
     exit 1
 }
 
