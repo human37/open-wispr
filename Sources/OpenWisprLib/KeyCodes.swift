@@ -35,13 +35,17 @@ public struct KeyCodes {
     }()
 
     public static func parse(_ input: String) -> (keyCode: UInt16, modifiers: [String])? {
-        let parts = input.lowercased().split(separator: "+").map { String($0).trimmingCharacters(in: .whitespaces) }
+        let parts = input.lowercased().split(separator: "+", omittingEmptySubsequences: false)
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
 
         guard let keyName = parts.last, let code = nameToCode[keyName] else {
             return nil
         }
 
         let modifiers = Array(parts.dropLast())
+        guard modifiers.allSatisfy({ HotkeyConfig.flag(for: $0) != nil }) else {
+            return nil
+        }
         return (code, modifiers)
     }
 
