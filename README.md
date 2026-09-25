@@ -104,6 +104,8 @@ If the Globe key opens the emoji picker: **System Settings → Keyboard → "Pre
 
 Click the waveform icon for status and options. **Recent Recordings** lists your last recordings; click one to re-transcribe and copy the result to the clipboard.
 
+Since OpenWispr runs as a background agent (no Dock icon while active), it's easy to lose track of after install — it's often missing from Spotlight's Applications results too. **Add to Dock** in the menu pins it to the Dock like a normal app so you can find and relaunch it later.
+
 | State | Icon |
 |---|---|
 | Idle | Waveform outline |

@@ -324,6 +324,20 @@ class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
+        let bundlePath = Bundle.main.bundlePath
+        let alreadyPinned = DockInstaller.isInDock(bundlePath: bundlePath)
+        let dockItem = NSMenuItem(
+            title: alreadyPinned ? "Pinned to Dock" : "Add to Dock",
+            action: alreadyPinned ? nil : #selector(pinToDock),
+            keyEquivalent: ""
+        )
+        dockItem.target = self
+        dockItem.isEnabled = !alreadyPinned
+        if alreadyPinned { dockItem.state = .on }
+        menu.addItem(dockItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let reloadItem = NSMenuItem(title: "Reload Configuration", action: #selector(reloadConfiguration), keyEquivalent: "r")
         reloadItem.target = self
         menu.addItem(reloadItem)
@@ -350,6 +364,19 @@ class StatusBarController: NSObject {
             try? config.save()
         }
         NSWorkspace.shared.open(configFile)
+    }
+
+    @objc private func pinToDock() {
+        let bundlePath = Bundle.main.bundlePath
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let succeeded = DockInstaller.addToDock(bundlePath: bundlePath)
+            DispatchQueue.main.async {
+                if !succeeded {
+                    self?.state = .error("Couldn't pin to Dock")
+                }
+                self?.buildMenu()
+            }
+        }
     }
 
     private func updateIcon() {
