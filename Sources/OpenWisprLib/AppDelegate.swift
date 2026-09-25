@@ -318,7 +318,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.async {
                     if !text.isEmpty {
                         self.lastTranscription = text
-                        self.inserter.insert(text: text)
+                        if self.inserter.insert(text: text) == .copiedToClipboard {
+                            self.statusBar.state = .copiedToClipboard
+                            self.statusBar.buildMenu()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                if case .copiedToClipboard = self.statusBar.state {
+                                    self.statusBar.state = .idle
+                                    self.statusBar.buildMenu()
+                                }
+                            }
+                            return
+                        }
                     }
                     self.statusBar.state = .idle
                     self.statusBar.buildMenu()

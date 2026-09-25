@@ -68,15 +68,47 @@ final class TextInserterTests: XCTestCase {
         XCTAssertFalse(pasteboard.events.contains("writeItems"))
     }
 
+    func testNoFocusedTextInputKeepsTranscriptionOnClipboardWithoutPasting() {
+        let pasteboard = FakePasteboard(string: "old clipboard")
+        let scheduler = CapturingScheduler()
+        var pasteCount = 0
+        let inserter = makeInserter(pasteboard: pasteboard, scheduler: scheduler,
+                                   focusedTextInputProvider: { false }) { _ in
+            pasteCount += 1
+        }
+
+        XCTAssertEqual(inserter.insert(text: "new transcription"), .copiedToClipboard)
+        XCTAssertEqual(pasteboard.string(forType: .string), "new transcription")
+        XCTAssertEqual(pasteCount, 0)
+        XCTAssertTrue(scheduler.scheduledActions.isEmpty)
+    }
+
+    func testUnknownFocusKeepsExistingPasteBehavior() {
+        let pasteboard = FakePasteboard(string: "old clipboard")
+        let scheduler = CapturingScheduler()
+        var pasteCount = 0
+        let inserter = makeInserter(pasteboard: pasteboard, scheduler: scheduler,
+                                   focusedTextInputProvider: { nil }) { _ in
+            pasteCount += 1
+        }
+
+        XCTAssertEqual(inserter.insert(text: "new transcription"), .pasted)
+        XCTAssertEqual(pasteCount, 1)
+        scheduler.runOnlyScheduledAction()
+        XCTAssertEqual(pasteboard.string(forType: .string), "old clipboard")
+    }
+
     private func makeInserter(
         pasteboard: FakePasteboard,
         scheduler: CapturingScheduler,
+        focusedTextInputProvider: @escaping () -> Bool? = { true },
         pasteAction: @escaping (CGKeyCode) -> Void = { _ in }
     ) -> TextInserter {
         TextInserter(
             pasteKeyCode: 9,
             pasteboardProvider: { pasteboard },
             pasteAction: pasteAction,
+            focusedTextInputProvider: focusedTextInputProvider,
             scheduleRestore: { delay, action in
                 scheduler.schedule(delay: delay, action: action)
             }
