@@ -81,6 +81,8 @@ Both `hotkey` (single) and `hotkeys` (array) are supported. If both are present,
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
 | **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
 
+Caps Lock cannot be used as a hotkey: macOS toggles its state rather than sending a release event, so it cannot provide reliable hold-to-talk behavior.
+
 ### Models
 
 Larger models are more accurate but slower and use more memory. The default `base.en` is a good balance for most users.
