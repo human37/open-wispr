@@ -82,6 +82,20 @@ final class KeyCodesTests: XCTestCase {
         XCTAssertNil(KeyCodes.parse("nonexistent"))
     }
 
+    func testParseRejectsUnknownAndEmptyModifiers() {
+        XCTAssertNil(KeyCodes.parse("bogus+cmd"))
+        XCTAssertNil(KeyCodes.parse("cmd++space"))
+        XCTAssertNil(KeyCodes.parse("+space"))
+    }
+
+    func testParseAcceptsFunctionModifierAliases() {
+        for name in ["fn", "globe", "function"] {
+            let parsed = KeyCodes.parse("\(name)+cmd")
+            XCTAssertEqual(parsed?.keyCode, 55)
+            XCTAssertEqual(parsed?.modifiers, [name])
+        }
+    }
+
     func testParseTrimsWhitespace() {
         let result = KeyCodes.parse("ctrl + space")
         XCTAssertNotNil(result)
