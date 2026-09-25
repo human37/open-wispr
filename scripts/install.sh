@@ -1,15 +1,24 @@
 #!/bin/bash
 
-# ── Colors & formatting ──────────────────────────────────────────────
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-DIM='\033[2m'
-BOLD='\033[1m'
-NC='\033[0m'
+# ── Terminal presentation ────────────────────────────────────────────
+# Use the terminal's ANSI palette so colors follow its light or dark theme.
+# Keep headings and body text in the terminal's default foreground.
+GREEN='' RED='' ACCENT='' DIM='' BOLD='' NC=''
+if [ -t 1 ] && [ -z "${NO_COLOR+x}" ] && [ "${TERM:-}" != "dumb" ]; then
+    GREEN=$'\033[32m'
+    RED=$'\033[31m'
+    ACCENT=$'\033[36m'
+    DIM=$'\033[2m'
+    BOLD=$'\033[1m'
+    NC=$'\033[0m'
+fi
 
-SPINNER_FRAMES=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+ANIMATE=false
+if [ -t 1 ] && [ "${TERM:-}" != "dumb" ]; then
+    ANIMATE=true
+fi
+
+SPINNER_FRAMES=("●····" "·●···" "··●··" "···●·" "····●" "···●·" "··●··" "·●···")
 SPIN_PID=""
 LOG=/opt/homebrew/var/log/open-wispr.log
 
@@ -19,33 +28,42 @@ cleanup() {
 trap cleanup EXIT
 
 step() {
-    printf "\n  ${BLUE}${BOLD}%s${NC}\n" "$1"
+    printf "\n  ${ACCENT}▌${NC} ${BOLD}%s${NC}\n" "$1"
 }
 
 ok() {
-    printf "\r\033[K  ${GREEN}✓${NC} %b\n" "$1"
+    printf "  ${GREEN}✓${NC} %b\n" "$1"
 }
 
 info() {
-    printf "  ${DIM}%b${NC}\n" "$1"
+    printf "  ${DIM}·${NC} %b\n" "$1"
 }
 
 fail() {
-    printf "\r\033[K  ${RED}✗${NC} %b\n" "$1"
+    printf "  ${RED}✗${NC} %b\n" "$1"
 }
 
 spin() {
+    local message="$1"
+    local started_at=$SECONDS
+    local elapsed
     while true; do
         for frame in "${SPINNER_FRAMES[@]}"; do
-            printf "\r\033[K  ${YELLOW}%s${NC} %b" "$frame" "$1"
-            sleep 0.1
+            elapsed=$((SECONDS - started_at))
+            printf "\r\033[2K  ${BOLD}%s${NC} %s ${DIM}%02d:%02d${NC}" \
+                "$frame" "$message" "$((elapsed / 60))" "$((elapsed % 60))"
+            sleep 0.12
         done
     done
 }
 
 start_spin() {
-    spin "$1" &
-    SPIN_PID=$!
+    if [ "$ANIMATE" = true ]; then
+        spin "$1" &
+        SPIN_PID=$!
+    else
+        info "$1"
+    fi
 }
 
 stop_spin() {
@@ -53,6 +71,7 @@ stop_spin() {
         kill "$SPIN_PID" 2>/dev/null
         wait "$SPIN_PID" 2>/dev/null
         SPIN_PID=""
+        printf '\r\033[2K'
     fi
 }
 
@@ -135,7 +154,13 @@ die_homebrew_trust_error() {
     printf "\n"
     printf "  ${BOLD}%s${NC}\n" "$trust_command"
     printf "\n"
-    info "Then re-run this installer."
+    info "Then reinstall with:"
+    printf "\n"
+    printf "  ${BOLD}curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/install.sh | bash"
+    if [ -n "$VERSION" ]; then
+        printf ' -s -- --version %q' "$VERSION"
+    fi
+    printf "${NC}\n"
     exit 1
 }
 
@@ -277,7 +302,6 @@ fi
 if wait_for_log "Accessibility: granted" 5; then
     ok "Accessibility"
 else
-    printf "\r\033[K"
     info "macOS needs Accessibility permission to detect your hotkey."
     info "System Settings will open — find ${BOLD}OpenWispr${NC} and toggle it ${BOLD}ON${NC}."
     info "If it already shows ON, toggle it ${BOLD}OFF${NC}, then ${BOLD}ON${NC} again.\n"
@@ -332,5 +356,5 @@ printf "\n"
 printf "\n"
 printf "  Hold your hotkey, speak, release -- text appears at cursor.\n"
 printf "\n"
-printf "  ${DIM}If you want to support development: ${BLUE}https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00${NC}\n"
+printf "  ${DIM}If you want to support development: ${ACCENT}https://buy.stripe.com/4gM5kC2AU0Ssd4l6Hqd7q00${NC}\n"
 printf "\n"
