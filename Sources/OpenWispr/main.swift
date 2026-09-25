@@ -73,6 +73,13 @@ func cmdStart() {
 }
 
 func cmdSetHotkey(_ keyString: String) {
+    let keyNames = keyString.lowercased().split(separator: "+")
+        .map { $0.trimmingCharacters(in: .whitespaces) }
+    if keyNames.contains("capslock") {
+        print("Error: Caps Lock cannot be used as a hotkey because macOS toggles it instead of sending a key release. Choose another key.")
+        exit(1)
+    }
+
     guard let parsed = KeyCodes.parse(keyString) else {
         print("Error: Unknown key '\(keyString)'")
         print("Run 'open-wispr --help' for examples")

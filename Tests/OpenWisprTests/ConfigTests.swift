@@ -115,6 +115,20 @@ final class ConfigTests: XCTestCase {
         XCTAssertFalse(json.contains("whisperPrompt"))
     }
 
+    func testVADDefaultsOffForLegacyConfigAndThresholdIsBounded() throws {
+        let json = #"{"modelSize":"base.en","language":"en"}"#.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertFalse(config.isVADEnabled)
+        XCTAssertEqual(config.effectiveVADThreshold, 0.5)
+
+        var updated = config
+        updated.voiceActivityDetection = true
+        updated.vadThreshold = 2.0
+        let decoded = try Config.decode(from: JSONEncoder().encode(updated))
+        XCTAssertTrue(decoded.isVADEnabled)
+        XCTAssertEqual(decoded.effectiveVADThreshold, 1.0)
+    }
+
     // MARK: - toggleMode decoding
 
     func testConfigDecodesToggleModeTrue() throws {
@@ -158,6 +172,74 @@ final class ConfigTests: XCTestCase {
     func testConfigDefaultToggleModeIsFalse() {
         let config = Config.defaultConfig
         XCTAssertEqual(config.toggleMode?.value, false)
+    }
+
+    func testSoundFeedbackDefaultsOffForExistingConfigs() throws {
+        let json = #"{"modelSize":"base.en","language":"en"}"#.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertFalse(config.isSoundFeedbackEnabled)
+    }
+
+    func testSoundFeedbackCanBeEnabledAndRoundTrips() throws {
+        var config = Config.defaultConfig
+        config.soundFeedback = FlexBool(true)
+        let decoded = try Config.decode(from: JSONEncoder().encode(config))
+        XCTAssertTrue(decoded.isSoundFeedbackEnabled)
+    }
+
+    // MARK: - customDictionary decoding
+
+    func testConfigDecodesWithCustomDictionary() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "customDictionary": [
+                {"from": "nural", "to": "neural"},
+                {"from": "chat gee pee tee", "to": "ChatGPT"}
+            ]
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.customDictionary?.count, 2)
+        XCTAssertEqual(config.customDictionary?[0].from, "nural")
+        XCTAssertEqual(config.customDictionary?[0].to, "neural")
+        XCTAssertEqual(config.customDictionary?[1].from, "chat gee pee tee")
+        XCTAssertEqual(config.customDictionary?[1].to, "ChatGPT")
+    }
+
+    func testConfigDecodesWithoutCustomDictionary() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en"
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertNil(config.customDictionary)
+    }
+
+    func testConfigDecodesEmptyCustomDictionary() throws {
+        let json = """
+        {
+            "hotkey": {"keyCode": 63, "modifiers": []},
+            "modelSize": "base.en",
+            "language": "en",
+            "customDictionary": []
+        }
+        """.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertEqual(config.customDictionary?.count, 0)
+    }
+
+    func testConfigEncodesCustomDictionaryRoundTrip() throws {
+        var config = Config.defaultConfig
+        config.customDictionary = [DictionaryEntry(from: "nural", to: "neural")]
+        let data = try JSONEncoder().encode(config)
+        let decoded = try Config.decode(from: data)
+        XCTAssertEqual(decoded.customDictionary, config.customDictionary)
     }
 
     // MARK: - audioInputDevice decoding
@@ -311,9 +393,16 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(config.modifierFlags, 0)
     }
 
-    func testModifierFlagsIgnoresUnknown() {
+    func testModifierFlagsFailClosedForUnknown() {
         let config = HotkeyConfig(keyCode: 49, modifiers: ["cmd", "bogus"])
-        XCTAssertEqual(config.modifierFlags, UInt64(1 << 20))
+        XCTAssertEqual(config.modifierFlags, UInt64.max)
+    }
+
+    func testModifierFlagsFunctionAliases() {
+        for name in ["fn", "globe", "function"] {
+            let config = HotkeyConfig(keyCode: 55, modifiers: [name])
+            XCTAssertEqual(config.modifierFlags, UInt64(1 << 23), name)
+        }
     }
 
     // MARK: - Multiple hotkeys
