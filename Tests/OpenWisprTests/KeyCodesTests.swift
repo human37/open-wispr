@@ -27,7 +27,7 @@ final class KeyCodesTests: XCTestCase {
         let modifiers = ["cmd", "leftcmd", "rightcmd", "shift", "leftshift", "rightshift",
                          "option", "leftoption", "rightoption", "alt", "leftalt", "rightalt",
                          "ctrl", "leftctrl", "rightctrl", "control", "rightcontrol",
-                         "fn", "globe", "capslock"]
+                         "fn", "globe"]
         for mod in modifiers {
             XCTAssertNotNil(KeyCodes.nameToCode[mod], "Missing modifier: \(mod)")
         }
@@ -80,6 +80,26 @@ final class KeyCodesTests: XCTestCase {
 
     func testParseUnknownKeyReturnsNil() {
         XCTAssertNil(KeyCodes.parse("nonexistent"))
+    }
+
+    func testParseRejectsCapsLock() {
+        XCTAssertNil(KeyCodes.parse("capslock"))
+        XCTAssertNil(KeyCodes.parse("ctrl+capslock"))
+        XCTAssertNil(KeyCodes.parse("capslock+space"))
+    }
+
+    func testParseRejectsUnknownAndEmptyModifiers() {
+        XCTAssertNil(KeyCodes.parse("bogus+cmd"))
+        XCTAssertNil(KeyCodes.parse("cmd++space"))
+        XCTAssertNil(KeyCodes.parse("+space"))
+    }
+
+    func testParseAcceptsFunctionModifierAliases() {
+        for name in ["fn", "globe", "function"] {
+            let parsed = KeyCodes.parse("\(name)+cmd")
+            XCTAssertEqual(parsed?.keyCode, 55)
+            XCTAssertEqual(parsed?.modifiers, [name])
+        }
     }
 
     func testParseTrimsWhitespace() {

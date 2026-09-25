@@ -27,6 +27,12 @@ class TextInserter {
     typealias PasteboardProvider = () -> any TextInsertionPasteboard
     typealias PasteAction = (CGKeyCode) -> Void
     typealias RestoreScheduler = (_ delay: TimeInterval, _ action: @escaping () -> Void) -> Void
+    typealias FocusedTextInputProvider = () -> Bool?
+
+    enum InsertionResult: Equatable {
+        case pasted
+        case copiedToClipboard
+    }
 
     static let defaultRestoreDelay: TimeInterval = 1.0
 
@@ -34,6 +40,7 @@ class TextInserter {
 
     private let pasteboardProvider: PasteboardProvider
     private let pasteAction: PasteAction
+    private let focusedTextInputProvider: FocusedTextInputProvider
     private let restoreDelay: TimeInterval
     private let scheduleRestore: RestoreScheduler
 
@@ -43,6 +50,7 @@ class TextInserter {
             pasteKeyCode: pasteKeyCode,
             pasteboardProvider: { NSPasteboard.general },
             pasteAction: TextInserter.simulatePaste,
+            focusedTextInputProvider: TextInserter.hasFocusedTextInput,
             scheduleRestore: { delay, action in
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                     action()
@@ -55,23 +63,31 @@ class TextInserter {
         pasteKeyCode: CGKeyCode,
         pasteboardProvider: @escaping PasteboardProvider,
         pasteAction: @escaping PasteAction,
+        focusedTextInputProvider: @escaping FocusedTextInputProvider = { true },
         restoreDelay: TimeInterval = TextInserter.defaultRestoreDelay,
         scheduleRestore: @escaping RestoreScheduler
     ) {
         self.pasteKeyCode = pasteKeyCode
         self.pasteboardProvider = pasteboardProvider
         self.pasteAction = pasteAction
+        self.focusedTextInputProvider = focusedTextInputProvider
         self.restoreDelay = restoreDelay
         self.scheduleRestore = scheduleRestore
     }
 
-    func insert(text: String) {
+    @discardableResult
+    func insert(text: String) -> InsertionResult {
         let pasteboard = pasteboardProvider()
-        let savedItems = savePasteboard(pasteboard)
+        // A failed accessibility query is inconclusive; preserve the existing
+        // paste behavior rather than silently routing text to the clipboard.
+        let shouldPaste = focusedTextInputProvider() != false
+        let savedItems = shouldPaste ? savePasteboard(pasteboard) : []
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
         let writeChangeCount = pasteboard.changeCount
+
+        guard shouldPaste else { return .copiedToClipboard }
 
         pasteAction(pasteKeyCode)
 
@@ -81,6 +97,49 @@ class TextInserter {
             guard pasteboard.changeCount == writeChangeCount else { return }
             self.restorePasteboard(pasteboard, items: savedItems)
         }
+        return .pasted
+    }
+
+    private static func hasFocusedTextInput() -> Bool? {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return false }
+        let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
+        var focusedValue: CFTypeRef?
+        let focusResult = AXUIElementCopyAttributeValue(
+            applicationElement, kAXFocusedUIElementAttribute as CFString, &focusedValue
+        )
+        if focusResult == .noValue { return false }
+        guard focusResult == .success, let focusedValue,
+              CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else { return nil }
+
+        let focusedElement = focusedValue as! AXUIElement
+        var roleValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            focusedElement, kAXRoleAttribute as CFString, &roleValue
+        ) == .success, let role = roleValue as? String else { return nil }
+
+        var editableValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(
+            focusedElement, kAXIsEditableAttribute as CFString, &editableValue
+        ) == .success, let isEditable = editableValue as? Bool, isEditable {
+            return true
+        }
+
+        if role == (kAXTextFieldRole as String)
+            || role == (kAXTextAreaRole as String)
+            || role == (kAXComboBoxRole as String) {
+            return true
+        }
+
+        // Custom editors may use other roles. Keep pasting unless the focused
+        // role is clearly not a text input.
+        if role == (kAXButtonRole as String)
+            || role == (kAXCheckBoxRole as String)
+            || role == (kAXRadioButtonRole as String)
+            || role == (kAXMenuItemRole as String)
+            || role == (kAXWindowRole as String) {
+            return false
+        }
+        return nil
     }
 
     private func savePasteboard(_ pasteboard: any TextInsertionPasteboard) -> [[(NSPasteboard.PasteboardType, Data)]] {

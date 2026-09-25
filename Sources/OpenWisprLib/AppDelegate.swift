@@ -8,8 +8,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     var inserter: TextInserter!
     var config: Config!
     var recordingLifecycle = RecordingLifecycle()
+    private let recordingSoundFeedback = RecordingSoundFeedback()
     var currentRecordingURL: URL?
     private var sleepWakeObservers: [NSObjectProtocol] = []
+    private var accessibilityPollTimer: Timer?
     var isReady = false
     public var lastTranscription: String?
 
@@ -24,6 +26,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     public func applicationWillTerminate(_ notification: Notification) {
+        accessibilityPollTimer?.invalidate()
         recorder?.teardown()
         unregisterSleepWakeObservers()
     }
@@ -33,6 +36,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             try setupInner()
         } catch {
             print("Fatal setup error: \(error.localizedDescription)")
+            DispatchQueue.main.async { [weak self] in
+                self?.statusBar.state = .error(error.localizedDescription)
+                self?.statusBar.updateDownloadProgress(nil)
+            }
         }
     }
 
@@ -64,16 +71,14 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        if Permissions.didUpgrade() {
-            print("Accessibility: upgrade detected, resetting permissions...")
-            Permissions.resetAccessibility()
-            Thread.sleep(forTimeInterval: 1)
-        }
-
-        if !AXIsProcessTrusted() {
-            DispatchQueue.main.async {
-                self.statusBar.state = .waitingForPermission
-                self.statusBar.buildMenu()
+        let didUpgrade = Permissions.didUpgrade()
+        if Permissions.shouldResetAccessibility(afterUpgrade: didUpgrade, isTrusted: AXIsProcessTrusted()) {
+            print("Accessibility: version changed and permission is not granted; resetting stale entry...")
+            if Permissions.resetAccessibility() {
+                Permissions.recordCurrentVersion()
+                Thread.sleep(forTimeInterval: 1)
+            } else {
+                print("Accessibility: reset failed; toggle OpenWispr OFF, then ON in System Settings")
             }
         }
 
@@ -81,17 +86,48 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         if !AXIsProcessTrusted() {
             print("Accessibility: not granted")
-            Permissions.promptAccessibility()
-            Permissions.openAccessibilitySettings()
             print("Waiting for Accessibility permission...")
-            while !AXIsProcessTrusted() {
-                Thread.sleep(forTimeInterval: 0.5)
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.statusBar.state = .waitingForPermission
+                self.statusBar.buildMenu()
+                Permissions.promptAccessibility()
+                Permissions.openAccessibilitySettings()
+                self.startAccessibilityPolling()
             }
-            print("Accessibility: granted")
-        } else {
-            print("Accessibility: granted")
+            return
         }
 
+        print("Accessibility: granted")
+        Permissions.recordCurrentVersion()
+        try finishSetup()
+    }
+
+    private func startAccessibilityPolling() {
+        guard accessibilityPollTimer == nil else { return }
+        accessibilityPollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.resumeWhenAccessibilityGranted()
+        }
+        resumeWhenAccessibilityGranted()
+    }
+
+    private func resumeWhenAccessibilityGranted() {
+        guard AXIsProcessTrusted() else { return }
+        accessibilityPollTimer?.invalidate()
+        accessibilityPollTimer = nil
+        print("Accessibility: granted")
+        Permissions.recordCurrentVersion()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            do {
+                try self.finishSetup()
+            } catch {
+                print("Fatal setup error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func finishSetup() throws {
         if !Transcriber.modelExists(modelSize: config.modelSize) {
             DispatchQueue.main.async {
                 self.statusBar.state = .downloading
@@ -120,6 +156,19 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 return
             }
+        }
+
+        if config.isVADEnabled && Transcriber.findVADModel() == nil {
+            DispatchQueue.main.async {
+                self.statusBar.state = .downloading
+                self.statusBar.updateDownloadProgress("Downloading voice activity model...")
+            }
+            try ModelDownloader.downloadVAD { [weak self] percent in
+                DispatchQueue.main.async {
+                    self?.statusBar.updateDownloadProgress("Downloading voice activity model... \(Int(percent))%", percent: percent)
+                }
+            }
+            DispatchQueue.main.async { self.statusBar.updateDownloadProgress(nil) }
         }
 
         DispatchQueue.main.async { [weak self] in
@@ -202,15 +251,30 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             hotkeyManagers.append(manager)
         }
 
-        if !wasDownloading && !Transcriber.modelExists(modelSize: config.modelSize) {
+        let needsWhisperModel = !Transcriber.modelExists(modelSize: config.modelSize)
+        let needsVADModel = config.isVADEnabled && Transcriber.findVADModel() == nil
+        if !wasDownloading && (needsWhisperModel || needsVADModel) {
             statusBar.state = .downloading
-            statusBar.updateDownloadProgress("Downloading \(config.modelSize) model...")
+            statusBar.updateDownloadProgress(needsWhisperModel
+                ? "Downloading \(config.modelSize) model..."
+                : "Downloading voice activity model...")
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 do {
-                    try ModelDownloader.download(modelSize: newConfig.modelSize) { percent in
+                    if needsWhisperModel {
+                        try ModelDownloader.download(modelSize: newConfig.modelSize) { percent in
+                            DispatchQueue.main.async {
+                                self?.statusBar.updateDownloadProgress("Downloading \(newConfig.modelSize) model... \(Int(percent))%", percent: percent)
+                            }
+                        }
+                    }
+                    if needsVADModel {
                         DispatchQueue.main.async {
-                            let pct = Int(percent)
-                            self?.statusBar.updateDownloadProgress("Downloading \(newConfig.modelSize) model... \(pct)%", percent: percent)
+                            self?.statusBar.updateDownloadProgress("Downloading voice activity model...")
+                        }
+                        try ModelDownloader.downloadVAD { percent in
+                            DispatchQueue.main.async {
+                                self?.statusBar.updateDownloadProgress("Downloading voice activity model... \(Int(percent))%", percent: percent)
+                            }
                         }
                     }
                     DispatchQueue.main.async {
@@ -220,8 +284,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 } catch {
                     DispatchQueue.main.async {
                         print("Error downloading model: \(error.localizedDescription)")
-                        self?.statusBar.state = .idle
-                        self?.statusBar.updateDownloadProgress(nil)
+                        self?.statusBar.state = .error(error.localizedDescription)
+                        self?.statusBar.buildMenu()
                     }
                 }
             }
@@ -237,9 +301,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let transcriber = Transcriber(
             modelSize: config.modelSize,
             language: config.language,
-            whisperPrompt: config.whisperPrompt
+            whisperPrompt: config.whisperPrompt,
+            vadEnabled: config.isVADEnabled,
+            vadThreshold: config.effectiveVADThreshold
         )
         transcriber.spokenPunctuation = config.spokenPunctuation?.value ?? false
+        transcriber.customDictionary = config.customDictionary ?? []
         return transcriber
     }
 
@@ -283,6 +350,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
             try recorder.startRecording(to: outputURL)
             currentRecordingURL = outputURL
+            if config.isSoundFeedbackEnabled {
+                recordingSoundFeedback.playStarted()
+            }
         } catch {
             print("Error: \(error.localizedDescription)")
             recordingLifecycle.recordingStartFailed()
@@ -300,6 +370,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
 
         currentRecordingURL = nil
         statusBar.state = .transcribing
+        if config.isSoundFeedbackEnabled {
+            recordingSoundFeedback.playStopped()
+        }
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
@@ -311,14 +384,24 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             }
             do {
                 let raw = try self.transcriber.transcribe(audioURL: audioURL)
-                let text = (self.config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
+                let text = self.postProcess(raw)
                 if maxRecordings > 0 {
                     RecordingStore.prune(maxCount: maxRecordings)
                 }
                 DispatchQueue.main.async {
                     if !text.isEmpty {
                         self.lastTranscription = text
-                        self.inserter.insert(text: text)
+                        if self.inserter.insert(text: text) == .copiedToClipboard {
+                            self.statusBar.state = .copiedToClipboard
+                            self.statusBar.buildMenu()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                if case .copiedToClipboard = self.statusBar.state {
+                                    self.statusBar.state = .idle
+                                    self.statusBar.buildMenu()
+                                }
+                            }
+                            return
+                        }
                     }
                     self.statusBar.state = .idle
                     self.statusBar.buildMenu()
@@ -340,6 +423,12 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+    }
+
+    private func postProcess(_ raw: String) -> String {
+        var text = (config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
+        text = DictionaryPostProcessor.process(text, dictionary: config.customDictionary ?? [])
+        return text
     }
 
     func handleSystemWillSleep() {
@@ -405,7 +494,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
             do {
                 let raw = try self.transcriber.transcribe(audioURL: audioURL)
-                let text = (self.config.spokenPunctuation?.value ?? false) ? TextPostProcessor.process(raw) : raw
+                let text = self.postProcess(raw)
                 DispatchQueue.main.async {
                     if !text.isEmpty {
                         self.lastTranscription = text

@@ -5,15 +5,29 @@ public struct LanguageOption: Equatable, Sendable {
     public let name: String
 }
 
+public struct DictionaryEntry: Codable, Equatable {
+    public var from: String
+    public var to: String
+
+    public init(from: String, to: String) {
+        self.from = from
+        self.to = to
+    }
+}
+
 public struct Config: Codable {
     public var hotkeys: [HotkeyConfig]
     public var modelPath: String?
     public var modelSize: String
     public var language: String
     public var whisperPrompt: String?
+    public var voiceActivityDetection: Bool?
+    public var vadThreshold: Double?
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
+    public var soundFeedback: FlexBool?
+    public var customDictionary: [DictionaryEntry]?
     public var audioInputDeviceID: UInt32?
     public var audioInputDeviceUID: String?
 
@@ -43,9 +57,13 @@ public struct Config: Codable {
         case modelSize
         case language
         case whisperPrompt
+        case voiceActivityDetection
+        case vadThreshold
         case spokenPunctuation
         case maxRecordings
         case toggleMode
+        case soundFeedback
+        case customDictionary
         case audioInputDeviceID
         case audioInputDeviceUID
     }
@@ -65,9 +83,13 @@ public struct Config: Codable {
         self.modelSize = try c.decode(String.self, forKey: .modelSize)
         self.language = try c.decode(String.self, forKey: .language)
         self.whisperPrompt = try c.decodeIfPresent(String.self, forKey: .whisperPrompt)
+        self.voiceActivityDetection = try c.decodeIfPresent(Bool.self, forKey: .voiceActivityDetection)
+        self.vadThreshold = try c.decodeIfPresent(Double.self, forKey: .vadThreshold)
         self.spokenPunctuation = try c.decodeIfPresent(FlexBool.self, forKey: .spokenPunctuation)
         self.maxRecordings = try c.decodeIfPresent(Int.self, forKey: .maxRecordings)
         self.toggleMode = try c.decodeIfPresent(FlexBool.self, forKey: .toggleMode)
+        self.soundFeedback = try c.decodeIfPresent(FlexBool.self, forKey: .soundFeedback)
+        self.customDictionary = try c.decodeIfPresent([DictionaryEntry].self, forKey: .customDictionary)
         self.audioInputDeviceID = try c.decodeIfPresent(UInt32.self, forKey: .audioInputDeviceID)
         self.audioInputDeviceUID = try c.decodeIfPresent(String.self, forKey: .audioInputDeviceUID)
     }
@@ -80,9 +102,13 @@ public struct Config: Codable {
         try c.encode(modelSize, forKey: .modelSize)
         try c.encode(language, forKey: .language)
         try c.encodeIfPresent(whisperPrompt, forKey: .whisperPrompt)
+        try c.encodeIfPresent(voiceActivityDetection, forKey: .voiceActivityDetection)
+        try c.encodeIfPresent(vadThreshold, forKey: .vadThreshold)
         try c.encodeIfPresent(spokenPunctuation, forKey: .spokenPunctuation)
         try c.encodeIfPresent(maxRecordings, forKey: .maxRecordings)
         try c.encodeIfPresent(toggleMode, forKey: .toggleMode)
+        try c.encodeIfPresent(soundFeedback, forKey: .soundFeedback)
+        try c.encodeIfPresent(customDictionary, forKey: .customDictionary)
         try c.encodeIfPresent(audioInputDeviceID, forKey: .audioInputDeviceID)
         try c.encodeIfPresent(audioInputDeviceUID, forKey: .audioInputDeviceUID)
     }
@@ -93,9 +119,13 @@ public struct Config: Codable {
         modelSize: String,
         language: String,
         whisperPrompt: String? = nil,
+        voiceActivityDetection: Bool? = nil,
+        vadThreshold: Double? = nil,
         spokenPunctuation: FlexBool?,
         maxRecordings: Int?,
         toggleMode: FlexBool?,
+        soundFeedback: FlexBool? = nil,
+        customDictionary: [DictionaryEntry]? = nil,
         audioInputDeviceID: UInt32? = nil,
         audioInputDeviceUID: String? = nil
     ) {
@@ -106,9 +136,13 @@ public struct Config: Codable {
         self.modelSize = modelSize
         self.language = language
         self.whisperPrompt = whisperPrompt
+        self.voiceActivityDetection = voiceActivityDetection
+        self.vadThreshold = vadThreshold
         self.spokenPunctuation = spokenPunctuation
         self.maxRecordings = maxRecordings
         self.toggleMode = toggleMode
+        self.soundFeedback = soundFeedback
+        self.customDictionary = customDictionary
         self.audioInputDeviceID = audioInputDeviceID
         self.audioInputDeviceUID = audioInputDeviceUID
     }
@@ -243,6 +277,15 @@ public struct Config: Codable {
 
     public static let defaultMaxRecordings = 0
 
+    public var isSoundFeedbackEnabled: Bool { soundFeedback?.value ?? false }
+
+    public var isVADEnabled: Bool { voiceActivityDetection ?? false }
+
+    public var effectiveVADThreshold: Double {
+        guard let vadThreshold, vadThreshold.isFinite else { return 0.5 }
+        return min(max(vadThreshold, 0), 1)
+    }
+
     public static func effectiveMaxRecordings(_ value: Int?) -> Int {
         let raw = value ?? Config.defaultMaxRecordings
         if raw == 0 { return 0 }
@@ -255,9 +298,11 @@ public struct Config: Codable {
         modelSize: "base.en",
         language: "en",
         whisperPrompt: nil,
+        voiceActivityDetection: false,
         spokenPunctuation: FlexBool(false),
         maxRecordings: nil,
-        toggleMode: FlexBool(false)
+        toggleMode: FlexBool(false),
+        soundFeedback: FlexBool(false)
     )
 
     public static var configDir: URL {
@@ -341,14 +386,21 @@ public struct HotkeyConfig: Codable, Equatable {
     public var modifierFlags: UInt64 {
         var flags: UInt64 = 0
         for mod in modifiers {
-            switch mod.lowercased() {
-            case "cmd", "command": flags |= UInt64(1 << 20)
-            case "shift": flags |= UInt64(1 << 17)
-            case "ctrl", "control": flags |= UInt64(1 << 18)
-            case "opt", "option", "alt": flags |= UInt64(1 << 19)
-            default: break
-            }
+            // An invalid value in a hand-edited config must never broaden a hotkey.
+            guard let flag = Self.flag(for: mod) else { return UInt64.max }
+            flags |= flag
         }
         return flags
+    }
+
+    public static func flag(for modifier: String) -> UInt64? {
+        switch modifier.lowercased() {
+        case "cmd", "command": return UInt64(1 << 20)
+        case "shift": return UInt64(1 << 17)
+        case "ctrl", "control": return UInt64(1 << 18)
+        case "opt", "option", "alt": return UInt64(1 << 19)
+        case "fn", "globe", "function": return UInt64(1 << 23)
+        default: return nil
+        }
     }
 }

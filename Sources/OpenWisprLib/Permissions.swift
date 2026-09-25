@@ -26,34 +26,52 @@ struct Permissions {
         AXIsProcessTrustedWithOptions(options)
     }
 
-    static func resetAccessibility() {
+    static func shouldResetAccessibility(afterUpgrade: Bool, isTrusted: Bool) -> Bool {
+        afterUpgrade && !isTrusted
+    }
+
+    static func resetAccessibility() -> Bool {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
         process.arguments = ["reset", "Accessibility", "com.human37.open-wispr"]
-        try? process.run()
-        process.waitUntilExit()
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
+        }
     }
 
     static func didUpgrade() -> Bool {
-        let configDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config/open-wispr")
-        let versionFile = configDir.appendingPathComponent(".last-version")
-        let current = OpenWispr.version
+        didUpgrade(versionFile: versionFile, currentVersion: OpenWispr.version)
+    }
+
+    static func didUpgrade(versionFile: URL, currentVersion: String) -> Bool {
         let raw = (try? String(contentsOf: versionFile, encoding: .utf8))?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let previous = raw.isEmpty ? nil : raw
+        return previous != nil && previous != currentVersion
+    }
 
-        try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
+    static func recordCurrentVersion() {
+        do {
+            try recordCurrentVersion(to: versionFile, version: OpenWispr.version)
+        } catch {
+            print("Accessibility: could not record current version: \(error.localizedDescription)")
+        }
+    }
 
-        if previous == nil {
-            try? current.write(to: versionFile, atomically: true, encoding: .utf8)
-            return false
-        }
-        if previous == current {
-            return false
-        }
-        try? current.write(to: versionFile, atomically: true, encoding: .utf8)
-        return true
+    static func recordCurrentVersion(to versionFile: URL, version: String) throws {
+        try FileManager.default.createDirectory(
+            at: versionFile.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
+        try version.write(to: versionFile, atomically: true, encoding: .utf8)
+    }
+
+    private static var versionFile: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".config/open-wispr/.last-version")
     }
 
     static func openAccessibilitySettings() {

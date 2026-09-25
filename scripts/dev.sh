@@ -71,7 +71,7 @@ name_to_keycode() {
         n) echo 45 ;; m) echo 46 ;; .) echo 47 ;; tab) echo 48 ;;
         space) echo 49 ;; \`) echo 50 ;; delete) echo 51 ;; escape) echo 53 ;;
         rightcmd) echo 54 ;; cmd|leftcmd|command) echo 55 ;; shift|leftshift) echo 56 ;;
-        capslock) echo 57 ;; option|leftoption|alt|leftalt) echo 58 ;; ctrl|leftctrl|control) echo 59 ;;
+        option|leftoption|alt|leftalt) echo 58 ;; ctrl|leftctrl|control) echo 59 ;;
         rightshift) echo 60 ;; rightoption|rightalt) echo 61 ;; rightctrl|rightcontrol) echo 62 ;;
         fn|globe) echo 63 ;;
         f1) echo 122 ;; f2) echo 120 ;; f3) echo 99 ;; f4) echo 118 ;;
