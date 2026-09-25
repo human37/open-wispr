@@ -199,8 +199,6 @@ if brew list open-wispr &>/dev/null || [ -d ~/Applications/OpenWispr.app ]; then
     brew services stop open-wispr </dev/null >/dev/null 2>&1 || true
     brew uninstall --force open-wispr </dev/null >/dev/null 2>&1 || true
     brew untap human37/open-wispr </dev/null >/dev/null 2>&1 || true
-    tccutil reset Accessibility com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
-    tccutil reset Microphone com.human37.open-wispr </dev/null >/dev/null 2>&1 || true
     rm -rf ~/Applications/OpenWispr.app
 
     stop_spin
@@ -281,10 +279,13 @@ if wait_for_log "Accessibility: granted" 5; then
 else
     printf "\r\033[K"
     info "macOS needs Accessibility permission to detect your hotkey."
-    info "System Settings will open — find ${BOLD}OpenWispr${NC} and toggle it ${BOLD}ON${NC}.\n"
+    info "System Settings will open — find ${BOLD}OpenWispr${NC} and toggle it ${BOLD}ON${NC}."
+    info "If it already shows ON, toggle it ${BOLD}OFF${NC}, then ${BOLD}ON${NC} again.\n"
 
     if ! wait_for_log "Accessibility: granted" 300 "Waiting for you to grant Accessibility permission..."; then
-        die "Timed out waiting for Accessibility permission."
+        fail "Installed, but Accessibility permission was not confirmed."
+        info "In System Settings → Privacy & Security → Accessibility, toggle OpenWispr OFF, then ON."
+        die "Once permission is granted, the running app will finish setup automatically."
     fi
     ok "Accessibility"
 fi
