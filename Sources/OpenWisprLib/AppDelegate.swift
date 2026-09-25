@@ -51,6 +51,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             uid: config.audioInputDeviceUID,
             legacyID: config.audioInputDeviceID
         )
+        recorder.voiceProcessingEnabled = config.isVoiceProcessingEnabled
         if Config.effectiveMaxRecordings(config.maxRecordings) == 0 {
             RecordingStore.deleteAllRecordings()
         }
@@ -233,6 +234,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         )
         config = newConfig
         recorder.preferredDeviceID = newDeviceID
+        recorder.voiceProcessingEnabled = config.isVoiceProcessingEnabled
         recorder.prepare()
         transcriber = makeTranscriber(for: config)
         inserter = TextInserter()

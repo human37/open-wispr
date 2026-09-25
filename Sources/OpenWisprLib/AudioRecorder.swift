@@ -6,10 +6,16 @@ class AudioRecorder {
     private var capture: AudioCaptureUnit?
     private var currentOutputURL: URL?
     private var selectedDeviceID: AudioDeviceID?
+    private var selectedVoiceProcessing = false
 
     var preferredDeviceID: AudioDeviceID? {
         get { queue.sync { selectedDeviceID } }
         set { queue.async { self.selectedDeviceID = newValue } }
+    }
+
+    var voiceProcessingEnabled: Bool {
+        get { queue.sync { selectedVoiceProcessing } }
+        set { queue.async { self.selectedVoiceProcessing = newValue } }
     }
 
     func prepare() {
@@ -38,9 +44,12 @@ class AudioRecorder {
         if let capture, capture.cacheState.canReuse(for: route) { return capture }
         capture = nil
         let startedAt = DispatchTime.now().uptimeNanoseconds
-        // VoiceProcessingIO binds the output device and takes about a second to
-        // initialize on some routes. HAL input-only capture avoids both effects.
-        let configured = try AudioCaptureUnit(route: route, voiceProcessing: false)
+        // VoiceProcessingIO binds the output device and can be slow to initialize.
+        // The default HAL path captures input only, without holding playback open.
+        let useVoiceProcessing: Bool
+        if #available(macOS 14.0, *) { useVoiceProcessing = selectedVoiceProcessing }
+        else { useVoiceProcessing = false }
+        let configured = try AudioCaptureUnit(route: route, voiceProcessing: useVoiceProcessing)
         capture = configured
         print("Audio setup: \((DispatchTime.now().uptimeNanoseconds - startedAt) / 1_000_000) ms; input=\(route.inputDeviceID), output=\(route.outputDeviceID)")
         return configured

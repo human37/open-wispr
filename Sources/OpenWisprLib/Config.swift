@@ -27,6 +27,7 @@ public struct Config: Codable {
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
     public var soundFeedback: FlexBool?
+    public var voiceProcessing: FlexBool?
     public var customDictionary: [DictionaryEntry]?
     public var audioInputDeviceID: UInt32?
     public var audioInputDeviceUID: String?
@@ -63,6 +64,7 @@ public struct Config: Codable {
         case maxRecordings
         case toggleMode
         case soundFeedback
+        case voiceProcessing
         case customDictionary
         case audioInputDeviceID
         case audioInputDeviceUID
@@ -89,6 +91,7 @@ public struct Config: Codable {
         self.maxRecordings = try c.decodeIfPresent(Int.self, forKey: .maxRecordings)
         self.toggleMode = try c.decodeIfPresent(FlexBool.self, forKey: .toggleMode)
         self.soundFeedback = try c.decodeIfPresent(FlexBool.self, forKey: .soundFeedback)
+        self.voiceProcessing = try c.decodeIfPresent(FlexBool.self, forKey: .voiceProcessing)
         self.customDictionary = try c.decodeIfPresent([DictionaryEntry].self, forKey: .customDictionary)
         self.audioInputDeviceID = try c.decodeIfPresent(UInt32.self, forKey: .audioInputDeviceID)
         self.audioInputDeviceUID = try c.decodeIfPresent(String.self, forKey: .audioInputDeviceUID)
@@ -108,6 +111,7 @@ public struct Config: Codable {
         try c.encodeIfPresent(maxRecordings, forKey: .maxRecordings)
         try c.encodeIfPresent(toggleMode, forKey: .toggleMode)
         try c.encodeIfPresent(soundFeedback, forKey: .soundFeedback)
+        try c.encodeIfPresent(voiceProcessing, forKey: .voiceProcessing)
         try c.encodeIfPresent(customDictionary, forKey: .customDictionary)
         try c.encodeIfPresent(audioInputDeviceID, forKey: .audioInputDeviceID)
         try c.encodeIfPresent(audioInputDeviceUID, forKey: .audioInputDeviceUID)
@@ -125,6 +129,7 @@ public struct Config: Codable {
         maxRecordings: Int?,
         toggleMode: FlexBool?,
         soundFeedback: FlexBool? = nil,
+        voiceProcessing: FlexBool? = nil,
         customDictionary: [DictionaryEntry]? = nil,
         audioInputDeviceID: UInt32? = nil,
         audioInputDeviceUID: String? = nil
@@ -142,6 +147,7 @@ public struct Config: Codable {
         self.maxRecordings = maxRecordings
         self.toggleMode = toggleMode
         self.soundFeedback = soundFeedback
+        self.voiceProcessing = voiceProcessing
         self.customDictionary = customDictionary
         self.audioInputDeviceID = audioInputDeviceID
         self.audioInputDeviceUID = audioInputDeviceUID
@@ -278,6 +284,7 @@ public struct Config: Codable {
     public static let defaultMaxRecordings = 0
 
     public var isSoundFeedbackEnabled: Bool { soundFeedback?.value ?? false }
+    public var isVoiceProcessingEnabled: Bool { voiceProcessing?.value ?? false }
 
     public var isVADEnabled: Bool { voiceActivityDetection ?? false }
 
@@ -302,7 +309,8 @@ public struct Config: Codable {
         spokenPunctuation: FlexBool(false),
         maxRecordings: nil,
         toggleMode: FlexBool(false),
-        soundFeedback: FlexBool(false)
+        soundFeedback: FlexBool(false),
+        voiceProcessing: FlexBool(false)
     )
 
     public static var configDir: URL {

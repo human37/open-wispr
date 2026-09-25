@@ -187,6 +187,20 @@ final class ConfigTests: XCTestCase {
         XCTAssertTrue(decoded.isSoundFeedbackEnabled)
     }
 
+    func testVoiceProcessingDefaultsOffForExistingConfigs() throws {
+        let json = #"{"modelSize":"base.en","language":"en"}"#.data(using: .utf8)!
+        let config = try Config.decode(from: json)
+        XCTAssertFalse(config.isVoiceProcessingEnabled)
+        XCTAssertFalse(Config.defaultConfig.isVoiceProcessingEnabled)
+    }
+
+    func testVoiceProcessingCanBeEnabledAndRoundTrips() throws {
+        var config = Config.defaultConfig
+        config.voiceProcessing = FlexBool(true)
+        let decoded = try Config.decode(from: JSONEncoder().encode(config))
+        XCTAssertTrue(decoded.isVoiceProcessingEnabled)
+    }
+
     // MARK: - customDictionary decoding
 
     func testConfigDecodesWithCustomDictionary() throws {

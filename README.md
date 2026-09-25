@@ -26,7 +26,7 @@ A waveform icon appears in your menu bar when it's running.
 
 The default hotkey is the **Globe key** (🌐, bottom-left). Hold it, speak, release.
 
-On macOS 14 and later, OpenWispr uses native voice processing to reduce playback volume during recording. Playback returns to normal when recording stops.
+OpenWispr uses fast input-only audio capture by default. On macOS 14 and later, optional Voice Processing adds system echo/noise processing but can slow recording startup and reduce playback volume while recording. Enable it from the menu bar if needed.
 
 > **[Full installation guide](docs/install-guide.md)** — permissions walkthrough with screenshots, non-English macOS instructions, and troubleshooting.
 
@@ -50,6 +50,7 @@ Edit `~/.config/open-wispr/config.json`:
   "spokenPunctuation": false,
   "whisperPrompt": "Use punctuation and capitalization.",
   "voiceActivityDetection": false,
+  "voiceProcessing": false,
   "vadThreshold": 0.5,
   "maxRecordings": 0,
   "toggleMode": false,
@@ -82,6 +83,7 @@ Both `hotkey` (single) and `hotkeys` (array) are supported. If both are present,
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
 | **whisperPrompt** | — | Optional prompt text passed to Whisper to guide style, vocabulary, or punctuation. Omit it or leave it blank to use Whisper's default behavior. |
 | **voiceActivityDetection** | `false` | Enable local Silero voice activity detection to filter non-speech audio before transcription. The VAD model downloads when first enabled; quiet or very short speech may be skipped. |
+| **voiceProcessing** | `false` | Use macOS voice processing on supported systems. Adds echo/noise processing but can slow recording startup and reduce playback volume while recording. Also available in the menu bar. |
 | **vadThreshold** | `0.5` | Speech detection sensitivity from `0` to `1`; lower values detect quieter speech but may admit more background audio. |
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
 | **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
