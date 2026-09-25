@@ -61,15 +61,11 @@ For reference, here's the path in a few languages:
 
 ## Troubleshooting
 
-### "Timed out waiting for Accessibility permission"
+### "Installed, but Accessibility permission was not confirmed"
 
-The installer waits up to 5 minutes for you to grant Accessibility. If it times out:
+The installer waits up to 5 minutes for Accessibility. The app remains open and will finish setup when macOS grants access. If OpenWispr already appears ON in **System Settings → Privacy & Security → Accessibility**, toggle it **OFF**, then **ON** again. The existing switch can refer to the previous app binary after a reinstall.
 
-1. Uninstall first:
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/human37/open-wispr/main/scripts/uninstall.sh | bash
-   ```
-2. Re-run the installer. Watch for the Accessibility pop-up and grant it promptly.
+If OpenWispr is missing from the list, add it using the steps below. You do not need to reinstall after granting access.
 
 ### App not appearing in Accessibility list
 
