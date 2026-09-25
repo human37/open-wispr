@@ -49,6 +49,8 @@ Edit `~/.config/open-wispr/config.json`:
   "language": "en",
   "spokenPunctuation": false,
   "whisperPrompt": "Use punctuation and capitalization.",
+  "voiceActivityDetection": false,
+  "vadThreshold": 0.5,
   "maxRecordings": 0,
   "toggleMode": false
 }
@@ -78,6 +80,8 @@ Both `hotkey` (single) and `hotkeys` (array) are supported. If both are present,
 | **language** | `"en"` | `"auto"` for auto-detect, or any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
 | **whisperPrompt** | — | Optional prompt text passed to Whisper to guide style, vocabulary, or punctuation. Omit it or leave it blank to use Whisper's default behavior. |
+| **voiceActivityDetection** | `false` | Enable local Silero voice activity detection to filter non-speech audio before transcription. The VAD model downloads when first enabled; quiet or very short speech may be skipped. |
+| **vadThreshold** | `0.5` | Speech detection sensitivity from `0` to `1`; lower values detect quieter speech but may admit more background audio. |
 | **maxRecordings** | `0` | Optionally store past recordings locally as `.wav` files for re-transcribing from the tray menu. `0` = nothing stored (default). Set 1-100 to keep that many recent recordings. |
 | **toggleMode** | `false` | Press hotkey once to start recording, press again to stop. Default is hold-to-talk. |
 
@@ -129,7 +133,7 @@ Click the menu bar icon to access **Copy Last Dictation** — recovers your most
 
 ## Privacy
 
-open-wispr is completely local. Audio is recorded to a temp file, transcribed by whisper.cpp on your CPU/GPU, and the temp file is deleted. No network requests are made except to download the Whisper model on first run. Optionally, you can configure open-wispr to store a number of past recordings locally via the `maxRecordings` setting. Those recordings stay private and on your machine, and we default to not storing anything.
+open-wispr is completely local. Audio is recorded to a temp file, transcribed by whisper.cpp on your CPU/GPU, and the temp file is deleted. No network requests are made except to download the Whisper model on first run and the VAD model if enabled. Optionally, you can configure open-wispr to store a number of past recordings locally via the `maxRecordings` setting. Those recordings stay private and on your machine, and we default to not storing anything.
 
 ## Roadmap
 

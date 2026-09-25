@@ -21,6 +21,8 @@ public struct Config: Codable {
     public var modelSize: String
     public var language: String
     public var whisperPrompt: String?
+    public var voiceActivityDetection: Bool?
+    public var vadThreshold: Double?
     public var spokenPunctuation: FlexBool?
     public var maxRecordings: Int?
     public var toggleMode: FlexBool?
@@ -54,6 +56,8 @@ public struct Config: Codable {
         case modelSize
         case language
         case whisperPrompt
+        case voiceActivityDetection
+        case vadThreshold
         case spokenPunctuation
         case maxRecordings
         case toggleMode
@@ -77,6 +81,8 @@ public struct Config: Codable {
         self.modelSize = try c.decode(String.self, forKey: .modelSize)
         self.language = try c.decode(String.self, forKey: .language)
         self.whisperPrompt = try c.decodeIfPresent(String.self, forKey: .whisperPrompt)
+        self.voiceActivityDetection = try c.decodeIfPresent(Bool.self, forKey: .voiceActivityDetection)
+        self.vadThreshold = try c.decodeIfPresent(Double.self, forKey: .vadThreshold)
         self.spokenPunctuation = try c.decodeIfPresent(FlexBool.self, forKey: .spokenPunctuation)
         self.maxRecordings = try c.decodeIfPresent(Int.self, forKey: .maxRecordings)
         self.toggleMode = try c.decodeIfPresent(FlexBool.self, forKey: .toggleMode)
@@ -93,6 +99,8 @@ public struct Config: Codable {
         try c.encode(modelSize, forKey: .modelSize)
         try c.encode(language, forKey: .language)
         try c.encodeIfPresent(whisperPrompt, forKey: .whisperPrompt)
+        try c.encodeIfPresent(voiceActivityDetection, forKey: .voiceActivityDetection)
+        try c.encodeIfPresent(vadThreshold, forKey: .vadThreshold)
         try c.encodeIfPresent(spokenPunctuation, forKey: .spokenPunctuation)
         try c.encodeIfPresent(maxRecordings, forKey: .maxRecordings)
         try c.encodeIfPresent(toggleMode, forKey: .toggleMode)
@@ -107,6 +115,8 @@ public struct Config: Codable {
         modelSize: String,
         language: String,
         whisperPrompt: String? = nil,
+        voiceActivityDetection: Bool? = nil,
+        vadThreshold: Double? = nil,
         spokenPunctuation: FlexBool?,
         maxRecordings: Int?,
         toggleMode: FlexBool?,
@@ -121,6 +131,8 @@ public struct Config: Codable {
         self.modelSize = modelSize
         self.language = language
         self.whisperPrompt = whisperPrompt
+        self.voiceActivityDetection = voiceActivityDetection
+        self.vadThreshold = vadThreshold
         self.spokenPunctuation = spokenPunctuation
         self.maxRecordings = maxRecordings
         self.toggleMode = toggleMode
@@ -259,6 +271,13 @@ public struct Config: Codable {
 
     public static let defaultMaxRecordings = 0
 
+    public var isVADEnabled: Bool { voiceActivityDetection ?? false }
+
+    public var effectiveVADThreshold: Double {
+        guard let vadThreshold, vadThreshold.isFinite else { return 0.5 }
+        return min(max(vadThreshold, 0), 1)
+    }
+
     public static func effectiveMaxRecordings(_ value: Int?) -> Int {
         let raw = value ?? Config.defaultMaxRecordings
         if raw == 0 { return 0 }
@@ -271,6 +290,7 @@ public struct Config: Codable {
         modelSize: "base.en",
         language: "en",
         whisperPrompt: nil,
+        voiceActivityDetection: false,
         spokenPunctuation: FlexBool(false),
         maxRecordings: nil,
         toggleMode: FlexBool(false)

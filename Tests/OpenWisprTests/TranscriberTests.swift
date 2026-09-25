@@ -56,6 +56,32 @@ final class TranscriberTests: XCTestCase {
         XCTAssertEqual(args[flagIndex + 1], "0")
     }
 
+    func testVADArgumentsGateWhisperWithConfiguredModelAndThreshold() throws {
+        let transcriber = Transcriber(vadEnabled: true, vadThreshold: 0.65)
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav"),
+            vadModelPath: "/models/ggml-silero-v6.2.0.bin"
+        )
+
+        XCTAssertTrue(args.contains("--vad"))
+        let modelIndex = try XCTUnwrap(args.firstIndex(of: "--vad-model"))
+        XCTAssertEqual(args[modelIndex + 1], "/models/ggml-silero-v6.2.0.bin")
+        let thresholdIndex = try XCTUnwrap(args.firstIndex(of: "--vad-threshold"))
+        XCTAssertEqual(args[thresholdIndex + 1], "0.65")
+    }
+
+    func testVADArgumentsAreAbsentWhenDisabled() {
+        let transcriber = Transcriber(vadEnabled: false)
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav"),
+            vadModelPath: "/models/ggml-silero-v6.2.0.bin"
+        )
+        XCTAssertFalse(args.contains("--vad"))
+        XCTAssertFalse(args.contains("--vad-model"))
+    }
+
     func testArgumentsUseSingleNoTimestampsFlag() {
         let transcriber = Transcriber(modelSize: "base.en", language: "en")
         let args = transcriber.arguments(
