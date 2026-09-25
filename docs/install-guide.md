@@ -10,11 +10,19 @@ The installer handles everything automatically — Homebrew tap, formula install
 
 ## What the installer does
 
-1. **Installs via Homebrew** — taps `human37/open-wispr` and installs the formula. Recent versions of Homebrew (6.0+) have tightened security around third-party taps, so you may be asked to trust the package first — the installer prints the exact `brew trust` command to run if so.
+1. **Installs via Homebrew** — taps `human37/open-wispr` and installs the formula. Recent versions of Homebrew (6.0+) have tightened security around third-party taps, so you may be asked to trust the package first — the installer prints the exact `brew trust` and retry commands if so.
 2. **Copies the app bundle** to `~/Applications/OpenWispr.app`
 3. **Requests permissions** — Microphone and Accessibility
 4. **Downloads the Whisper model** (~142 MB, one-time)
 5. **Starts the background service** via `brew services`
+
+## Audio capture
+
+OpenWispr defaults to fast, input-only microphone capture. It releases the audio device between recordings so it does not keep your headphones or speakers in a recording mode while idle.
+
+On macOS 14 or later, you can turn on **Voice Processing (slower)** in the menu bar, or set `"voiceProcessing": true` in `~/.config/open-wispr/config.json`. This enables Apple's echo/noise processing, but recording can take longer to start and other audio may get quieter while you dictate. The setting is off by default, including for existing config files without this key.
+
+If you use the AirPods microphone, [macOS may switch Bluetooth audio to its lower-quality headset mode](https://support.apple.com/en-us/102217) *during* a recording, regardless of this setting. Selecting another microphone can avoid that switch while you dictate.
 
 ## Granting Permissions
 
