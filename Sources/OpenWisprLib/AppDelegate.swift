@@ -28,6 +28,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     public func applicationWillTerminate(_ notification: Notification) {
         accessibilityPollTimer?.invalidate()
         recorder?.teardown()
+        WhisperEngine.shared.unload()
         unregisterSleepWakeObservers()
     }
 
@@ -157,6 +158,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 }
                 return
             }
+            WhisperEngine.shared.preload(modelPath: modelPath)
         }
 
         if config.isVADEnabled && Transcriber.findVADModel() == nil {
@@ -291,6 +293,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             }
+        }
+
+        if let modelPath = Transcriber.findModel(modelSize: config.modelSize) {
+            WhisperEngine.shared.preload(modelPath: modelPath)
         }
 
         statusBar.buildMenu()

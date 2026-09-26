@@ -19,12 +19,30 @@ public class Transcriber {
     }
 
     public func transcribe(audioURL: URL) throws -> String {
-        guard let whisperPath = Transcriber.findWhisperBinary() else {
-            throw TranscriberError.whisperNotFound
-        }
-
         guard let modelPath = Transcriber.findModel(modelSize: modelSize) else {
             throw TranscriberError.modelNotFound(modelSize)
+        }
+
+        // Fast path: use pre-loaded in-memory WhisperEngine if VAD is not active
+        if !vadEnabled && WhisperEngine.shared.ensureLoaded(modelPath: modelPath) {
+            do {
+                let text = try WhisperEngine.shared.transcribe(
+                    audioURL: audioURL,
+                    language: language,
+                    prompt: fullPrompt,
+                    spokenPunctuation: spokenPunctuation
+                )
+                return Transcriber.stripWhisperMarkers(
+                    text.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+            } catch {
+                print("WhisperEngine in-memory transcription failed, falling back to CLI: \(error.localizedDescription)")
+            }
+        }
+
+        // Fallback path or VAD path via whisper-cli
+        guard let whisperPath = Transcriber.findWhisperBinary() else {
+            throw TranscriberError.whisperNotFound
         }
 
         let vadModelPath: String?
@@ -69,24 +87,28 @@ public class Transcriber {
         return output
     }
 
+    private var fullPrompt: String? {
+        let dictionaryPrompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
+        let prompt = [effectiveWhisperPrompt, dictionaryPrompt.isEmpty ? nil : dictionaryPrompt]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        return prompt.isEmpty ? nil : prompt
+    }
+
     func arguments(modelPath: String, audioURL: URL, vadModelPath: String? = nil) -> [String] {
         var args = [
             "-m", modelPath,
             "-f", audioURL.path,
             "-l", language,
             "-nt",
-            // Disable cross-window context carry-over. whisper.cpp feeds each
-            // 30s window's decoded text as the prompt for the next window; on
-            // long dictation this compounds into repetition/hallucination
-            // loops (sentences repeating verbatim, then trailing off).
-            // max-context 0 decodes each window independently and stops it.
             "-mc", "0",
+            "-bs", "1",           // Greedy decoding for lowest latency
+            "-bo", "1",
+            "-nf",                // Disable temperature fallback loops
+            "-t", "4",            // Explicit M4 thread count
+            "--suppress-nst",     // Suppress non-speech tokens
         ]
-        let dictionaryPrompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
-        let prompt = [effectiveWhisperPrompt, dictionaryPrompt.isEmpty ? nil : dictionaryPrompt]
-            .compactMap { $0 }
-            .joined(separator: " ")
-        if !prompt.isEmpty {
+        if let prompt = fullPrompt {
             args += ["--prompt", prompt]
         }
         if spokenPunctuation {
@@ -186,7 +208,7 @@ public class Transcriber {
         return candidates.first { ModelDownloader.isValidGGMLFile(at: URL(fileURLWithPath: $0)) }
     }
 
-    static func findModel(modelSize: String) -> String? {
+    public static func findModel(modelSize: String) -> String? {
         let modelFileName = "ggml-\(modelSize).bin"
 
         let candidates = [
