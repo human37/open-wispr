@@ -130,13 +130,12 @@ class TextInserter {
             return true
         }
 
-        // Custom editors may use other roles. Keep pasting unless the focused
-        // role is clearly not a text input.
+        // Custom editors may use other roles (e.g. Electron apps, browsers, or terminal windows).
+        // Keep pasting unless the focused role is explicitly a non-input UI widget.
         if role == (kAXButtonRole as String)
             || role == (kAXCheckBoxRole as String)
             || role == (kAXRadioButtonRole as String)
-            || role == (kAXMenuItemRole as String)
-            || role == (kAXWindowRole as String) {
+            || role == (kAXMenuItemRole as String) {
             return false
         }
         return nil

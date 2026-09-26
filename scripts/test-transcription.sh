@@ -89,7 +89,8 @@ fi
 # Test 3: Transcriber class via the built binary
 BIN=".build/release/open-wispr"
 if [ -x "$BIN" ]; then
-    if $BIN status 2>&1 | grep -q "whisper-cpp: yes"; then
+    STATUS_OUT=$($BIN status 2>&1 || true)
+    if echo "$STATUS_OUT" | grep -q "whisper-cpp: yes"; then
         pass "Binary detects whisper-cpp"
     else
         fail "Binary should detect whisper-cpp"

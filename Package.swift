@@ -6,7 +6,26 @@ let package = Package(
     platforms: [.macOS(.v13)],
     targets: [
         .target(
+            name: "CWhisper",
+            path: "Sources/CWhisper",
+            cSettings: [
+                .headerSearchPath("include"),
+                .unsafeFlags(["-I/opt/homebrew/include", "-I/usr/local/include"]),
+            ],
+            linkerSettings: [
+                .unsafeFlags([
+                    "-L/opt/homebrew/lib",
+                    "-L/usr/local/lib",
+                    "-lwhisper",
+                    "-lggml",
+                    "-Xlinker", "-rpath", "-Xlinker", "/opt/homebrew/lib",
+                    "-Xlinker", "-rpath", "-Xlinker", "/usr/local/lib",
+                ]),
+            ]
+        ),
+        .target(
             name: "OpenWisprLib",
+            dependencies: ["CWhisper"],
             path: "Sources/OpenWisprLib",
             linkerSettings: [
                 .linkedFramework("CoreAudio"),
