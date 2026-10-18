@@ -32,9 +32,14 @@ public class Transcriber {
                     prompt: fullPrompt,
                     spokenPunctuation: spokenPunctuation
                 )
-                return Transcriber.stripWhisperMarkers(
+                let cleaned = Transcriber.stripWhisperMarkers(
                     text.trimmingCharacters(in: .whitespacesAndNewlines)
                 )
+                let collapsed = Transcriber.collapseRepetitions(cleaned)
+                if collapsed != cleaned {
+                    print("WhisperEngine: collapsed repeated output (\(cleaned.count) -> \(collapsed.count) chars)")
+                }
+                return collapsed
             } catch {
                 print("WhisperEngine in-memory transcription failed, falling back to CLI: \(error.localizedDescription)")
             }
@@ -104,7 +109,6 @@ public class Transcriber {
             "-mc", "0",
             "-bs", "1",           // Greedy decoding for lowest latency
             "-bo", "1",
-            "-nf",                // Disable temperature fallback loops
             "-t", "4",            // Explicit M4 thread count
             "--suppress-nst",     // Suppress non-speech tokens
         ]
@@ -157,6 +161,86 @@ public class Transcriber {
         return result
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public static func collapseRepetitions(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return text }
+
+        var words = trimmed.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        guard words.count >= 2 else { return trimmed }
+
+        // 1. Collapse single word repetitions (e.g. "the the the the" -> "the")
+        var deduplicated: [String] = []
+        var lastWordNorm = ""
+        var runCount = 0
+
+        for word in words {
+            let norm = word.lowercased().trimmingCharacters(in: .punctuationCharacters)
+            if norm == lastWordNorm && !norm.isEmpty {
+                runCount += 1
+                if runCount < 3 {
+                    deduplicated.append(word)
+                }
+            } else {
+                runCount = 1
+                lastWordNorm = norm
+                deduplicated.append(word)
+            }
+        }
+        words = deduplicated
+
+        // 2. Check for repeating multi-word phrases of length k
+        let maxK = max(1, words.count / 3)
+        for k in (1...maxK).reversed() {
+            var i = 0
+            var newWords: [String] = []
+            var modified = false
+
+            while i < words.count {
+                if i + k <= words.count {
+                    let candidate = words[i..<i+k].map { $0.lowercased().trimmingCharacters(in: .punctuationCharacters) }
+                    var count = 1
+                    while i + (count + 1) * k <= words.count {
+                        let nextChunk = words[i + count * k ..< i + (count + 1) * k].map { $0.lowercased().trimmingCharacters(in: .punctuationCharacters) }
+                        if candidate == nextChunk {
+                            count += 1
+                        } else {
+                            break
+                        }
+                    }
+
+                    if count >= 3 {
+                        newWords.append(contentsOf: words[i..<i+k])
+                        i += count * k
+                        modified = true
+                        continue
+                    }
+                }
+                newWords.append(words[i])
+                i += 1
+            }
+
+            if modified {
+                words = newWords
+            }
+        }
+
+        var result = words.joined(separator: " ")
+
+        // 3. Strip common hallucinated trailing phrases from Whisper training data
+        let trailingHallucinationPattern = "(?i)[,\\.\\s]+(?:thank you(?: very much)?|thanks for watching|thank you for watching|please subscribe|subscribe to my channel|see you next time|bye bye|bye)\\.?$"
+        if let regex = try? NSRegularExpression(pattern: trailingHallucinationPattern) {
+            let range = NSRange(result.startIndex..., in: result)
+            let matches = regex.matches(in: result, range: range)
+            for match in matches {
+                if match.range.location > 3 {
+                    result = (result as NSString).replacingCharacters(in: match.range, with: "")
+                }
+            }
+        }
+
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public static func findWhisperBinary() -> String? {

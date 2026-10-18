@@ -45,6 +45,7 @@ public final class WhisperEngine {
         guard var pcm = try load16kHzPCM(from: audioURL), !pcm.isEmpty else {
             return ""
         }
+        pcm = trimTrailingSilence(pcm)
         if pcm.count < 1600 {
             pcm.append(contentsOf: [Float](repeating: 0.0, count: 1600 - pcm.count))
         }
@@ -67,6 +68,37 @@ public final class WhisperEngine {
             print("WhisperEngine: transcribed in \(ms) ms (in-memory)")
             return String(cString: cStr)
         }
+    }
+
+    /// Trims trailing silence and ambient noise from 16kHz PCM audio to prevent Whisper from hallucinating on dead air at the end of recording.
+    private func trimTrailingSilence(_ samples: [Float]) -> [Float] {
+        guard samples.count > 3200 else { return samples } // Keep at least 200ms
+        let windowSize = 320 // 20ms at 16kHz
+        let paddingSamples = 3200 // 200ms padding after speech ends
+
+        var lastSpeechIndex = samples.count
+        var index = samples.count - windowSize
+
+        while index >= 0 {
+            var sumSquares: Float = 0.0
+            for i in index..<(index + windowSize) {
+                let s = samples[i]
+                sumSquares += s * s
+            }
+            let rms = sqrt(sumSquares / Float(windowSize))
+            // Speech is typically > 0.03, room ambient / silence is < 0.008
+            if rms > 0.008 {
+                lastSpeechIndex = min(samples.count, index + windowSize + paddingSamples)
+                break
+            }
+            index -= windowSize
+        }
+
+        if lastSpeechIndex < samples.count && lastSpeechIndex >= 3200 {
+            print("WhisperEngine: trimmed trailing silence (\(samples.count) -> \(lastSpeechIndex) samples)")
+            return Array(samples[0..<lastSpeechIndex])
+        }
+        return samples
     }
 
     private func load16kHzPCM(from url: URL) throws -> [Float]? {

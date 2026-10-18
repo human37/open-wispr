@@ -112,18 +112,33 @@ char * cwhisper_transcribe(
     params.print_realtime = false;
     params.print_timestamps = false;
     params.suppress_nst = true;
+    params.suppress_blank = true;
     params.temperature = 0.0f;
-    params.temperature_inc = 0.0f;  // Disable fallback retries (--no-fallback)
+    params.no_speech_thold = 0.6f;
+    // Keep whisper.cpp's default temperature fallback (0.2 steps). It only
+    // re-decodes when a pass is detected as degenerate (low token entropy, i.e.
+    // a repetition loop), so it costs nothing on normal dictation but is the
+    // main guard against "the the the..." loops, especially on large-v3/turbo.
     params.greedy.best_of = 1;
 
-    // Dynamic audio context: scale context down for short audio to save encoder compute
+    // Dynamic audio context scaling:
+    // Whisper's encoder evaluates attention positions across all layers.
+    // For 32-layer models (like large-v3-turbo), full 1500 context (30s) takes ~1150ms of encoder GPU time.
+    // Setting a safe floor of 512 frames (~10.2s buffer) saves ~750ms of compute on short dictations
+    // without cutting off acoustic context or causing repetition loops.
     double duration_sec = (double)n_samples / 16000.0;
-    if (duration_sec < 10.0) {
-        int ctx = (int)(duration_sec * 50.0) + 64;
-        if (ctx < 256) ctx = 256;
+    if (duration_sec < 25.0) {
+        int ctx = (int)(duration_sec * 50.0) + 256;
+        if (ctx < 512) ctx = 512;
         if (ctx > 1500) ctx = 1500;
         params.audio_ctx = ctx;
     }
+
+    // Hard cap on decoded tokens per segment, scaled to audio length, so a
+    // runaway decode can never produce many repetitions of the dictation.
+    // Normal speech is ~3-5 tokens/s; allow generous headroom.
+    double seg_sec = duration_sec < 30.0 ? duration_sec : 30.0;
+    params.max_tokens = (int)(seg_sec * 10.0) + 32;
 
     if (language && strlen(language) > 0) {
         params.language = language;
@@ -148,6 +163,10 @@ char * cwhisper_transcribe(
     const int n_segments = whisper_full_n_segments(g_ctx);
     size_t total_len = 0;
     for (int i = 0; i < n_segments; ++i) {
+        float no_speech = whisper_full_get_segment_no_speech_prob(g_ctx, i);
+        if (no_speech > 0.6f) {
+            continue;
+        }
         const char * text = whisper_full_get_segment_text(g_ctx, i);
         if (text) {
             total_len += strlen(text);
@@ -162,6 +181,10 @@ char * cwhisper_transcribe(
     result[0] = '\0';
 
     for (int i = 0; i < n_segments; ++i) {
+        float no_speech = whisper_full_get_segment_no_speech_prob(g_ctx, i);
+        if (no_speech > 0.6f) {
+            continue;
+        }
         const char * text = whisper_full_get_segment_text(g_ctx, i);
         if (text) {
             strcat(result, text);
