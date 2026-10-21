@@ -174,6 +174,53 @@ func cmdStatus() {
     print("Toggle:      \(toggleMode ? "on (press to start/stop)" : "off (hold to talk)")")
 }
 
+func cmdBenchmark(_ audioPath: String?) {
+    let config = Config.load()
+    let path = audioPath ?? "/tmp/test_1s.wav"
+    let url = URL(fileURLWithPath: path)
+    guard FileManager.default.fileExists(atPath: path) else {
+        print("Error: audio file not found at \(path)")
+        exit(1)
+    }
+
+    print("Benchmarking OpenWispr in-memory inference pipeline...")
+    print("Model: \(config.modelSize)")
+    print("Audio: \(path)")
+
+    guard let modelPath = Transcriber.findModel(modelSize: config.modelSize) else {
+        print("Error: model \(config.modelSize) not found")
+        exit(1)
+    }
+
+    let t0 = DispatchTime.now().uptimeNanoseconds
+    _ = WhisperEngine.shared.ensureLoaded(modelPath: modelPath)
+    let loadMs = Double(DispatchTime.now().uptimeNanoseconds - t0) / 1_000_000.0
+    print("Preload model time: \(String(format: "%.2f", loadMs)) ms (happens once at startup)")
+
+    let transcriber = Transcriber(modelSize: config.modelSize, language: config.language)
+    var times: [Double] = []
+
+    print("\nExecuting 3 test dictation inferences:")
+    for i in 1...3 {
+        let start = DispatchTime.now().uptimeNanoseconds
+        do {
+            let text = try transcriber.transcribe(audioURL: url)
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000.0
+            times.append(elapsed)
+            print("  Run \(i): \(String(format: "%.2f", elapsed)) ms | Result: '\(text)'")
+        } catch {
+            print("  Run \(i) failed: \(error)")
+        }
+    }
+
+    if !times.isEmpty {
+        let avg = times.reduce(0, +) / Double(times.count)
+        print("\nAverage dictation-to-text latency: \(String(format: "%.2f", avg)) ms")
+    }
+
+    WhisperEngine.shared.unload()
+}
+
 let args = CommandLine.arguments
 let rawCommand = args.count > 1 ? args[1] : nil
 let command: String? = {
@@ -187,6 +234,9 @@ case "start":
         exit(0)
     }
     cmdStart()
+case "benchmark":
+    let audio = args.count > 2 ? args[2] : nil
+    cmdBenchmark(audio)
 case "set-hotkey":
     guard args.count > 2 else {
         print("Usage: open-wispr set-hotkey <key>")

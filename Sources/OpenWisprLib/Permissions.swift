@@ -15,7 +15,7 @@ struct Permissions {
                 print("Microphone: \(granted ? "granted" : "denied")")
                 semaphore.signal()
             }
-            semaphore.wait()
+            _ = semaphore.wait(timeout: .now() + 2.0)
         default:
             print("Microphone: denied — grant in System Settings → Privacy & Security → Microphone")
         }

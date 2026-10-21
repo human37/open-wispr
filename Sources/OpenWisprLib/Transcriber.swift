@@ -19,12 +19,35 @@ public class Transcriber {
     }
 
     public func transcribe(audioURL: URL) throws -> String {
-        guard let whisperPath = Transcriber.findWhisperBinary() else {
-            throw TranscriberError.whisperNotFound
-        }
-
         guard let modelPath = Transcriber.findModel(modelSize: modelSize) else {
             throw TranscriberError.modelNotFound(modelSize)
+        }
+
+        // Fast path: use pre-loaded in-memory WhisperEngine if VAD is not active
+        if !vadEnabled && WhisperEngine.shared.ensureLoaded(modelPath: modelPath) {
+            do {
+                let text = try WhisperEngine.shared.transcribe(
+                    audioURL: audioURL,
+                    language: language,
+                    prompt: fullPrompt,
+                    spokenPunctuation: spokenPunctuation
+                )
+                let cleaned = Transcriber.stripWhisperMarkers(
+                    text.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+                let collapsed = Transcriber.collapseRepetitions(cleaned)
+                if collapsed != cleaned {
+                    print("WhisperEngine: collapsed repeated output (\(cleaned.count) -> \(collapsed.count) chars)")
+                }
+                return collapsed
+            } catch {
+                print("WhisperEngine in-memory transcription failed, falling back to CLI: \(error.localizedDescription)")
+            }
+        }
+
+        // Fallback path or VAD path via whisper-cli
+        guard let whisperPath = Transcriber.findWhisperBinary() else {
+            throw TranscriberError.whisperNotFound
         }
 
         let vadModelPath: String?
@@ -69,24 +92,27 @@ public class Transcriber {
         return output
     }
 
+    private var fullPrompt: String? {
+        let dictionaryPrompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
+        let prompt = [effectiveWhisperPrompt, dictionaryPrompt.isEmpty ? nil : dictionaryPrompt]
+            .compactMap { $0 }
+            .joined(separator: " ")
+        return prompt.isEmpty ? nil : prompt
+    }
+
     func arguments(modelPath: String, audioURL: URL, vadModelPath: String? = nil) -> [String] {
         var args = [
             "-m", modelPath,
             "-f", audioURL.path,
             "-l", language,
             "-nt",
-            // Disable cross-window context carry-over. whisper.cpp feeds each
-            // 30s window's decoded text as the prompt for the next window; on
-            // long dictation this compounds into repetition/hallucination
-            // loops (sentences repeating verbatim, then trailing off).
-            // max-context 0 decodes each window independently and stops it.
             "-mc", "0",
+            "-bs", "1",           // Greedy decoding for lowest latency
+            "-bo", "1",
+            "-t", "4",            // Explicit M4 thread count
+            "--suppress-nst",     // Suppress non-speech tokens
         ]
-        let dictionaryPrompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
-        let prompt = [effectiveWhisperPrompt, dictionaryPrompt.isEmpty ? nil : dictionaryPrompt]
-            .compactMap { $0 }
-            .joined(separator: " ")
-        if !prompt.isEmpty {
+        if let prompt = fullPrompt {
             args += ["--prompt", prompt]
         }
         if spokenPunctuation {
@@ -135,6 +161,86 @@ public class Transcriber {
         return result
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public static func collapseRepetitions(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return text }
+
+        var words = trimmed.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        guard words.count >= 2 else { return trimmed }
+
+        // 1. Collapse single word repetitions (e.g. "the the the the" -> "the")
+        var deduplicated: [String] = []
+        var lastWordNorm = ""
+        var runCount = 0
+
+        for word in words {
+            let norm = word.lowercased().trimmingCharacters(in: .punctuationCharacters)
+            if norm == lastWordNorm && !norm.isEmpty {
+                runCount += 1
+                if runCount < 3 {
+                    deduplicated.append(word)
+                }
+            } else {
+                runCount = 1
+                lastWordNorm = norm
+                deduplicated.append(word)
+            }
+        }
+        words = deduplicated
+
+        // 2. Check for repeating multi-word phrases of length k
+        let maxK = max(1, words.count / 3)
+        for k in (1...maxK).reversed() {
+            var i = 0
+            var newWords: [String] = []
+            var modified = false
+
+            while i < words.count {
+                if i + k <= words.count {
+                    let candidate = words[i..<i+k].map { $0.lowercased().trimmingCharacters(in: .punctuationCharacters) }
+                    var count = 1
+                    while i + (count + 1) * k <= words.count {
+                        let nextChunk = words[i + count * k ..< i + (count + 1) * k].map { $0.lowercased().trimmingCharacters(in: .punctuationCharacters) }
+                        if candidate == nextChunk {
+                            count += 1
+                        } else {
+                            break
+                        }
+                    }
+
+                    if count >= 3 {
+                        newWords.append(contentsOf: words[i..<i+k])
+                        i += count * k
+                        modified = true
+                        continue
+                    }
+                }
+                newWords.append(words[i])
+                i += 1
+            }
+
+            if modified {
+                words = newWords
+            }
+        }
+
+        var result = words.joined(separator: " ")
+
+        // 3. Strip common hallucinated trailing phrases from Whisper training data
+        let trailingHallucinationPattern = "(?i)[,\\.\\s]+(?:thank you(?: very much)?|thanks for watching|thank you for watching|please subscribe|subscribe to my channel|see you next time|bye bye|bye)\\.?$"
+        if let regex = try? NSRegularExpression(pattern: trailingHallucinationPattern) {
+            let range = NSRange(result.startIndex..., in: result)
+            let matches = regex.matches(in: result, range: range)
+            for match in matches {
+                if match.range.location > 3 {
+                    result = (result as NSString).replacingCharacters(in: match.range, with: "")
+                }
+            }
+        }
+
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public static func findWhisperBinary() -> String? {
@@ -186,7 +292,7 @@ public class Transcriber {
         return candidates.first { ModelDownloader.isValidGGMLFile(at: URL(fileURLWithPath: $0)) }
     }
 
-    static func findModel(modelSize: String) -> String? {
+    public static func findModel(modelSize: String) -> String? {
         let modelFileName = "ggml-\(modelSize).bin"
 
         let candidates = [

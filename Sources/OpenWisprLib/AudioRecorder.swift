@@ -75,11 +75,18 @@ class AudioRecorder {
         queue.sync {
             guard let url = currentOutputURL else { return nil }
             currentOutputURL = nil
-            defer { capture = nil }
+            // Only release the capture unit if voiceProcessing was enabled to exit voice-processing mode.
+            // When voice processing is off (standard HALOutput), keep the unit alive to avoid 50-80ms re-init.
+            defer {
+                if selectedVoiceProcessing {
+                    capture = nil
+                }
+            }
             do {
                 try capture?.stop()
                 return url
             } catch {
+                capture = nil
                 try? FileManager.default.removeItem(at: url)
                 print("Recording failed: \(error.localizedDescription)")
                 return nil

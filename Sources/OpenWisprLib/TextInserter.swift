@@ -107,7 +107,10 @@ class TextInserter {
         let focusResult = AXUIElementCopyAttributeValue(
             applicationElement, kAXFocusedUIElementAttribute as CFString, &focusedValue
         )
-        if focusResult == .noValue { return false }
+        // If the query returns noValue, the target application (e.g. Electron, web browser,
+        // or custom editor) doesn't expose standard AX focus. Treat this as inconclusive (nil)
+        // rather than assuming no text input is focused, so pasting continues.
+        if focusResult == .noValue { return nil }
         guard focusResult == .success, let focusedValue,
               CFGetTypeID(focusedValue) == AXUIElementGetTypeID() else { return nil }
 
@@ -130,13 +133,12 @@ class TextInserter {
             return true
         }
 
-        // Custom editors may use other roles. Keep pasting unless the focused
-        // role is clearly not a text input.
+        // Custom editors may use other roles (e.g. Electron apps, browsers, or terminal windows).
+        // Keep pasting unless the focused role is explicitly a non-input UI widget.
         if role == (kAXButtonRole as String)
             || role == (kAXCheckBoxRole as String)
             || role == (kAXRadioButtonRole as String)
-            || role == (kAXMenuItemRole as String)
-            || role == (kAXWindowRole as String) {
+            || role == (kAXMenuItemRole as String) {
             return false
         }
         return nil
@@ -220,6 +222,7 @@ class TextInserter {
         keyUp.flags = .maskCommand
 
         keyDown.post(tap: .cghidEventTap)
+        usleep(15000)
         keyUp.post(tap: .cghidEventTap)
     }
 }
