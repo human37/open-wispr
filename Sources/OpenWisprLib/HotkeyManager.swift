@@ -14,6 +14,7 @@ class HotkeyManager {
     private let removeMonitor: (Any) -> Void
     private var onKeyDown: (() -> Void)?
     private var onKeyUp: (() -> Void)?
+    private var onCancel: (() -> Void)?
     private var modifierPressed = false
 
     init(
@@ -34,9 +35,14 @@ class HotkeyManager {
         self.removeMonitor = removeMonitor
     }
 
-    func start(onKeyDown: @escaping () -> Void, onKeyUp: @escaping () -> Void) {
+    func start(
+        onKeyDown: @escaping () -> Void,
+        onKeyUp: @escaping () -> Void,
+        onCancel: @escaping () -> Void = {}
+    ) {
         self.onKeyDown = onKeyDown
         self.onKeyUp = onKeyUp
+        self.onCancel = onCancel
 
         let mask: NSEvent.EventTypeMask = [.keyDown, .keyUp, .flagsChanged]
 
@@ -62,15 +68,29 @@ class HotkeyManager {
 
     private func handleEvent(_ event: NSEvent) {
         if isModifierOnlyKey(keyCode) {
+            // A modifier-only hotkey must be pressed on its own. Any other key or
+            // modifier while it's held means it's being used as a modifier (Fn+arrow,
+            // Fn+Delete, Fn+F-keys...), so the press is cancelled.
+            if modifierPressed, event.type == .keyDown || (event.type == .flagsChanged && event.keyCode != keyCode) {
+                modifierPressed = false
+                onCancel?()
+                return
+            }
+
             guard event.type == .flagsChanged else { return }
             guard event.keyCode == keyCode else { return }
 
+            let currentMods = UInt64(event.modifierFlags.rawValue) & 0x00FF0000
+            let isDown = currentMods & ownFlag(keyCode) != 0
+
             if modifierPressed {
+                guard !isDown else { return }
                 modifierPressed = false
                 onKeyUp?()
             } else {
+                guard isDown else { return }
+                if currentMods & ~(requiredModifiers | ownFlag(keyCode)) != 0 { return }
                 if requiredModifiers != 0 {
-                    let currentMods = UInt64(event.modifierFlags.rawValue) & 0x00FF0000
                     guard currentMods & requiredModifiers == requiredModifiers else { return }
                 }
                 modifierPressed = true
@@ -88,6 +108,19 @@ class HotkeyManager {
                 onKeyUp?()
             }
         }
+    }
+
+    private func ownFlag(_ code: UInt16) -> UInt64 {
+        let flags: NSEvent.ModifierFlags
+        switch code {
+        case 54, 55: flags = .command
+        case 56, 60: flags = .shift
+        case 58, 61: flags = .option
+        case 59, 62: flags = .control
+        case 63: flags = .function
+        default: flags = []
+        }
+        return UInt64(flags.rawValue)
     }
 
     private func isModifierOnlyKey(_ code: UInt16) -> Bool {

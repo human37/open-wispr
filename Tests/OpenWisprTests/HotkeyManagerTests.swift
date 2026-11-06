@@ -29,6 +29,76 @@ final class HotkeyManagerTests: XCTestCase {
         XCTAssertEqual(upCount, 1)
     }
 
+    func testFnAloneTriggersDownAndUp() throws {
+        var handler: ((NSEvent) -> Void)?
+        var events: [String] = []
+        let manager = HotkeyManager(
+            keyCode: 63,
+            addGlobalMonitor: { _, callback in handler = callback; return NSObject() },
+            addLocalMonitor: { _, _ in nil },
+            removeMonitor: { _ in }
+        )
+        manager.start(onKeyDown: { events.append("down") }, onKeyUp: { events.append("up") }, onCancel: { events.append("cancel") })
+        defer { manager.stop() }
+
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63, flags: [.function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63)))
+        XCTAssertEqual(events, ["down", "up"])
+    }
+
+    func testFnUsedWithAnotherKeyIsCancelled() throws {
+        var handler: ((NSEvent) -> Void)?
+        var events: [String] = []
+        let manager = HotkeyManager(
+            keyCode: 63,
+            addGlobalMonitor: { _, callback in handler = callback; return NSObject() },
+            addLocalMonitor: { _, _ in nil },
+            removeMonitor: { _ in }
+        )
+        manager.start(onKeyDown: { events.append("down") }, onKeyUp: { events.append("up") }, onCancel: { events.append("cancel") })
+        defer { manager.stop() }
+
+        // Fn + Left arrow
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63, flags: [.function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .keyDown, keyCode: 123, flags: [.function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .keyUp, keyCode: 123, flags: [.function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63)))
+        XCTAssertEqual(events, ["down", "cancel"])
+
+        // Fn + Cmd
+        events = []
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63, flags: [.function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 55, flags: [.function, .command])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 55, flags: [.function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63)))
+        XCTAssertEqual(events, ["down", "cancel"])
+
+        // Next plain press works again
+        events = []
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63, flags: [.function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63)))
+        XCTAssertEqual(events, ["down", "up"])
+    }
+
+    func testFnPressedWhileOtherModifierHeldDoesNotTrigger() throws {
+        var handler: ((NSEvent) -> Void)?
+        var events: [String] = []
+        let manager = HotkeyManager(
+            keyCode: 63,
+            addGlobalMonitor: { _, callback in handler = callback; return NSObject() },
+            addLocalMonitor: { _, _ in nil },
+            removeMonitor: { _ in }
+        )
+        manager.start(onKeyDown: { events.append("down") }, onKeyUp: { events.append("up") }, onCancel: { events.append("cancel") })
+        defer { manager.stop() }
+
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 59, flags: [.control])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63, flags: [.control, .function])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 63, flags: [.control])))
+        handler?(try XCTUnwrap(makeKeyEvent(type: .flagsChanged, keyCode: 59)))
+        XCTAssertEqual(events, [])
+    }
+
     func testMonitorsHotkeyEventsFromOtherAppsAndOpenWisprItself() throws {
         let globalToken = NSObject()
         let localToken = NSObject()
