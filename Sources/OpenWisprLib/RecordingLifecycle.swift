@@ -32,6 +32,12 @@ struct RecordingLifecycle {
         return .stopRecording
     }
 
+    mutating func hotkeyCancelled() -> Action {
+        guard isRecording else { return .none }
+        isRecording = false
+        return .cancelRecording
+    }
+
     mutating func systemWillSleep() -> Action {
         guard isRecording else { return .none }
         isRecording = false

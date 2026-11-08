@@ -191,6 +191,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 onKeyUp: { [weak self] in
                     self?.handleKeyUp()
+                },
+                onCancel: { [weak self] in
+                    self?.handleHotkeyCancelled()
                 }
             )
             hotkeyManagers.append(manager)
@@ -248,7 +251,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             )
             manager.start(
                 onKeyDown: { [weak self] in self?.handleKeyDown() },
-                onKeyUp: { [weak self] in self?.handleKeyUp() }
+                onKeyUp: { [weak self] in self?.handleKeyUp() },
+                onCancel: { [weak self] in self?.handleHotkeyCancelled() }
             )
             hotkeyManagers.append(manager)
         }
@@ -335,6 +339,17 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         if recordingLifecycle.keyUp(toggleMode: isToggle) == .stopRecording {
             handleRecordingStop()
         }
+    }
+
+    private func handleHotkeyCancelled() {
+        guard isReady else { return }
+        guard recordingLifecycle.hotkeyCancelled() == .cancelRecording else { return }
+
+        if let url = recorder.stopRecording() {
+            RecordingCancellation.discardPartialRecording(at: url)
+        }
+        RecordingCancellation.discardTrackedPartialRecording(&currentRecordingURL)
+        resetRecordingStatusToIdleIfNeeded()
     }
 
     private func handleRecordingStart() {
