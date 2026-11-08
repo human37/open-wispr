@@ -103,20 +103,10 @@ class TextInserter {
     private static func hasFocusedTextInput() -> Bool? {
         guard let app = NSWorkspace.shared.frontmostApplication else { return false }
         let applicationElement = AXUIElementCreateApplication(app.processIdentifier)
-        // Electron and Chromium apps build their accessibility tree only after a
-        // client sets AXManualAccessibility. Other apps ignore the attribute.
-        AXUIElementSetAttributeValue(applicationElement, "AXManualAccessibility" as CFString, kCFBooleanTrue)
         var focusedValue: CFTypeRef?
-        var focusResult = AXUIElementCopyAttributeValue(
+        let focusResult = AXUIElementCopyAttributeValue(
             applicationElement, kAXFocusedUIElementAttribute as CFString, &focusedValue
         )
-        if focusResult == .noValue {
-            // The tree can appear a moment after the first request.
-            Thread.sleep(forTimeInterval: 0.05)
-            focusResult = AXUIElementCopyAttributeValue(
-                applicationElement, kAXFocusedUIElementAttribute as CFString, &focusedValue
-            )
-        }
         // No focused element is not proof that no text field has focus. Electron
         // apps can report .noValue while a text field is focused, so every
         // unsuccessful query is inconclusive and the text is pasted.
