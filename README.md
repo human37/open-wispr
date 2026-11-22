@@ -81,7 +81,7 @@ Both `hotkey` (single) and `hotkeys` (array) are supported. If both are present,
 | **modelSize** | `"base.en"` | See model table below |
 | **language** | `"en"` | `"auto"` for auto-detect, or any [ISO 639-1 code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) — e.g. `it`, `fr`, `de`, `es` |
 | **spokenPunctuation** | `false` | Say "comma", "period", etc. to insert punctuation instead of auto-punctuation |
-| **whisperPrompt** | — | Optional prompt text passed to Whisper to guide style, vocabulary, or punctuation. Omit it or leave it blank to use Whisper's default behavior. |
+| **whisperPrompt** | — | Optional prompt text passed to Whisper to guide style, vocabulary, or punctuation (Whisper accepts up to ~224 tokens, shared with the custom dictionary vocabulary hint). Omit it or leave it blank to use Whisper's default behavior. |
 | **voiceActivityDetection** | `false` | Enable local Silero voice activity detection to filter non-speech audio before transcription. The VAD model downloads when first enabled; quiet or very short speech may be skipped. |
 | **voiceProcessing** | `false` | Use macOS voice processing on supported systems. Adds echo/noise processing but can slow recording startup and reduce playback volume while recording. Also available in the menu bar. |
 | **vadThreshold** | `0.5` | Speech detection sensitivity from `0` to `1`; lower values detect quieter speech but may admit more background audio. |
