@@ -120,9 +120,15 @@ class TextInserter {
         ) == .success, let role = roleValue as? String else { return nil }
 
         var editableValue: CFTypeRef?
-        if AXUIElementCopyAttributeValue(
+        let isEditable = AXUIElementCopyAttributeValue(
             focusedElement, kAXIsEditableAttribute as CFString, &editableValue
-        ) == .success, let isEditable = editableValue as? Bool, isEditable {
+        ) == .success && (editableValue as? Bool == true)
+
+        return classifyFocusedElement(role: role, isEditable: isEditable)
+    }
+
+    static func classifyFocusedElement(role: String, isEditable: Bool) -> Bool? {
+        if isEditable {
             return true
         }
 
@@ -132,13 +138,13 @@ class TextInserter {
             return true
         }
 
-        // Custom editors may use other roles. Keep pasting unless the focused
-        // role is clearly not a text input.
+        // Custom-rendered apps (Firefox, Electron, browsers, terminals) often
+        // report AXWindow or container roles even when a text field has focus.
+        // Keep pasting unless the focused role is clearly a non-text control.
         if role == (kAXButtonRole as String)
             || role == (kAXCheckBoxRole as String)
             || role == (kAXRadioButtonRole as String)
-            || role == (kAXMenuItemRole as String)
-            || role == (kAXWindowRole as String) {
+            || role == (kAXMenuItemRole as String) {
             return false
         }
         return nil

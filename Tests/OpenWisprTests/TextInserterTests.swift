@@ -98,6 +98,23 @@ final class TextInserterTests: XCTestCase {
         XCTAssertEqual(pasteboard.string(forType: .string), "old clipboard")
     }
 
+    func testClassifyFocusedElementTreatsWindowRoleAsInconclusive() {
+        XCTAssertNil(TextInserter.classifyFocusedElement(role: kAXWindowRole as String, isEditable: false))
+        XCTAssertNil(TextInserter.classifyFocusedElement(role: "AXWebArea", isEditable: false))
+    }
+
+    func testClassifyFocusedElementRecognizesTextAndNonTextControls() {
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXTextFieldRole as String, isEditable: false), true)
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXTextAreaRole as String, isEditable: false), true)
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXComboBoxRole as String, isEditable: false), true)
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXWindowRole as String, isEditable: true), true)
+
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXButtonRole as String, isEditable: false), false)
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXCheckBoxRole as String, isEditable: false), false)
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXRadioButtonRole as String, isEditable: false), false)
+        XCTAssertEqual(TextInserter.classifyFocusedElement(role: kAXMenuItemRole as String, isEditable: false), false)
+    }
+
     private func makeInserter(
         pasteboard: FakePasteboard,
         scheduler: CapturingScheduler,
