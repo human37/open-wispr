@@ -69,25 +69,41 @@ public class Transcriber {
         return output
     }
 
+    static let maxPromptContextTokens = 224
+
+    /// Estimate a `-mc` token budget large enough to fit `prompt` without
+    /// truncating it, while leaving minimal headroom for previous 30s windows
+    /// to leak into later windows when `--carry-initial-prompt` is set.
+    static func promptMaxContext(for prompt: String) -> Int {
+        let estimate = (prompt.utf8.count + 1) / 2 + 2
+        return min(max(estimate, 2), maxPromptContextTokens)
+    }
+
     func arguments(modelPath: String, audioURL: URL, vadModelPath: String? = nil) -> [String] {
         var args = [
             "-m", modelPath,
             "-f", audioURL.path,
             "-l", language,
             "-nt",
-            // Disable cross-window context carry-over. whisper.cpp feeds each
-            // 30s window's decoded text as the prompt for the next window; on
-            // long dictation this compounds into repetition/hallucination
-            // loops (sentences repeating verbatim, then trailing off).
-            // max-context 0 decodes each window independently and stops it.
-            "-mc", "0",
         ]
         let dictionaryPrompt = DictionaryPostProcessor.buildPrompt(from: customDictionary)
         let prompt = [effectiveWhisperPrompt, dictionaryPrompt.isEmpty ? nil : dictionaryPrompt]
             .compactMap { $0 }
             .joined(separator: " ")
-        if !prompt.isEmpty {
-            args += ["--prompt", prompt]
+        if prompt.isEmpty {
+            // Disable cross-window context carry-over. whisper.cpp feeds each
+            // 30s window's decoded text as the prompt for the next window; on
+            // long dictation this compounds into repetition/hallucination
+            // loops (sentences repeating verbatim, then trailing off).
+            // max-context 0 decodes each window independently and stops it.
+            args += ["-mc", "0"]
+        } else {
+            // whisper.cpp ignores --prompt when -mc is 0. Carry the initial
+            // prompt across windows with a tight -mc budget sized to the prompt
+            // so it reaches the decoder without letting decoded text from
+            // earlier 30s windows accumulate into repetition loops.
+            let maxContext = Transcriber.promptMaxContext(for: prompt)
+            args += ["-mc", String(maxContext), "--carry-initial-prompt", "--prompt", prompt]
         }
         if spokenPunctuation {
             args += ["--suppress-regex", "[,\\.\\?!;:\\-—]"]

@@ -45,7 +45,7 @@ final class TranscriberTests: XCTestCase {
         XCTAssertEqual(args[promptFlagIndex + 1], "Vocabulary: neural.")
     }
 
-    func testArgumentsDisableCrossWindowContext() throws {
+    func testArgumentsDisableCrossWindowContextWhenNoPrompt() throws {
         let transcriber = Transcriber(modelSize: "base.en", language: "en")
         let args = transcriber.arguments(
             modelPath: "/models/ggml-base.en.bin",
@@ -54,6 +54,47 @@ final class TranscriberTests: XCTestCase {
 
         let flagIndex = try XCTUnwrap(args.firstIndex(of: "-mc"))
         XCTAssertEqual(args[flagIndex + 1], "0")
+        XCTAssertFalse(args.contains("--carry-initial-prompt"))
+    }
+
+    func testArgumentsCarryInitialPromptWithPositiveMaxContextWhenPromptSet() throws {
+        let prompt = "Vocabulary: Claude Code, Oxlint, Vercel, shadcn."
+        let transcriber = Transcriber(whisperPrompt: prompt)
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav")
+        )
+
+        let mcIndex = try XCTUnwrap(args.firstIndex(of: "-mc"))
+        let mcValue = try XCTUnwrap(Int(args[mcIndex + 1]))
+        XCTAssertGreaterThan(mcValue, 0)
+        XCTAssertLessThanOrEqual(mcValue, Transcriber.maxPromptContextTokens)
+        XCTAssertEqual(mcValue, Transcriber.promptMaxContext(for: prompt))
+        XCTAssertTrue(args.contains("--carry-initial-prompt"))
+        let promptIndex = try XCTUnwrap(args.firstIndex(of: "--prompt"))
+        XCTAssertEqual(args[promptIndex + 1], prompt)
+    }
+
+    func testArgumentsCarryInitialPromptForDictionaryVocabulary() throws {
+        let transcriber = Transcriber()
+        transcriber.customDictionary = [DictionaryEntry(from: "oxlant", to: "Oxlint")]
+        let args = transcriber.arguments(
+            modelPath: "/models/ggml-base.en.bin",
+            audioURL: URL(fileURLWithPath: "/tmp/input.wav")
+        )
+
+        let mcIndex = try XCTUnwrap(args.firstIndex(of: "-mc"))
+        let mcValue = try XCTUnwrap(Int(args[mcIndex + 1]))
+        XCTAssertGreaterThan(mcValue, 0)
+        XCTAssertTrue(args.contains("--carry-initial-prompt"))
+    }
+
+    func testPromptMaxContextCapsAtWhisperLimit() {
+        let longPrompt = String(repeating: "Kubernetes, ", count: 100)
+        XCTAssertEqual(
+            Transcriber.promptMaxContext(for: longPrompt),
+            Transcriber.maxPromptContextTokens
+        )
     }
 
     func testVADArgumentsGateWhisperWithConfiguredModelAndThreshold() throws {
